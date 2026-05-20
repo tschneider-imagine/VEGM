@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -49,6 +50,19 @@ type ExportOptions struct {
 	StateSnapshot   any
 	ConfigSnapshot  any
 	PackSummary     any
+}
+
+type ExportBundle struct {
+	GeneratedAt    time.Time `json:"generated_at"`
+	InstanceID     string    `json:"instance_id"`
+	Since          time.Time `json:"since,omitempty"`
+	Until          time.Time `json:"until,omitempty"`
+	IncludePayloads bool     `json:"include_payloads"`
+	Events         []Event   `json:"events"`
+	PayloadFiles   []string  `json:"payload_files,omitempty"`
+	StateSnapshot  any       `json:"state_snapshot,omitempty"`
+	ConfigSnapshot any       `json:"config_snapshot,omitempty"`
+	PackSummary    any       `json:"pack_summary,omitempty"`
 }
 
 func NewLogger(dir, instanceID string) (*Logger, error) {
@@ -103,6 +117,61 @@ func (l *Logger) QueryEvents(filter EventFilter) ([]Event, error) {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return l.queryEventsLocked(filter)
+}
+
+func (l *Logger) ExportBundle(opts ExportOptions) (string, error) {
+	if l == nil {
+		return "", fmt.Errorf("logger is nil")
+	}
+	outDir := opts.OutputDir
+	if outDir == "" {
+		outDir = filepath.Join(l.logDir, "exports")
+	}
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return "", err
+	}
+	bundlePath := filepath.Join(outDir, fmt.Sprintf("%s_%s_bundle.json", time.Now().UTC().Format("20060102T150405Z"), sanitizeFilePart(l.instanceID)))
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	events, err := l.queryEventsLocked(EventFilter{Since: opts.Since, Until: opts.Until})
+	if err != nil {
+		return "", err
+	}
+	bundle := ExportBundle{
+		GeneratedAt:     time.Now().UTC(),
+		InstanceID:      l.instanceID,
+		Since:           opts.Since,
+		Until:           opts.Until,
+		IncludePayloads: opts.IncludePayloads,
+		Events:          events,
+		StateSnapshot:   opts.StateSnapshot,
+		ConfigSnapshot:  opts.ConfigSnapshot,
+		PackSummary:     opts.PackSummary,
+	}
+	if opts.IncludePayloads {
+		entries, err := os.ReadDir(l.payloadDir)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				bundle.PayloadFiles = append(bundle.PayloadFiles, entry.Name())
+			}
+			sort.Strings(bundle.PayloadFiles)
+		}
+	}
+	data, err := json.MarshalIndent(bundle, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(bundlePath, append(data, '\n'), 0o644); err != nil {
+		return "", err
+	}
+	return bundlePath, nil
+}
+
+func (l *Logger) queryEventsLocked(filter EventFilter) ([]Event, error) {
 	f, err := os.Open(l.eventPath)
 	if err != nil {
 		return nil, err
@@ -130,10 +199,6 @@ func (l *Logger) QueryEvents(filter EventFilter) ([]Event, error) {
 	return out, nil
 }
 
-func (l *Logger) ExportBundle(opts ExportOptions) (string, error) {
-	return "", fmt.Errorf("bundle export not implemented in this repo seed")
-}
-
 func matchesEventFilter(evt Event, filter EventFilter) bool {
 	if filter.Category != "" && evt.Category != filter.Category {
 		return false
@@ -149,7 +214,7 @@ func matchesEventFilter(evt Event, filter EventFilter) bool {
 	}
 	if filter.Contains != "" {
 		needle := strings.ToLower(filter.Contains)
-		blob := strings.ToLower(evt.Message)
+		blob := strings.ToLower(evt.Message + " " + flattenFields(evt.Fields))
 		if !strings.Contains(blob, needle) {
 			return false
 		}
@@ -157,7 +222,32 @@ func matchesEventFilter(evt Event, filter EventFilter) bool {
 	if filter.MessageType != "" && fmt.Sprint(evt.Fields["message_type"]) != filter.MessageType {
 		return false
 	}
+	if filter.HostID != "" && fmt.Sprint(evt.Fields["hostId"]) != filter.HostID && fmt.Sprint(evt.Fields["host_id"]) != filter.HostID {
+		return false
+	}
+	if filter.SessionID != "" && fmt.Sprint(evt.Fields["sessionId"]) != filter.SessionID && fmt.Sprint(evt.Fields["session_id"]) != filter.SessionID {
+		return false
+	}
 	return true
+}
+
+func flattenFields(fields map[string]any) string {
+	if len(fields) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(fields))
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var b strings.Builder
+	for _, k := range keys {
+		b.WriteString(k)
+		b.WriteByte('=')
+		b.WriteString(fmt.Sprint(fields[k]))
+		b.WriteByte(' ')
+	}
+	return b.String()
 }
 
 func sanitizeFilePart(s string) string {
