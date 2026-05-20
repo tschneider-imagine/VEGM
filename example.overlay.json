@@ -1,0 +1,24 @@
+{
+  "schema_version": "vegm.message-overlay/v1",
+  "overlay_name": "slow-responses-and-open-registration",
+  "overlay_version": "0.1.0",
+  "target_pack": "repo-seed-baseline",
+  "description": "Simple repo-native overlay example.",
+  "changes": [
+    {
+      "op": "set",
+      "path": "/timers/artificial_response_delay_ms",
+      "value": 1500
+    },
+    {
+      "op": "set",
+      "path": "/state_defaults/registration_mode",
+      "value": "open"
+    }
+  ],
+  "activate": {
+    "apply_immediately": true,
+    "scope": "instance",
+    "ttl_ms": 60000
+  }
+}
