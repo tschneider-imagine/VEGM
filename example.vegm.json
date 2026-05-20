@@ -1,0 +1,34 @@
+{
+  "instance_id": "vegm-001",
+  "egm_id": "EGM-001",
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 18443
+  },
+  "security": {
+    "trust_mode": "plaintext_lab"
+  },
+  "logging": {
+    "dir": "./logs/vegm-001",
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true
+  },
+  "control": {
+    "bind": "127.0.0.1:19001"
+  },
+  "outbound": {
+    "default_target_url": "http://127.0.0.1:18080/host",
+    "timeout_ms": 3000,
+    "scheduler": {
+      "enabled": true,
+      "auto_start": false,
+      "open_session_on_start": true,
+      "heartbeat_interval_ms": 5000,
+      "open_retry_interval_ms": 2000,
+      "failure_threshold": 2,
+      "run_heartbeat_when_idle": false
+    }
+  },
+  "pack_file": "./example.pack.json",
+  "overlay_files": []
+}
