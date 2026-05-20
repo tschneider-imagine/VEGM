@@ -1,0 +1,167 @@
+{
+  "schema_version": "vegm.message-pack/v1",
+  "pack_name": "extended-operations-pack",
+  "pack_version": "1.0.0",
+  "description": "Extended operation pack for inbound and outbound VEGM testing.",
+  "tags": ["extended", "descriptor", "cabinet", "session"],
+  "wire": {
+    "protocol_family": "g2s",
+    "transport": {
+      "http_versions": ["1.1"],
+      "tls_modes_supported": [
+        "strict_mtls",
+        "mtls_no_revocation",
+        "tls_server_only",
+        "accept_all_lab",
+        "plaintext_lab"
+      ],
+      "content_types": ["text/xml; charset=utf-8"],
+      "soap_action_required": false
+    },
+    "envelope": {
+      "kind": "soap-http",
+      "soap_namespace": "http://schemas.xmlsoap.org/soap/envelope/",
+      "body_xpath_hint": "/*[local-name()='Envelope']/*[local-name()='Body']"
+    },
+    "paths": {
+      "default_listener_path": "/g2s",
+      "alternate_listener_paths": ["/g2s/host"]
+    },
+    "namespaces": {
+      "soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
+      "g2s": "urn:com:g2s:2010:common",
+      "cab": "urn:com:g2s:2010:cabinet"
+    }
+  },
+  "control_plane": {
+    "hot_reloadable_sections": ["timers", "operations", "state_defaults"],
+    "mutable_fields": [
+      "/timers/artificial_response_delay_ms",
+      "/state_defaults/registration_mode"
+    ],
+    "requires_audit_log": true
+  },
+  "timers": {
+    "request_timeout_ms": 3000,
+    "heartbeat_interval_ms": 5000,
+    "heartbeat_timeout_ms": 12000,
+    "session_idle_timeout_ms": 30000,
+    "artificial_response_delay_ms": 0
+  },
+  "state_defaults": {
+    "registration_mode": "strict_match",
+    "session_state": "idle",
+    "heartbeat_state": "idle",
+    "allowed_host_ids": ["HOST-001"],
+    "registered_hosts": [
+      {
+        "host_id": "HOST-001",
+        "display_name": "Primary Host",
+        "role": "owner",
+        "enabled": true,
+        "notes": "Default test host"
+      }
+    ]
+  },
+  "logging_hints": {
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true,
+    "parsed_fields": ["hostId", "egmId", "sessionId"],
+    "redact_fields": []
+  },
+  "operations": {
+    "commsOnLine": {
+      "enabled": true,
+      "description": "Bring session online.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "commsOnLine", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:commsOnLineAck><g2s:hostId>{{request.hostId}}</g2s:hostId><g2s:egmId>{{request.egmId}}</g2s:egmId><g2s:sessionId>{{request.sessionId}}</g2s:sessionId></g2s:commsOnLineAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"session_state": "online", "heartbeat_state": "healthy"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["hostId", "egmId", "sessionId"]
+    },
+    "keepAlive": {
+      "enabled": true,
+      "description": "Acknowledge heartbeat.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "keepAlive", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:keepAliveAck><g2s:hostId>{{request.hostId}}</g2s:hostId><g2s:egmId>{{request.egmId}}</g2s:egmId><g2s:sessionId>{{request.sessionId}}</g2s:sessionId></g2s:keepAliveAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"heartbeat_state": "healthy"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["hostId", "egmId", "sessionId"]
+    },
+    "getDescriptor": {
+      "enabled": true,
+      "description": "Return descriptor list shell.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "getDescriptor", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "descriptor_list",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:descriptorList><g2s:egmId>{{request.egmId}}</g2s:egmId><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:descriptorClass>cabinet</g2s:descriptorClass></g2s:descriptorList></soapenv:Body></soapenv:Envelope>",
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "setKeepAlive": {
+      "enabled": true,
+      "description": "Acknowledge keepalive timer negotiation.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "setKeepAlive", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "set_keepalive_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:setKeepAliveAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId></g2s:setKeepAliveAck></soapenv:Body></soapenv:Envelope>",
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "getCabinetStatus": {
+      "enabled": true,
+      "description": "Return a simple cabinet status shell.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "getCabinetStatus", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "cabinet_status",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:cab='{{ns.cab}}'><soapenv:Body><cab:cabinetStatus><cab:egmId>{{request.egmId}}</cab:egmId><cab:sessionId>{{request.sessionId}}</cab:sessionId><cab:status>ready</cab:status></cab:cabinetStatus></soapenv:Body></soapenv:Envelope>",
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "commsClosing": {
+      "enabled": true,
+      "description": "Close session cleanly.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "commsClosing", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "closing_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:commsClosingAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId></g2s:commsClosingAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"session_state": "closed"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    }
+  }
+}
