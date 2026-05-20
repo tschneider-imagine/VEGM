@@ -1,0 +1,23 @@
+# Build outputs
+/bin/
+/dist/
+vegm
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Runtime artifacts
+logs/
+payloads/
+exports/
+*.zip
+*.sqlite
+*.db
+*.db-shm
+*.db-wal
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
