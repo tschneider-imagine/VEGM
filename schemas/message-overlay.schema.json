@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tschneider-imagine/VEGM/schemas/message-overlay.schema.json",
+  "title": "VEGM Message Overlay v1",
+  "type": "object",
+  "required": ["schema_version", "overlay_name", "target_pack", "changes"],
+  "properties": {
+    "schema_version": {"const": "vegm.message-overlay/v1"},
+    "overlay_name": {"type": "string", "minLength": 1},
+    "overlay_version": {"type": "string"},
+    "target_pack": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["op", "path"],
+        "properties": {
+          "op": {"enum": ["set", "merge", "remove", "append"]},
+          "path": {"type": "string", "pattern": "^/"},
+          "value": {}
+        },
+        "additionalProperties": true
+      }
+    },
+    "activate": {
+      "type": "object",
+      "properties": {
+        "apply_immediately": {"type": "boolean"},
+        "scope": {"enum": ["", "instance", "fleet", "session"]},
+        "ttl_ms": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
