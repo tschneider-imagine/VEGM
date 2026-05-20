@@ -1,0 +1,21 @@
+{
+  "instance_id": "vegm-dynamic",
+  "egm_id": "EGM-DYNAMIC",
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 0
+  },
+  "security": {
+    "trust_mode": "plaintext_lab"
+  },
+  "logging": {
+    "dir": "./logs/vegm-dynamic",
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true
+  },
+  "control": {
+    "bind": "127.0.0.1:0"
+  },
+  "pack_file": "./example.pack.json",
+  "overlay_files": []
+}
