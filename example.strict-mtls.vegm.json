@@ -1,0 +1,24 @@
+{
+  "instance_id": "vegm-mtls-001",
+  "egm_id": "EGM-MTLS-001",
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 18443
+  },
+  "security": {
+    "trust_mode": "strict_mtls",
+    "cert_file": "./certs/server.pem",
+    "key_file": "./certs/server.key",
+    "ca_file": "./certs/ca.pem"
+  },
+  "logging": {
+    "dir": "./logs/vegm-mtls-001",
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true
+  },
+  "control": {
+    "bind": "127.0.0.1:19002"
+  },
+  "pack_file": "./example.pack.json",
+  "overlay_files": []
+}
