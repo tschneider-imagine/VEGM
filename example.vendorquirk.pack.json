@@ -1,0 +1,155 @@
+{
+  "schema_version": "vegm.message-pack/v1",
+  "pack_name": "vendorquirk-pack",
+  "pack_version": "1.0.0",
+  "description": "Example vendor-quirk pack showing alternate path, namespace, and stricter registration posture.",
+  "tags": ["vendor", "quirk", "alternate-path"],
+  "wire": {
+    "protocol_family": "g2s",
+    "transport": {
+      "http_versions": ["1.1"],
+      "tls_modes_supported": [
+        "strict_mtls",
+        "mtls_no_revocation",
+        "tls_server_only",
+        "accept_all_lab",
+        "plaintext_lab"
+      ],
+      "content_types": ["text/xml; charset=utf-8"],
+      "soap_action_required": false
+    },
+    "envelope": {
+      "kind": "soap-http",
+      "soap_namespace": "http://schemas.xmlsoap.org/soap/envelope/",
+      "body_xpath_hint": "/*[local-name()='Envelope']/*[local-name()='Body']"
+    },
+    "paths": {
+      "default_listener_path": "/vendor/g2s",
+      "alternate_listener_paths": ["/vendor/g2s/fallback"]
+    },
+    "namespaces": {
+      "soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
+      "g2s": "urn:com:g2s:vendor:2010:common",
+      "cab": "urn:com:g2s:vendor:2010:cabinet"
+    }
+  },
+  "control_plane": {
+    "hot_reloadable_sections": ["timers", "operations", "state_defaults", "wire"],
+    "mutable_fields": [
+      "/timers/artificial_response_delay_ms",
+      "/state_defaults/registration_mode",
+      "/wire/paths/default_listener_path"
+    ],
+    "requires_audit_log": true
+  },
+  "timers": {
+    "request_timeout_ms": 3000,
+    "heartbeat_interval_ms": 5000,
+    "heartbeat_timeout_ms": 12000,
+    "session_idle_timeout_ms": 30000,
+    "artificial_response_delay_ms": 120
+  },
+  "state_defaults": {
+    "registration_mode": "strict_match",
+    "session_state": "idle",
+    "heartbeat_state": "idle",
+    "allowed_host_ids": ["HOST-VENDOR-001"],
+    "registered_hosts": [
+      {
+        "host_id": "HOST-VENDOR-001",
+        "display_name": "Vendor Host",
+        "role": "owner",
+        "enabled": true,
+        "notes": "Only this host is allowed by default"
+      }
+    ]
+  },
+  "logging_hints": {
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true,
+    "parsed_fields": ["hostId", "egmId", "sessionId"],
+    "redact_fields": []
+  },
+  "operations": {
+    "commsOnLine": {
+      "enabled": true,
+      "description": "Vendor-style session bring-up.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "commsOnLine", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "vendor_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:commsOnLineAck><g2s:hostId>{{request.hostId}}</g2s:hostId><g2s:egmId>{{request.egmId}}</g2s:egmId><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:vendorMode>strict</g2s:vendorMode></g2s:commsOnLineAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"session_state": "online", "heartbeat_state": "healthy"},
+        "delay_ms": 120,
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["hostId", "egmId", "sessionId"]
+    },
+    "keepAlive": {
+      "enabled": true,
+      "description": "Vendor heartbeat with slight delay.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "keepAlive", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "vendor_keepalive_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:keepAliveAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:heartbeatProfile>vendor-delayed</g2s:heartbeatProfile></g2s:keepAliveAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"heartbeat_state": "healthy"},
+        "delay_ms": 120,
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "getDescriptor": {
+      "enabled": true,
+      "description": "Vendor descriptor response.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "getDescriptor", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "vendor_descriptor_list",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:descriptorList><g2s:egmId>{{request.egmId}}</g2s:egmId><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:descriptorClass>vendor-cabinet</g2s:descriptorClass></g2s:descriptorList></soapenv:Body></soapenv:Envelope>",
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "getCabinetStatus": {
+      "enabled": true,
+      "description": "Vendor cabinet status shell.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "getCabinetStatus", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "vendor_cabinet_status",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:cab='{{ns.cab}}'><soapenv:Body><cab:cabinetStatus><cab:egmId>{{request.egmId}}</cab:egmId><cab:sessionId>{{request.sessionId}}</cab:sessionId><cab:status>vendor-ready</cab:status><cab:audioMode>mute-capable</cab:audioMode></cab:cabinetStatus></soapenv:Body></soapenv:Envelope>",
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "commsClosing": {
+      "enabled": true,
+      "description": "Vendor closing ACK.",
+      "direction": "bidirectional",
+      "match": [{"kind": "message_type", "value": "commsClosing", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "vendor_closing_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:commsClosingAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:vendorMode>strict</g2s:vendorMode></g2s:commsClosingAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"session_state": "closed"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    }
+  }
+}
