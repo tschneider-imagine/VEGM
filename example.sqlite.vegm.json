@@ -1,0 +1,25 @@
+{
+  "instance_id": "vegm-sqlite-001",
+  "egm_id": "EGM-SQLITE-001",
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 18443
+  },
+  "security": {
+    "trust_mode": "plaintext_lab"
+  },
+  "logging": {
+    "dir": "./logs/vegm-sqlite-001",
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true
+  },
+  "storage": {
+    "backend": "sqlite",
+    "sqlite_path": "./logs/vegm-sqlite-001/vegm-index.db"
+  },
+  "control": {
+    "bind": "127.0.0.1:19003"
+  },
+  "pack_file": "./example.pack.json",
+  "overlay_files": []
+}
