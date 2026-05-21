@@ -173,6 +173,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) startControl() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.handleHealthz)
+	mux.HandleFunc("/ui", s.handleScenarioUIRoot)
+	mux.Handle("/ui/", scenarioUIHandler())
 	mux.HandleFunc("/control/state", s.handleControlState)
 	mux.HandleFunc("/control/state/history", s.handleControlStateHistory)
 	mux.HandleFunc("/control/audio", s.handleControlAudio)
@@ -186,6 +188,7 @@ func (s *Server) startControl() error {
 	mux.HandleFunc("/control/security/reload", s.handleControlSecurityReload)
 	mux.HandleFunc("/control/pack/summary", s.handleControlPackSummary)
 	mux.HandleFunc("/control/pack/operations", s.handleControlPackOperations)
+	mux.HandleFunc("/control/inject-logical-command", s.handleControlInjectLogicalCommand)
 	mux.HandleFunc("/control/outbound/session/open", s.handleControlOutboundSessionOpen)
 	mux.HandleFunc("/control/outbound/heartbeat", s.handleControlOutboundHeartbeat)
 	mux.HandleFunc("/control/outbound/send", s.handleControlOutboundSend)
@@ -196,7 +199,7 @@ func (s *Server) startControl() error {
 		return err
 	}
 	s.controlLn = ln
-	s.controlSrv = &http.Server{Handler: mux}
+	s.controlSrv = &http.Server{Handler: withControlCORS(mux)}
 	go func() { _ = s.controlSrv.Serve(ln) }()
 	return nil
 }
