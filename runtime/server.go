@@ -20,20 +20,33 @@ import (
 )
 
 type RuntimeState struct {
-	InstanceID         string                   `json:"instance_id"`
-	EGMID              string                   `json:"egm_id"`
-	TrustMode          string                   `json:"trust_mode"`
-	SessionState       string                   `json:"session_state"`
-	HeartbeatState     string                   `json:"heartbeat_state"`
-	AllowedHostIDs     []string                 `json:"allowed_host_ids,omitempty"`
-	RegisteredHosts    []packpkg.RegisteredHost `json:"registered_hosts,omitempty"`
-	LastMessageType    string                   `json:"last_message_type,omitempty"`
-	LastSessionID      string                   `json:"last_session_id,omitempty"`
-	LastHostID         string                   `json:"last_host_id,omitempty"`
-	StartedAt          time.Time                `json:"started_at"`
-	StorageBackend     string                   `json:"storage_backend,omitempty"`
-	StorageSQLitePath  string                   `json:"storage_sqlite_path,omitempty"`
-	OutboundScheduler  OutboundSchedulerState   `json:"outbound_scheduler"`
+	InstanceID           string                   `json:"instance_id"`
+	EGMID                string                   `json:"egm_id"`
+	TrustMode            string                   `json:"trust_mode"`
+	ConnectionState      string                   `json:"connection_state"`
+	RegistrationState    string                   `json:"registration_state"`
+	SessionState         string                   `json:"session_state"`
+	HeartbeatState       string                   `json:"heartbeat_state"`
+	AudioState           string                   `json:"audio_state"`
+	HoldState            string                   `json:"hold_state"`
+	LockState            string                   `json:"lock_state"`
+	MachineState         string                   `json:"machine_state"`
+	AllowedHostIDs       []string                 `json:"allowed_host_ids,omitempty"`
+	RegisteredHosts      []packpkg.RegisteredHost `json:"registered_hosts,omitempty"`
+	LastMessageType      string                   `json:"last_message_type,omitempty"`
+	LastCommandType      string                   `json:"last_command_type,omitempty"`
+	LastCommandAt        time.Time                `json:"last_command_at,omitempty"`
+	LastCommandSource    string                   `json:"last_command_source,omitempty"`
+	LastSessionID        string                   `json:"last_session_id,omitempty"`
+	LastHostID           string                   `json:"last_host_id,omitempty"`
+	LastAckStatus        string                   `json:"last_ack_status,omitempty"`
+	LastTransitionAt     time.Time                `json:"last_transition_at,omitempty"`
+	LastTransitionReason string                   `json:"last_transition_reason,omitempty"`
+	LastError            string                   `json:"last_error,omitempty"`
+	StartedAt            time.Time                `json:"started_at"`
+	StorageBackend       string                   `json:"storage_backend,omitempty"`
+	StorageSQLitePath    string                   `json:"storage_sqlite_path,omitempty"`
+	OutboundScheduler    OutboundSchedulerState   `json:"outbound_scheduler"`
 }
 
 type Server struct {
@@ -82,6 +95,10 @@ func NewServer(cfg *Config) (*Server, error) {
 	}
 	allowed := append([]string(nil), pk.StateDefaults.AllowedHostIDs...)
 	sort.Strings(allowed)
+	registrationState := "open"
+	if pk.StateDefaults.RegistrationMode != "open" {
+		registrationState = "restricted"
+	}
 	return &Server{
 		cfg:    cfg,
 		pack:   pk,
@@ -90,8 +107,14 @@ func NewServer(cfg *Config) (*Server, error) {
 			InstanceID:        cfg.InstanceID,
 			EGMID:             cfg.EGMID,
 			TrustMode:         cfg.Security.TrustMode,
+			ConnectionState:   "listening",
+			RegistrationState: registrationState,
 			SessionState:      pk.StateDefaults.SessionState,
 			HeartbeatState:    pk.StateDefaults.HeartbeatState,
+			AudioState:        "normal",
+			HoldState:         "inactive",
+			LockState:         "inactive",
+			MachineState:      "available",
 			AllowedHostIDs:    allowed,
 			RegisteredHosts:   append([]packpkg.RegisteredHost(nil), pk.StateDefaults.RegisteredHosts...),
 			StartedAt:         time.Now().UTC(),
@@ -151,6 +174,9 @@ func (s *Server) startControl() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.handleHealthz)
 	mux.HandleFunc("/control/state", s.handleControlState)
+	mux.HandleFunc("/control/state/history", s.handleControlStateHistory)
+	mux.HandleFunc("/control/audio", s.handleControlAudio)
+	mux.HandleFunc("/control/machine-status", s.handleControlMachineStatus)
 	mux.HandleFunc("/control/logs", s.handleControlLogs)
 	mux.HandleFunc("/control/export", s.handleControlExport)
 	mux.HandleFunc("/control/overlay", s.handleControlOverlay)
@@ -236,6 +262,49 @@ func (s *Server) handleControlState(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(s.state)
 }
 
+func (s *Server) handleControlStateHistory(w http.ResponseWriter, r *http.Request) {
+	events, err := s.logger.QueryEvents(EventFilter{Category: "state", Limit: 200})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(events)
+}
+
+func (s *Server) handleControlAudio(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"instance_id":       s.state.InstanceID,
+		"egm_id":            s.state.EGMID,
+		"audio_state":       s.state.AudioState,
+		"hold_state":        s.state.HoldState,
+		"lock_state":        s.state.LockState,
+		"last_command_type": s.state.LastCommandType,
+		"last_command_at":   s.state.LastCommandAt,
+	})
+}
+
+func (s *Server) handleControlMachineStatus(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"instance_id":            s.state.InstanceID,
+		"egm_id":                 s.state.EGMID,
+		"machine_state":          s.state.MachineState,
+		"connection_state":       s.state.ConnectionState,
+		"registration_state":     s.state.RegistrationState,
+		"session_state":          s.state.SessionState,
+		"heartbeat_state":        s.state.HeartbeatState,
+		"last_message_type":      s.state.LastMessageType,
+		"last_transition_at":     s.state.LastTransitionAt,
+		"last_transition_reason": s.state.LastTransitionReason,
+	})
+}
+
 func (s *Server) handleControlLogs(w http.ResponseWriter, r *http.Request) {
 	filter := EventFilter{Category: r.URL.Query().Get("category"), Level: r.URL.Query().Get("level"), Contains: r.URL.Query().Get("contains"), MessageType: r.URL.Query().Get("message_type")}
 	events, err := s.logger.QueryEvents(filter)
@@ -285,34 +354,70 @@ func (s *Server) handleControlOverlay(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleControlHostsAdd(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var in struct{ HostID string `json:"host_id"` }
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.HostID == "" { http.Error(w, "host_id is required", http.StatusBadRequest); return }
-	s.mu.Lock(); defer s.mu.Unlock()
-	for _, v := range s.state.AllowedHostIDs { if v == in.HostID { _ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs}); return } }
-	s.state.AllowedHostIDs = append(s.state.AllowedHostIDs, in.HostID); sort.Strings(s.state.AllowedHostIDs)
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.HostID == "" {
+		http.Error(w, "host_id is required", http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, v := range s.state.AllowedHostIDs {
+		if v == in.HostID {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs})
+			return
+		}
+	}
+	s.state.AllowedHostIDs = append(s.state.AllowedHostIDs, in.HostID)
+	sort.Strings(s.state.AllowedHostIDs)
+	s.state.RegistrationState = "restricted"
 	s.logger.Log("info", "control", "host added", map[string]any{"host_id": in.HostID})
 	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs})
 }
 
 func (s *Server) handleControlHostsRemove(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var in struct{ HostID string `json:"host_id"` }
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.HostID == "" { http.Error(w, "host_id is required", http.StatusBadRequest); return }
-	s.mu.Lock(); defer s.mu.Unlock()
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.HostID == "" {
+		http.Error(w, "host_id is required", http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	out := s.state.AllowedHostIDs[:0]
-	for _, v := range s.state.AllowedHostIDs { if v != in.HostID { out = append(out, v) } }
+	for _, v := range s.state.AllowedHostIDs {
+		if v != in.HostID {
+			out = append(out, v)
+		}
+	}
 	s.state.AllowedHostIDs = out
+	if len(s.state.AllowedHostIDs) == 0 && s.pack.StateDefaults.RegistrationMode == "open" {
+		s.state.RegistrationState = "open"
+	}
 	s.logger.Log("info", "control", "host removed", map[string]any{"host_id": in.HostID})
 	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs})
 }
 
 func (s *Server) handleControlSecurityMode(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var in struct{ TrustMode string `json:"trust_mode"` }
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.TrustMode == "" { http.Error(w, "trust_mode is required", http.StatusBadRequest); return }
-	s.mu.Lock(); defer s.mu.Unlock()
-	s.cfg.Security.TrustMode = in.TrustMode; s.state.TrustMode = in.TrustMode
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.TrustMode == "" {
+		http.Error(w, "trust_mode is required", http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cfg.Security.TrustMode = in.TrustMode
+	s.state.TrustMode = in.TrustMode
 	s.logger.Log("info", "control", "trust mode changed", map[string]any{"trust_mode": in.TrustMode, "note": "wire restart not yet automatic in repo seed"})
 	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "trust_mode": in.TrustMode, "note": "wire restart not yet automatic in repo seed"})
 }
@@ -330,7 +435,9 @@ func (s *Server) handleControlPackSummary(w http.ResponseWriter, r *http.Request
 
 func (s *Server) handleControlPackOperations(w http.ResponseWriter, r *http.Request) {
 	ops := make([]string, 0, len(s.pack.Operations))
-	for name := range s.pack.Operations { ops = append(ops, name) }
+	for name := range s.pack.Operations {
+		ops = append(ops, name)
+	}
 	sort.Strings(ops)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"operations": ops})
@@ -347,50 +454,101 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	parsed := ParseMessage(body)
-	if s.cfg.Logging.CaptureRawXML { _, _ = s.logger.WritePayload("inbound_request", parsed.RootLocalName, body) }
+	if s.cfg.Logging.CaptureRawXML {
+		_, _ = s.logger.WritePayload("inbound_request", parsed.RootLocalName, body)
+	}
 	hostID := firstNonEmpty(parsed.Fields["hostId"], parsed.Fields["host_id"], parsed.Fields["hostID"])
 	sessionID := firstNonEmpty(parsed.Fields["sessionId"], parsed.Fields["session_id"])
 	if !s.hostAllowed(hostID) {
 		http.Error(w, "host is not registered", http.StatusForbidden)
+		s.mu.Lock()
+		s.state.ConnectionState = "controller_connected"
+		s.state.LastError = "host is not registered"
+		s.state.LastCommandType = parsed.RootLocalName
+		s.state.LastCommandAt = time.Now().UTC()
+		s.state.LastCommandSource = hostID
+		s.mu.Unlock()
 		s.logger.Log("warn", "wire", "unregistered host rejected", map[string]any{"host_id": hostID, "message_type": parsed.RootLocalName})
 		return
 	}
 	opName, op := s.findOperation(parsed.RootLocalName)
 	if op == nil || len(op.Responses) == 0 {
 		http.Error(w, "operation not supported", http.StatusNotFound)
+		s.mu.Lock()
+		s.state.ConnectionState = "controller_connected"
+		s.state.LastError = "operation not supported"
+		s.state.LastCommandType = parsed.RootLocalName
+		s.state.LastCommandAt = time.Now().UTC()
+		s.state.LastCommandSource = hostID
+		s.mu.Unlock()
 		s.logger.Log("warn", "wire", "unsupported operation", map[string]any{"message_type": parsed.RootLocalName})
 		return
 	}
 	s.mu.Lock()
+	s.state.ConnectionState = "controller_connected"
 	s.state.LastMessageType = parsed.RootLocalName
+	s.state.LastCommandType = parsed.RootLocalName
+	s.state.LastCommandAt = time.Now().UTC()
+	s.state.LastCommandSource = hostID
 	s.state.LastSessionID = sessionID
 	s.state.LastHostID = hostID
-	if parsed.RootLocalName == "commsOnLine" { s.state.SessionState = "online" }
-	if parsed.RootLocalName == "keepAlive" { s.state.HeartbeatState = "healthy" }
-	if parsed.RootLocalName == "commsClosing" { s.state.SessionState = "closed" }
+	s.state.LastError = ""
+	if parsed.RootLocalName == "commsOnLine" {
+		s.applyStateUpdatesLocked(map[string]any{"session_state": "online", "heartbeat_state": "healthy"}, "inbound commsOnLine")
+	}
+	if parsed.RootLocalName == "keepAlive" {
+		s.applyStateUpdatesLocked(map[string]any{"heartbeat_state": "healthy"}, "inbound keepAlive")
+	}
+	if parsed.RootLocalName == "commsClosing" {
+		s.applyStateUpdatesLocked(map[string]any{"session_state": "closed"}, "inbound commsClosing")
+	}
 	stateValues := s.templateStateLocked()
+	variant := op.Responses[0]
+	if len(variant.SetState) > 0 {
+		s.applyStateUpdatesLocked(variant.SetState, fmt.Sprintf("operation %s", parsed.RootLocalName))
+		stateValues = s.templateStateLocked()
+	}
 	s.mu.Unlock()
 	requestFields := map[string]string{"hostId": hostID, "sessionId": sessionID, "egmId": s.cfg.EGMID}
-	respBody := RenderTemplate(op.Responses[0].Template, s.pack.Wire.Namespaces, requestFields, stateValues)
-	if delay := s.pack.Timers.ArtificialResponseDelayMS; delay > 0 { time.Sleep(time.Duration(delay) * time.Millisecond) }
-	if s.cfg.Logging.CaptureRenderedXML { _, _ = s.logger.WritePayload("outbound_response", opName, []byte(respBody)) }
+	respBody := RenderTemplate(variant.Template, s.pack.Wire.Namespaces, requestFields, stateValues)
+	if delay := maxInt(variant.DelayMS, s.pack.Timers.ArtificialResponseDelayMS); delay > 0 {
+		time.Sleep(time.Duration(delay) * time.Millisecond)
+	}
+	if s.cfg.Logging.CaptureRenderedXML {
+		_, _ = s.logger.WritePayload("outbound_response", opName, []byte(respBody))
+	}
 	w.Header().Set("Content-Type", "text/xml; charset=utf-8")
-	status := op.Responses[0].HTTPStatus; if status == 0 { status = http.StatusOK }
+	status := variant.HTTPStatus
+	if status == 0 {
+		status = http.StatusOK
+	}
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(respBody))
+	s.mu.Lock()
+	s.state.LastAckStatus = fmt.Sprintf("http_%d", status)
+	s.mu.Unlock()
 	s.logger.Log("info", "wire", "operation handled", map[string]any{"message_type": parsed.RootLocalName, "host_id": hostID, "session_id": sessionID, "status": status})
 }
 
 func (s *Server) hostAllowed(hostID string) bool {
-	s.mu.RLock(); defer s.mu.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	mode := s.pack.StateDefaults.RegistrationMode
-	if mode == "open" || hostID == "" { return true }
-	for _, v := range s.state.AllowedHostIDs { if v == hostID { return true } }
+	if mode == "open" || hostID == "" {
+		return true
+	}
+	for _, v := range s.state.AllowedHostIDs {
+		if v == hostID {
+			return true
+		}
+	}
 	return false
 }
 
 func (s *Server) findOperation(root string) (string, *packpkg.Operation) {
-	if op, ok := s.pack.Operations[root]; ok { return root, &op }
+	if op, ok := s.pack.Operations[root]; ok {
+		return root, &op
+	}
 	for name, op := range s.pack.Operations {
 		for _, m := range op.Match {
 			if m.Kind == "message_type" && strings.EqualFold(m.Value, root) {
@@ -404,10 +562,80 @@ func (s *Server) findOperation(root string) (string, *packpkg.Operation) {
 
 func (s *Server) templateStateLocked() map[string]any {
 	return map[string]any{
-		"instance_id":     s.state.InstanceID,
-		"egm_id":          s.state.EGMID,
-		"trust_mode":      s.state.TrustMode,
-		"session_state":   s.state.SessionState,
-		"heartbeat_state": s.state.HeartbeatState,
+		"instance_id":      s.state.InstanceID,
+		"egm_id":           s.state.EGMID,
+		"trust_mode":       s.state.TrustMode,
+		"session_state":    s.state.SessionState,
+		"heartbeat_state":  s.state.HeartbeatState,
+		"audio_state":      s.state.AudioState,
+		"hold_state":       s.state.HoldState,
+		"lock_state":       s.state.LockState,
+		"machine_state":    s.state.MachineState,
+		"connection_state": s.state.ConnectionState,
+	}
+}
+
+func (s *Server) applyStateUpdatesLocked(updates map[string]any, reason string) {
+	if len(updates) == 0 {
+		return
+	}
+	changed := map[string]any{}
+	for key, value := range updates {
+		newValue := fmt.Sprint(value)
+		switch key {
+		case "connection_state":
+			if s.state.ConnectionState != newValue {
+				changed[key] = map[string]string{"old": s.state.ConnectionState, "new": newValue}
+				s.state.ConnectionState = newValue
+			}
+		case "registration_state":
+			if s.state.RegistrationState != newValue {
+				changed[key] = map[string]string{"old": s.state.RegistrationState, "new": newValue}
+				s.state.RegistrationState = newValue
+			}
+		case "session_state":
+			if s.state.SessionState != newValue {
+				changed[key] = map[string]string{"old": s.state.SessionState, "new": newValue}
+				s.state.SessionState = newValue
+			}
+		case "heartbeat_state":
+			if s.state.HeartbeatState != newValue {
+				changed[key] = map[string]string{"old": s.state.HeartbeatState, "new": newValue}
+				s.state.HeartbeatState = newValue
+			}
+		case "audio_state":
+			if s.state.AudioState != newValue {
+				changed[key] = map[string]string{"old": s.state.AudioState, "new": newValue}
+				s.state.AudioState = newValue
+			}
+		case "hold_state":
+			if s.state.HoldState != newValue {
+				changed[key] = map[string]string{"old": s.state.HoldState, "new": newValue}
+				s.state.HoldState = newValue
+			}
+		case "lock_state":
+			if s.state.LockState != newValue {
+				changed[key] = map[string]string{"old": s.state.LockState, "new": newValue}
+				s.state.LockState = newValue
+			}
+		case "machine_state":
+			if s.state.MachineState != newValue {
+				changed[key] = map[string]string{"old": s.state.MachineState, "new": newValue}
+				s.state.MachineState = newValue
+			}
+		case "last_ack_status":
+			s.state.LastAckStatus = newValue
+		}
+	}
+	if len(changed) > 0 {
+		s.state.LastTransitionAt = time.Now().UTC()
+		s.state.LastTransitionReason = reason
+		s.logger.Log("info", "state", "state changed", map[string]any{
+			"reason":       reason,
+			"changes":      changed,
+			"message_type": s.state.LastCommandType,
+			"host_id":      s.state.LastHostID,
+			"session_id":   s.state.LastSessionID,
+		})
 	}
 }
