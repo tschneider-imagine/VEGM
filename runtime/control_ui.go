@@ -3,8 +3,10 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/tschneider-imagine/VEGM/webui"
 )
@@ -56,11 +58,11 @@ func (s *Server) handleControlInjectLogicalCommand(w http.ResponseWriter, r *htt
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"ok": true,
-		"operation": opName,
-		"status": status,
+		"ok":           true,
+		"operation":    opName,
+		"status":       status,
 		"response_xml": responseXML,
-		"state": s.state,
+		"state":        s.state,
 	})
 }
 
@@ -98,7 +100,7 @@ func (s *Server) processSimulatedInbound(opName, hostID, sessionID string) (stri
 	s.state.ConnectionState = "controller_simulated"
 	s.state.LastMessageType = opName
 	s.state.LastCommandType = opName
-	s.state.LastCommandAt = nowUTC()
+	s.state.LastCommandAt = time.Now().UTC()
 	s.state.LastCommandSource = hostID
 	s.state.LastSessionID = sessionID
 	s.state.LastHostID = hostID
@@ -127,9 +129,9 @@ func (s *Server) processSimulatedInbound(opName, hostID, sessionID string) (stri
 }
 
 func scenarioUIHandler() http.Handler {
-	return http.StripPrefix("/ui/", http.FileServer(http.FS(webui.StaticFS)))
-}
-
-func nowUTC() string {
-	return ""
+	sub, err := fs.Sub(webui.StaticFS, "static")
+	if err != nil {
+		return http.NotFoundHandler()
+	}
+	return http.StripPrefix("/ui/", http.FileServer(http.FS(sub)))
 }
