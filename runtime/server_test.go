@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -171,6 +172,9 @@ func newTestServer(t *testing.T) *Server {
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
+	t.Cleanup(func() {
+		_ = srv.Shutdown(context.Background())
+	})
 	return srv
 }
 
