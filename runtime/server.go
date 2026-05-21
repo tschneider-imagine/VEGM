@@ -16,21 +16,24 @@ import (
 	"time"
 
 	packpkg "github.com/tschneider-imagine/VEGM/pack"
+	"github.com/tschneider-imagine/VEGM/storage"
 )
 
 type RuntimeState struct {
-	InstanceID        string                  `json:"instance_id"`
-	EGMID             string                  `json:"egm_id"`
-	TrustMode         string                  `json:"trust_mode"`
-	SessionState      string                  `json:"session_state"`
-	HeartbeatState    string                  `json:"heartbeat_state"`
-	AllowedHostIDs    []string                `json:"allowed_host_ids,omitempty"`
-	RegisteredHosts   []packpkg.RegisteredHost `json:"registered_hosts,omitempty"`
-	LastMessageType   string                  `json:"last_message_type,omitempty"`
-	LastSessionID     string                  `json:"last_session_id,omitempty"`
-	LastHostID        string                  `json:"last_host_id,omitempty"`
-	StartedAt         time.Time               `json:"started_at"`
-	OutboundScheduler OutboundSchedulerState  `json:"outbound_scheduler"`
+	InstanceID         string                   `json:"instance_id"`
+	EGMID              string                   `json:"egm_id"`
+	TrustMode          string                   `json:"trust_mode"`
+	SessionState       string                   `json:"session_state"`
+	HeartbeatState     string                   `json:"heartbeat_state"`
+	AllowedHostIDs     []string                 `json:"allowed_host_ids,omitempty"`
+	RegisteredHosts    []packpkg.RegisteredHost `json:"registered_hosts,omitempty"`
+	LastMessageType    string                   `json:"last_message_type,omitempty"`
+	LastSessionID      string                   `json:"last_session_id,omitempty"`
+	LastHostID         string                   `json:"last_host_id,omitempty"`
+	StartedAt          time.Time                `json:"started_at"`
+	StorageBackend     string                   `json:"storage_backend,omitempty"`
+	StorageSQLitePath  string                   `json:"storage_sqlite_path,omitempty"`
+	OutboundScheduler  OutboundSchedulerState   `json:"outbound_scheduler"`
 }
 
 type Server struct {
@@ -61,7 +64,19 @@ func NewServer(cfg *Config) (*Server, error) {
 			return nil, err
 		}
 	}
-	logger, err := NewLogger(cfg.Logging.Dir, cfg.InstanceID)
+	backend := cfg.Storage.Backend
+	if backend == "" {
+		backend = "noop"
+	}
+	sqlitePath := cfg.Storage.SQLitePath
+	if backend == "sqlite" && sqlitePath == "" {
+		sqlitePath = storage.DefaultSQLitePath(cfg.Logging.Dir)
+	}
+	idx, err := storage.NewIndex(backend, sqlitePath)
+	if err != nil {
+		return nil, err
+	}
+	logger, err := NewLoggerWithIndex(cfg.Logging.Dir, cfg.InstanceID, idx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +87,16 @@ func NewServer(cfg *Config) (*Server, error) {
 		pack:   pk,
 		logger: logger,
 		state: RuntimeState{
-			InstanceID:      cfg.InstanceID,
-			EGMID:           cfg.EGMID,
-			TrustMode:       cfg.Security.TrustMode,
-			SessionState:    pk.StateDefaults.SessionState,
-			HeartbeatState:  pk.StateDefaults.HeartbeatState,
-			AllowedHostIDs:  allowed,
-			RegisteredHosts: append([]packpkg.RegisteredHost(nil), pk.StateDefaults.RegisteredHosts...),
-			StartedAt:       time.Now().UTC(),
+			InstanceID:        cfg.InstanceID,
+			EGMID:             cfg.EGMID,
+			TrustMode:         cfg.Security.TrustMode,
+			SessionState:      pk.StateDefaults.SessionState,
+			HeartbeatState:    pk.StateDefaults.HeartbeatState,
+			AllowedHostIDs:    allowed,
+			RegisteredHosts:   append([]packpkg.RegisteredHost(nil), pk.StateDefaults.RegisteredHosts...),
+			StartedAt:         time.Now().UTC(),
+			StorageBackend:    backend,
+			StorageSQLitePath: sqlitePath,
 		},
 	}, nil
 }
@@ -112,7 +129,7 @@ func (s *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		_ = s.Shutdown(context.Background())
 	}()
-	s.logger.Log("info", "server", "VEGM started", map[string]any{"wire_addr": s.WireAddr(), "control_addr": s.ControlAddr(), "trust_mode": s.cfg.Security.TrustMode})
+	s.logger.Log("info", "server", "VEGM started", map[string]any{"wire_addr": s.WireAddr(), "control_addr": s.ControlAddr(), "trust_mode": s.cfg.Security.TrustMode, "storage_backend": s.state.StorageBackend})
 	return nil
 }
 
