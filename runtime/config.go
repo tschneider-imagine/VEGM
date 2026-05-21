@@ -12,6 +12,7 @@ type Config struct {
 	Listen     ListenConfig      `json:"listen"`
 	Security   SecurityConfig    `json:"security"`
 	Logging    LoggingConfig     `json:"logging"`
+	Storage    StorageConfig     `json:"storage,omitempty"`
 	Control    ControlConfig     `json:"control"`
 	Outbound   OutboundConfig    `json:"outbound,omitempty"`
 	PackFile   string            `json:"pack_file"`
@@ -35,6 +36,11 @@ type LoggingConfig struct {
 	Dir                string `json:"dir"`
 	CaptureRawXML      bool   `json:"capture_raw_xml"`
 	CaptureRenderedXML bool   `json:"capture_rendered_xml"`
+}
+
+type StorageConfig struct {
+	Backend    string `json:"backend,omitempty"`
+	SQLitePath string `json:"sqlite_path,omitempty"`
 }
 
 type ControlConfig struct {
@@ -108,6 +114,15 @@ func ValidateConfig(cfg *Config) error {
 	}
 	if cfg.Outbound.Scheduler.FailureThreshold < 0 {
 		return fmt.Errorf("outbound.scheduler.failure_threshold must be >= 0")
+	}
+	switch cfg.Storage.Backend {
+	case "", "noop":
+	case "sqlite":
+		if cfg.Storage.SQLitePath == "" {
+			return fmt.Errorf("storage.sqlite_path is required when storage.backend is %q", cfg.Storage.Backend)
+		}
+	default:
+		return fmt.Errorf("unsupported storage.backend %q", cfg.Storage.Backend)
 	}
 	switch cfg.Security.TrustMode {
 	case "plaintext_lab":
