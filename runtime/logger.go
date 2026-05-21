@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/tschneider-imagine/VEGM/storage"
 )
 
 type Logger struct {
@@ -19,6 +21,7 @@ type Logger struct {
 	payloadDir string
 	logDir     string
 	instanceID string
+	index      storage.Index
 }
 
 type Event struct {
@@ -43,29 +46,33 @@ type EventFilter struct {
 }
 
 type ExportOptions struct {
-	OutputDir       string
-	Since           time.Time
-	Until           time.Time
-	IncludePayloads bool
-	StateSnapshot   any
-	ConfigSnapshot  any
-	PackSummary     any
+	OutputDir        string
+	Since            time.Time
+	Until            time.Time
+	IncludePayloads  bool
+	StateSnapshot    any
+	ConfigSnapshot   any
+	PackSummary      any
 }
 
 type ExportBundle struct {
-	GeneratedAt    time.Time `json:"generated_at"`
-	InstanceID     string    `json:"instance_id"`
-	Since          time.Time `json:"since,omitempty"`
-	Until          time.Time `json:"until,omitempty"`
-	IncludePayloads bool     `json:"include_payloads"`
-	Events         []Event   `json:"events"`
-	PayloadFiles   []string  `json:"payload_files,omitempty"`
-	StateSnapshot  any       `json:"state_snapshot,omitempty"`
-	ConfigSnapshot any       `json:"config_snapshot,omitempty"`
-	PackSummary    any       `json:"pack_summary,omitempty"`
+	GeneratedAt     time.Time `json:"generated_at"`
+	InstanceID      string    `json:"instance_id"`
+	Since           time.Time `json:"since,omitempty"`
+	Until           time.Time `json:"until,omitempty"`
+	IncludePayloads bool      `json:"include_payloads"`
+	Events          []Event   `json:"events"`
+	PayloadFiles    []string  `json:"payload_files,omitempty"`
+	StateSnapshot   any       `json:"state_snapshot,omitempty"`
+	ConfigSnapshot  any       `json:"config_snapshot,omitempty"`
+	PackSummary     any       `json:"pack_summary,omitempty"`
 }
 
 func NewLogger(dir, instanceID string) (*Logger, error) {
+	return NewLoggerWithIndex(dir, instanceID, &storage.NoopIndex{})
+}
+
+func NewLoggerWithIndex(dir, instanceID string, idx storage.Index) (*Logger, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("mkdir log dir: %w", err)
 	}
@@ -78,11 +85,24 @@ func NewLogger(dir, instanceID string) (*Logger, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open event log: %w", err)
 	}
-	return &Logger{eventFile: f, eventPath: eventPath, payloadDir: payloadDir, logDir: dir, instanceID: instanceID}, nil
+	if idx == nil {
+		idx = &storage.NoopIndex{}
+	}
+	if err := idx.Initialize(); err != nil {
+		_ = f.Close()
+		return nil, fmt.Errorf("initialize storage index: %w", err)
+	}
+	return &Logger{eventFile: f, eventPath: eventPath, payloadDir: payloadDir, logDir: dir, instanceID: instanceID, index: idx}, nil
 }
 
 func (l *Logger) Close() error {
-	if l == nil || l.eventFile == nil {
+	if l == nil {
+		return nil
+	}
+	if l.index != nil {
+		_ = l.index.Close()
+	}
+	if l.eventFile == nil {
 		return nil
 	}
 	return l.eventFile.Close()
@@ -97,6 +117,9 @@ func (l *Logger) Log(level, category, message string, fields map[string]any) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	_, _ = l.eventFile.Write(append(data, '\n'))
+	if l.index != nil {
+		_ = l.index.WriteEvent(eventToRecord(evt, ""))
+	}
 }
 
 func (l *Logger) WritePayload(direction, op string, data []byte) (string, error) {
@@ -264,4 +287,30 @@ func sanitizeFilePart(s string) string {
 		}
 	}
 	return string(out)
+}
+
+func eventToRecord(evt Event, payloadPath string) storage.EventRecord {
+	return storage.EventRecord{
+		Time:        evt.Time,
+		InstanceID:  evt.InstanceID,
+		Level:       evt.Level,
+		Category:    evt.Category,
+		Message:     evt.Message,
+		MessageType: firstField(evt.Fields, "message_type", "messageType"),
+		HostID:      firstField(evt.Fields, "host_id", "hostId"),
+		SessionID:   firstField(evt.Fields, "session_id", "sessionId"),
+		PayloadPath: payloadPath,
+	}
+}
+
+func firstField(fields map[string]any, keys ...string) string {
+	for _, k := range keys {
+		if v, ok := fields[k]; ok {
+			s := fmt.Sprint(v)
+			if s != "" {
+				return s
+			}
+		}
+	}
+	return ""
 }
