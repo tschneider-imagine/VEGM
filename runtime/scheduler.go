@@ -135,6 +135,10 @@ func (s *Server) updateSchedulerAfterResult(operation string, res outboundResult
 		st.LastSuccessAt = now
 		st.ConsecutiveFailures = 0
 		st.LastError = ""
+		if operation == "commsOnLine" {
+			s.state.SessionState = "online"
+			s.state.HeartbeatState = "healthy"
+		}
 		if operation == "keepAlive" {
 			s.state.HeartbeatState = "healthy"
 		}
