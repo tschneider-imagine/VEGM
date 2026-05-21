@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tschneider-imagine/VEGM/schemas/fleet-manifest.schema.json",
+  "title": "VEGM Fleet Manifest v1",
+  "type": "object",
+  "required": ["schema_version", "fleet_name", "defaults", "profiles", "groups", "instances"],
+  "properties": {
+    "schema_version": {"const": "vegm.fleet-manifest/v1"},
+    "fleet_name": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "listen_host": {"type": "string"},
+        "wire_port_base": {"type": "integer", "minimum": 0},
+        "control_port_base": {"type": "integer", "minimum": 0},
+        "trust_mode": {"type": "string"},
+        "pack_file": {"type": "string"},
+        "overlay_files": {"type": "array", "items": {"type": "string"}},
+        "log_root": {"type": "string"},
+        "storage_backend": {"enum": ["noop", "sqlite"]},
+        "sqlite_root": {"type": "string"},
+        "heartbeat": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "interval_ms": {"type": "integer", "minimum": 0},
+            "timeout_ms": {"type": "integer", "minimum": 0},
+            "jitter_ms": {"type": "integer", "minimum": 0},
+            "auto_start": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        },
+        "normalized_state": {
+          "type": "object",
+          "properties": {
+            "audio_state": {"type": "string"},
+            "hold_state": {"type": "string"},
+            "lock_state": {"type": "string"},
+            "machine_state": {"type": "string"}
+          },
+          "additionalProperties": true
+        },
+        "faults": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": true
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["pack_file", "logical_commands"],
+        "properties": {
+          "label": {"type": "string"},
+          "manufacturer": {"type": "string"},
+          "pack_file": {"type": "string"},
+          "overlay_files": {"type": "array", "items": {"type": "string"}},
+          "logical_commands": {
+            "type": "object",
+            "additionalProperties": {"type": "string"}
+          },
+          "heartbeat": {"type": "object", "additionalProperties": true},
+          "normalized_state": {"type": "object", "additionalProperties": true},
+          "faults": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    },
+    "groups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["profile"],
+        "properties": {
+          "label": {"type": "string"},
+          "profile": {"type": "string"},
+          "zone": {"type": "string"},
+          "overrides": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    },
+    "instances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["instance_id", "egm_id", "group"],
+        "properties": {
+          "instance_id": {"type": "string", "minLength": 1},
+          "egm_id": {"type": "string", "minLength": 1},
+          "group": {"type": "string", "minLength": 1},
+          "wire_port": {"type": "integer", "minimum": 0},
+          "control_port": {"type": "integer", "minimum": 0},
+          "bind_host": {"type": "string"},
+          "log_dir": {"type": "string"},
+          "sqlite_path": {"type": "string"},
+          "cert_file": {"type": "string"},
+          "key_file": {"type": "string"},
+          "ca_file": {"type": "string"},
+          "overrides": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
