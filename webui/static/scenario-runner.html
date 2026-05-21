@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VEGM Scenario Runner</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
+    .wrap { padding: 16px; display: grid; gap: 16px; }
+    .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
+    h1,h2 { margin: 0 0 12px 0; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    input, button, textarea { background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px; }
+    textarea { width: 100%; min-height: 160px; font-family: Consolas, monospace; }
+    button { cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .tile { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; }
+    .muted { color: #94a3b8; }
+    .bad { color: #f87171; }
+    .mono { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1>VEGM Scenario Runner</h1>
+      <div class="row">
+        <label>Base URLs (comma separated)</label>
+        <input id="baseUrls" size="80" />
+        <label>Poll ms</label>
+        <input id="pollMs" type="number" value="2000" />
+        <button id="connectBtn">Connect</button>
+        <button id="refreshBtn">Refresh now</button>
+      </div>
+      <div class="muted" style="margin-top:8px;">Served by VEGM over HTTP so the browser can talk to control endpoints without raw CLI driving.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Scenario</h2>
+      <div class="row">
+        <button id="loadExampleBtn">Load example</button>
+        <button id="runBtn">Run</button>
+        <button id="stopBtn">Stop</button>
+        <button id="stepBtn">Step once</button>
+      </div>
+      <textarea id="scenarioJson"></textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Instance Board</h2>
+      <div id="instanceGrid" class="grid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Timeline</h2>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Instance</th><th>Type</th><th>Details</th></tr>
+        </thead>
+        <tbody id="timelineBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const state = {
+  bases: [],
+  timer: null,
+  running: false,
+  currentStep: 0,
+  scenario: { steps: [] },
+  timeline: []
+};
+
+const exampleScenario = {
+  steps: [
+    { id: 'step-001', selector: { type: 'instance', value: 'all' }, action: 'refresh_state', params: {}, enabled: true },
+    { id: 'step-002', selector: { type: 'instance', value: 'current' }, action: 'send_logical_command', params: { logical_command: 'audio_mute_on', session_id: 'SCENARIO-1' }, enabled: true },
+    { id: 'step-003', selector: { type: 'instance', value: 'current' }, action: 'send_logical_command', params: { logical_command: 'hold_on', session_id: 'SCENARIO-2' }, enabled: true },
+    { id: 'step-004', selector: { type: 'instance', value: 'current' }, action: 'send_logical_command', params: { logical_command: 'lock_on', session_id: 'SCENARIO-3' }, enabled: true }
+  ]
+};
+
+function $(id) { return document.getElementById(id); }
+function now() { return new Date().toLocaleTimeString(); }
+function addTimeline(instance, type, details) {
+  state.timeline.unshift({ time: now(), instance, type, details });
+  state.timeline = state.timeline.slice(0, 200);
+  renderTimeline();
+}
+function renderTimeline() {
+  const body = $('timelineBody');
+  body.innerHTML = state.timeline.map(x => `<tr><td>${x.time}</td><td class="mono">${x.instance}</td><td>${x.type}</td><td class="mono">${escapeHtml(x.details)}</td></tr>`).join('');
+}
+function escapeHtml(str) {
+  return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+}
+async function fetchJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return await r.json();
+}
+function defaultBaseUrl() {
+  if (window.location.protocol.startsWith('http')) return window.location.origin;
+  return 'http://127.0.0.1:19003';
+}
+async function connect() {
+  const raw = $('baseUrls').value.split(',').map(x => x.trim()).filter(Boolean);
+  state.bases = raw.length ? raw : [defaultBaseUrl()];
+  if (state.timer) clearInterval(state.timer);
+  await refreshAll();
+  const poll = Number($('pollMs').value || '2000');
+  state.timer = setInterval(refreshAll, poll);
+}
+async function refreshAll() {
+  const grid = $('instanceGrid');
+  grid.innerHTML = '';
+  for (const base of state.bases) {
+    try {
+      const [stateJson, audioJson, machineJson] = await Promise.all([
+        fetchJson(base + '/control/state'),
+        fetchJson(base + '/control/audio').catch(() => null),
+        fetchJson(base + '/control/machine-status').catch(() => null)
+      ]);
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.innerHTML = `
+        <div><strong>${escapeHtml(stateJson.instance_id || base)}</strong></div>
+        <div class="muted mono">${escapeHtml(base)}</div>
+        <div>EGM: ${escapeHtml(stateJson.egm_id || '')}</div>
+        <div>Session: <strong>${escapeHtml(stateJson.session_state || '')}</strong></div>
+        <div>Heartbeat: <strong>${escapeHtml(stateJson.heartbeat_state || '')}</strong></div>
+        <div>Audio: <strong>${escapeHtml((audioJson && audioJson.audio_state) || stateJson.audio_state || 'n/a')}</strong></div>
+        <div>Hold: <strong>${escapeHtml((audioJson && audioJson.hold_state) || stateJson.hold_state || 'n/a')}</strong></div>
+        <div>Lock: <strong>${escapeHtml((audioJson && audioJson.lock_state) || stateJson.lock_state || 'n/a')}</strong></div>
+        <div>Machine: <strong>${escapeHtml((machineJson && machineJson.machine_state) || stateJson.machine_state || 'n/a')}</strong></div>
+        <div class="muted">Last command: ${escapeHtml(stateJson.last_command_type || 'n/a')}</div>
+      `;
+      grid.appendChild(tile);
+    } catch (err) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.innerHTML = `<div><strong>${escapeHtml(base)}</strong></div><div class="bad">${escapeHtml(err.message)}</div>`;
+      grid.appendChild(tile);
+    }
+  }
+}
+function loadScenarioFromTextarea() {
+  state.scenario = JSON.parse($('scenarioJson').value);
+  if (!state.scenario.steps) state.scenario.steps = [];
+}
+function getTargets(selector) {
+  if (!selector || selector.value === 'all') return [...state.bases];
+  if (selector.value === 'current') return [state.bases[0] || defaultBaseUrl()];
+  return [selector.value];
+}
+async function sendLogicalCommand(base, logicalCommand, sessionId) {
+  const r = await fetch(base + '/control/inject-logical-command', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ logical_command: logicalCommand, session_id: sessionId || 'SCENARIO', host_id: 'HOST-001' })
+  });
+  const text = await r.text();
+  addTimeline(base, logicalCommand, `${r.status} ${text.slice(0, 200)}`);
+}
+async function runScenario(stepOnce = false) {
+  if (state.running && !stepOnce) return;
+  loadScenarioFromTextarea();
+  state.running = true;
+  while (state.currentStep < state.scenario.steps.length) {
+    const step = state.scenario.steps[state.currentStep];
+    state.currentStep += 1;
+    if (!step.enabled) continue;
+    const targets = getTargets(step.selector);
+    if (step.action === 'refresh_state') {
+      await refreshAll();
+      addTimeline('all', 'refresh_state', step.id || 'refresh');
+    }
+    if (step.action === 'send_logical_command') {
+      for (const target of targets) {
+        await sendLogicalCommand(target, step.params.logical_command, step.params.session_id);
+      }
+    }
+    if (stepOnce) break;
+  }
+  if (state.currentStep >= state.scenario.steps.length) {
+    state.running = false;
+    state.currentStep = 0;
+  }
+}
+
+document.getElementById('connectBtn').addEventListener('click', connect);
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('loadExampleBtn').addEventListener('click', () => {
+  $('scenarioJson').value = JSON.stringify(exampleScenario, null, 2);
+});
+document.getElementById('runBtn').addEventListener('click', () => runScenario(false));
+document.getElementById('stepBtn').addEventListener('click', () => runScenario(true));
+document.getElementById('stopBtn').addEventListener('click', () => { state.running = false; state.currentStep = 0; addTimeline('all', 'scenario', 'stopped'); });
+$('baseUrls').value = defaultBaseUrl();
+$('scenarioJson').value = JSON.stringify(exampleScenario, null, 2);
+</script>
+</body>
+</html>
