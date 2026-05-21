@@ -1,0 +1,111 @@
+{
+  "schema_version": "vegm.fleet-manifest/v1",
+  "fleet_name": "lab-floor-a",
+  "description": "Example mixed-floor manifest for supervisor-driven VEGM generation and launch.",
+  "defaults": {
+    "listen_host": "127.0.0.1",
+    "wire_port_base": 18443,
+    "control_port_base": 19001,
+    "trust_mode": "plaintext_lab",
+    "pack_file": "./example.pack.json",
+    "overlay_files": [],
+    "log_root": "./logs/fleet-a",
+    "storage_backend": "sqlite",
+    "sqlite_root": "./logs/fleet-a",
+    "heartbeat": {
+      "enabled": true,
+      "interval_ms": 5000,
+      "timeout_ms": 12000,
+      "jitter_ms": 0,
+      "auto_start": false
+    },
+    "normalized_state": {
+      "audio_state": "normal",
+      "hold_state": "inactive",
+      "lock_state": "inactive",
+      "machine_state": "available"
+    }
+  },
+  "profiles": {
+    "baseline": {
+      "label": "Baseline simulated floor profile",
+      "manufacturer": "generic",
+      "pack_file": "./example.pack.json",
+      "overlay_files": [],
+      "logical_commands": {
+        "audio_mute_on": "audioMuteOn",
+        "audio_mute_off": "audioMuteOff",
+        "hold_on": "holdOn",
+        "hold_off": "holdOff",
+        "lock_on": "lockOn",
+        "lock_off": "lockOff"
+      }
+    },
+    "vendorquirk": {
+      "label": "Vendor quirk profile",
+      "manufacturer": "mixed-vendor",
+      "pack_file": "./example.vendorquirk.pack.json",
+      "overlay_files": [],
+      "logical_commands": {
+        "audio_mute_on": "audioMuteOn",
+        "audio_mute_off": "audioMuteOff",
+        "hold_on": "holdOn",
+        "hold_off": "holdOff",
+        "lock_on": "lockOn",
+        "lock_off": "lockOff"
+      },
+      "heartbeat": {
+        "interval_ms": 8000,
+        "auto_start": false
+      }
+    }
+  },
+  "groups": {
+    "bank_a": {
+      "label": "Bank A",
+      "profile": "baseline",
+      "zone": "A"
+    },
+    "bank_b": {
+      "label": "Bank B",
+      "profile": "vendorquirk",
+      "zone": "B",
+      "overrides": {
+        "heartbeat": {
+          "interval_ms": 7000
+        }
+      }
+    }
+  },
+  "instances": [
+    {
+      "instance_id": "vegm-001",
+      "egm_id": "EGM-001",
+      "group": "bank_a",
+      "wire_port": 18443,
+      "control_port": 19001
+    },
+    {
+      "instance_id": "vegm-002",
+      "egm_id": "EGM-002",
+      "group": "bank_a",
+      "wire_port": 18444,
+      "control_port": 19002
+    },
+    {
+      "instance_id": "vegm-011",
+      "egm_id": "EGM-011",
+      "group": "bank_b",
+      "wire_port": 18453,
+      "control_port": 19011,
+      "overrides": {
+        "normalized_state": {
+          "audio_state": "normal",
+          "hold_state": "inactive",
+          "lock_state": "inactive",
+          "machine_state": "available"
+        }
+      }
+    }
+  ]
+}
