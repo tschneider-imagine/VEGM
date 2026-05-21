@@ -16,6 +16,8 @@ It already includes:
 - JSONL event logging plus payload capture
 - JSON bundle export from the repo seed logger
 - repo-native docs, schemas, example packs, and smoke tests
+- an HTTP-served browser scenario runner UI
+- normalized live state endpoints for audio, hold, lock, session, and machine status
 
 It is still a **repo seed**, not full parity with every richer local artifact produced earlier in the chat.
 
@@ -38,6 +40,11 @@ Current repo seed supports:
 - `setKeepAlive` / `setKeepAliveAck` through the extended pack
 - `getCabinetStatus` / `cabinetStatus` through the extended pack
 - `commsClosing` / `commsClosingAck`
+- starter floor-state commands:
+  - `audioMuteOn` / `audioMuteOff`
+  - `holdOn` / `holdOff`
+  - `lockOn` / `lockOff`
+- logical-command injection through the control plane for scenario/UI use
 - outbound session open, outbound heartbeat, and generic outbound send
 - automatic outbound scheduler with attempt counters and degradation state
 
@@ -53,13 +60,22 @@ The repo seed logger currently provides:
   - config snapshot
   - pack summary
 
+### Browser UI
+The control plane now serves a non-blocking browser UI at:
+
+```text
+http://127.0.0.1:19003/ui/scenario-runner.html
+```
+
+The UI is designed to sit on top of the current VEGM endpoints rather than replace the runtime.
+
 ## What is not done yet
 
 Not yet completed in this repo seed:
 - full parity with every local runtime artifact built outside GitHub
-- SQLite-backed indexing
+- full fleet supervisor implementation
 - deeper XML extraction beyond the current local-name oriented approach
-- fuller runtime/server test coverage
+- broader runtime/server test coverage
 - vendor-certified behavior packs
 - polished live wire restart for trust-mode changes
 
@@ -89,10 +105,30 @@ Use the strict mTLS config once cert files exist under `./certs/`:
 go run ./cmd/vegm -config ./example.strict-mtls.vegm.json
 ```
 
+Use the SQLite-backed example config:
+
+```bash
+go run ./cmd/vegm -config ./example.sqlite.vegm.json
+```
+
+## PowerShell UI startup helper
+
+A Windows-friendly helper script is included at:
+
+```text
+scripts/start-vegm-ui.ps1
+```
+
+It starts VEGM in a new PowerShell window, waits for `/healthz`, and then opens the browser UI.
+
 ## Useful control endpoints
 
 - `GET /healthz`
+- `GET /ui/scenario-runner.html`
 - `GET /control/state`
+- `GET /control/state/history`
+- `GET /control/audio`
+- `GET /control/machine-status`
 - `GET /control/logs?message_type=keepAlive&limit=50`
 - `POST /control/export`
 - `POST /control/overlay`
@@ -100,6 +136,7 @@ go run ./cmd/vegm -config ./example.strict-mtls.vegm.json
 - `POST /control/hosts/remove`
 - `POST /control/security/reload`
 - `POST /control/security/mode`
+- `POST /control/inject-logical-command`
 - `POST /control/outbound/session/open`
 - `POST /control/outbound/heartbeat`
 - `POST /control/outbound/send`
@@ -113,13 +150,21 @@ go run ./cmd/vegm -config ./example.strict-mtls.vegm.json
 Log query:
 
 ```bash
-curl "http://127.0.0.1:19001/control/logs?message_type=keepAlive&limit=20"
+curl "http://127.0.0.1:19003/control/logs?message_type=keepAlive&limit=20"
 ```
 
 Bundle export:
 
 ```bash
-curl -X POST "http://127.0.0.1:19001/control/export"
+curl -X POST "http://127.0.0.1:19003/control/export"
+```
+
+Inject a logical mute command through the control plane:
+
+```bash
+curl -X POST http://127.0.0.1:19003/control/inject-logical-command \
+  -H "Content-Type: application/json" \
+  -d '{"logical_command":"audio_mute_on","host_id":"HOST-001","session_id":"S-100"}'
 ```
 
 Outbound session open:
@@ -159,6 +204,7 @@ Configs:
 - `example.dynamic.vegm.json`
 - `example.outbound.vegm.json`
 - `example.strict-mtls.vegm.json`
+- `example.sqlite.vegm.json`
 
 Packs:
 - `example.pack.json`
@@ -170,6 +216,8 @@ Docs:
 - `docs/project_build_log.md`
 - `docs/VEGM_MVP1_protocol_matrix.md`
 - `docs/SQLite_blocker_and_unblock_plan.md`
+- `docs/SQLite_vendoring_checklist.md`
+- `docs/scenario_runner_plan.md`
 
 Schemas:
 - `schemas/message-pack.schema.json`
@@ -179,17 +227,9 @@ Schemas:
 
 - `cmd/vegm` — runnable VEGM server entrypoint
 - `runtime/` — wire plane, control plane, scheduler, logger, outbound behavior
+- `storage/` — noop and SQLite-backed index implementations
 - `pack/` — message-pack loading, validation, overlays, summaries
+- `webui/` — embedded browser UI assets
+- `scripts/` — startup helpers
 - `schemas/` — message-pack and overlay schemas
-- `docs/` — build log, MVP-1 matrix, SQLite unblock plan
-
-## SQLite note
-
-SQLite is still blocked here by **dependency acquisition**, not by VEGM design.
-
-The repo already includes the unblock plan in:
-- `docs/SQLite_blocker_and_unblock_plan.md`
-
-Recommended next external step:
-- vendor the chosen SQLite driver into this repo on a connected machine
-- then wire SQLite in as a search/index layer on top of the current JSONL + payload capture foundation
+- `docs/` — build log, MVP-1 matrix, SQLite and scenario notes
