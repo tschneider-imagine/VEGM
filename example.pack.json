@@ -1,9 +1,9 @@
 {
   "schema_version": "vegm.message-pack/v1",
   "pack_name": "repo-seed-baseline",
-  "pack_version": "0.1.0",
-  "description": "Repo-native starter pack aligned to the current compile-oriented VEGM core.",
-  "tags": ["mvp1", "registration", "heartbeat"],
+  "pack_version": "0.2.0",
+  "description": "Repo-native starter pack aligned to the current simulated-floor VEGM core.",
+  "tags": ["mvp1", "registration", "heartbeat", "floor-state"],
   "wire": {
     "protocol_family": "g2s",
     "transport": {
@@ -110,6 +110,102 @@
       "fault_policy": {},
       "log_fields": ["sessionId"]
     },
+    "audioMuteOn": {
+      "enabled": true,
+      "description": "Simulate an audio mute command taking effect.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "audioMuteOn", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "audio_mute_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:audioMuteOnAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:audioState>{{state.audio_state}}</g2s:audioState></g2s:audioMuteOnAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"audio_state": "muted", "machine_state": "available"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "audioMuteOff": {
+      "enabled": true,
+      "description": "Simulate an audio restore command taking effect.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "audioMuteOff", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "audio_restore_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:audioMuteOffAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:audioState>{{state.audio_state}}</g2s:audioState></g2s:audioMuteOffAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"audio_state": "normal"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "holdOn": {
+      "enabled": true,
+      "description": "Simulate a hold command taking effect.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "holdOn", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "hold_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:holdOnAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:holdState>{{state.hold_state}}</g2s:holdState></g2s:holdOnAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"hold_state": "active", "machine_state": "held"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "holdOff": {
+      "enabled": true,
+      "description": "Simulate a hold clear command.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "holdOff", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "hold_clear_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:holdOffAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:holdState>{{state.hold_state}}</g2s:holdState></g2s:holdOffAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"hold_state": "inactive", "machine_state": "available"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "lockOn": {
+      "enabled": true,
+      "description": "Simulate a lock command taking effect.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "lockOn", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "lock_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:lockOnAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:lockState>{{state.lock_state}}</g2s:lockState></g2s:lockOnAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"lock_state": "active", "machine_state": "locked"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
+    "lockOff": {
+      "enabled": true,
+      "description": "Simulate a lock clear command.",
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "lockOff", "source": "body"}],
+      "extract": [],
+      "responses": [{
+        "variant_name": "lock_clear_ack",
+        "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:lockOffAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId><g2s:lockState>{{state.lock_state}}</g2s:lockState></g2s:lockOffAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"lock_state": "inactive", "machine_state": "available"},
+        "http_status": 200,
+        "headers": {"Content-Type": "text/xml; charset=utf-8"}
+      }],
+      "fault_policy": {},
+      "log_fields": ["sessionId"]
+    },
     "commsClosing": {
       "enabled": true,
       "description": "Close the session cleanly.",
@@ -119,6 +215,7 @@
       "responses": [{
         "variant_name": "closing_ack",
         "template": "<soapenv:Envelope xmlns:soapenv='{{ns.soapenv}}' xmlns:g2s='{{ns.g2s}}'><soapenv:Body><g2s:commsClosingAck><g2s:sessionId>{{request.sessionId}}</g2s:sessionId></g2s:commsClosingAck></soapenv:Body></soapenv:Envelope>",
+        "set_state": {"session_state": "closed"},
         "http_status": 200,
         "headers": {"Content-Type": "text/xml; charset=utf-8"}
       }],
