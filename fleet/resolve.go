@@ -23,8 +23,11 @@ func ResolveInstances(m *Manifest) ([]EffectiveInstance, error) {
 func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, error) {
 	group := m.Groups[inst.Group]
 	profile := m.Profiles[group.Profile]
-	listenHost := firstNonEmpty(inst.BindHost, m.Defaults.ListenHost, "127.0.0.1")
+	listenHost := firstNonEmpty(inst.BindHost, inst.EGMEndpoint.BindIP, profile.EGMEndpoint.BindIP, m.Defaults.EGMEndpoint.BindIP, m.Defaults.ListenHost, "127.0.0.1")
 	wirePort := inst.WirePort
+	if wirePort == 0 {
+		wirePort = firstNonZero(inst.EGMEndpoint.Port, profile.EGMEndpoint.Port, m.Defaults.EGMEndpoint.Port)
+	}
 	if wirePort == 0 {
 		wirePort = m.Defaults.WirePortBase + idx
 	}
@@ -32,6 +35,7 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 	if controlPort == 0 {
 		controlPort = m.Defaults.ControlPortBase + idx
 	}
+	hostID := firstNonEmpty(inst.HostID, profile.HostID, m.Defaults.HostID, "HOST-001")
 	trustMode := m.Defaults.TrustMode
 	if trustMode == "" {
 		trustMode = "plaintext_lab"
@@ -40,6 +44,29 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 	if packFile == "" {
 		return EffectiveInstance{}, fmt.Errorf("no pack file resolved for instance %q", inst.InstanceID)
 	}
+	egmEndpoint := mergeEndpoint(m.Defaults.EGMEndpoint, profile.EGMEndpoint)
+	egmEndpoint = mergeEndpoint(egmEndpoint, inst.EGMEndpoint)
+	if egmEndpoint.Scheme == "" {
+		if trustMode == "plaintext_lab" || trustMode == "" {
+			egmEndpoint.Scheme = "http"
+		} else {
+			egmEndpoint.Scheme = "https"
+		}
+	}
+	if egmEndpoint.BindIP == "" {
+		egmEndpoint.BindIP = listenHost
+	}
+	if egmEndpoint.Host == "" {
+		egmEndpoint.Host = firstNonEmpty(inst.AdvertisedHost, inst.AdvertisedIP, egmEndpoint.BindIP)
+	}
+	if egmEndpoint.Port == 0 {
+		egmEndpoint.Port = wirePort
+	}
+	if egmEndpoint.Path == "" {
+		egmEndpoint.Path = "/g2s"
+	}
+	hostEndpoint := mergeHostEndpoint(m.Defaults.HostEndpoint, profile.HostEndpoint)
+	hostEndpoint = mergeHostEndpoint(hostEndpoint, inst.HostEndpoint)
 	overlays := append([]string(nil), m.Defaults.OverlayFiles...)
 	overlays = append(overlays, profile.OverlayFiles...)
 	logDir := firstNonEmpty(inst.LogDir)
@@ -53,7 +80,7 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 		root := firstNonEmpty(m.Defaults.SQLiteRoot, logDir)
 		sqlitePath = filepath.Join(root, inst.InstanceID+"-index.db")
 	}
-	advertisedHost := firstNonEmpty(inst.AdvertisedHost, profile.AdvertisedHost, m.Defaults.AdvertisedHost)
+	advertisedHost := firstNonEmpty(inst.AdvertisedHost, profile.AdvertisedHost, m.Defaults.AdvertisedHost, egmEndpoint.Host)
 	advertisedIP := firstNonEmpty(inst.AdvertisedIP, profile.AdvertisedIP, m.Defaults.AdvertisedIP)
 	dnsServers := firstNonEmptySlice(inst.DNSServers, profile.DNSServers, m.Defaults.DNSServers)
 	subnetMask := firstNonEmpty(inst.SubnetMask, profile.SubnetMask, m.Defaults.SubnetMask)
@@ -90,12 +117,15 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 	return EffectiveInstance{
 		InstanceID:      inst.InstanceID,
 		EGMID:           inst.EGMID,
+		HostID:          hostID,
 		Group:           inst.Group,
 		Profile:         group.Profile,
 		Manufacturer:    profile.Manufacturer,
 		ListenHost:      listenHost,
 		WirePort:        wirePort,
 		ControlPort:     controlPort,
+		EGMEndpoint:     egmEndpoint,
+		HostEndpoint:    hostEndpoint,
 		AdvertisedHost:  advertisedHost,
 		AdvertisedIP:    advertisedIP,
 		DNSServers:      dnsServers,
@@ -127,6 +157,15 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
+func firstNonZero(values ...int) int {
+	for _, v := range values {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
+}
+
 func firstNonEmptySlice(values ...[]string) []string {
 	for _, v := range values {
 		if len(v) > 0 {
@@ -136,6 +175,22 @@ func firstNonEmptySlice(values ...[]string) []string {
 		}
 	}
 	return nil
+}
+
+func mergeEndpoint(base, overlay Endpoint) Endpoint {
+	out := base
+	if overlay.Scheme != "" { out.Scheme = overlay.Scheme }
+	if overlay.BindIP != "" { out.BindIP = overlay.BindIP }
+	if overlay.Host != "" { out.Host = overlay.Host }
+	if overlay.Port != 0 { out.Port = overlay.Port }
+	if overlay.Path != "" { out.Path = overlay.Path }
+	return out
+}
+
+func mergeHostEndpoint(base, overlay HostEndpoint) HostEndpoint {
+	out := base
+	if overlay.URL != "" { out.URL = overlay.URL }
+	return out
 }
 
 func mergeMaps(base, overlay map[string]any) map[string]any {
