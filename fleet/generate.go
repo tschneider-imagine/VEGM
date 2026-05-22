@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	runtimecfg "github.com/tschneider-imagine/VEGM/runtime"
 )
@@ -28,6 +29,22 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 	}
 	var out []GeneratedConfig
 	for _, eff := range effective {
+		notes := map[string]string{
+			"group":            eff.Group,
+			"profile":          eff.Profile,
+			"manufacturer":     eff.Manufacturer,
+			"advertised_host":  eff.AdvertisedHost,
+			"advertised_ip":    eff.AdvertisedIP,
+			"subnet_mask":      eff.SubnetMask,
+			"gateway":          eff.Gateway,
+			"server_name":      eff.ServerName,
+			"dns_servers":      strings.Join(eff.DNSServers, ","),
+			"cert_file":        eff.CertFile,
+			"key_file":         eff.KeyFile,
+			"ca_file":          eff.CAFile,
+			"storage_backend":  eff.StorageBackend,
+			"sqlite_path":      eff.SQLitePath,
+		}
 		cfg := runtimecfg.Config{
 			InstanceID: eff.InstanceID,
 			EGMID:      eff.EGMID,
@@ -55,11 +72,7 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 			},
 			PackFile: eff.PackFile,
 			Overlay:  eff.OverlayFiles,
-			Notes: map[string]string{
-				"group":        eff.Group,
-				"profile":      eff.Profile,
-				"manufacturer": eff.Manufacturer,
-			},
+			Notes:    notes,
 		}
 		cfgPath := filepath.Join(outDir, eff.InstanceID+".json")
 		b, err := json.MarshalIndent(cfg, "", "  ")
