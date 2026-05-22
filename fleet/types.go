@@ -10,10 +10,25 @@ type Manifest struct {
 	Instances     []Instance         `json:"instances"`
 }
 
+type Endpoint struct {
+	Scheme string `json:"scheme,omitempty"`
+	BindIP string `json:"bind_ip,omitempty"`
+	Host   string `json:"host,omitempty"`
+	Port   int    `json:"port,omitempty"`
+	Path   string `json:"path,omitempty"`
+}
+
+type HostEndpoint struct {
+	URL string `json:"url,omitempty"`
+}
+
 type Defaults struct {
+	HostID           string         `json:"host_id,omitempty"`
 	ListenHost       string         `json:"listen_host,omitempty"`
 	WirePortBase     int            `json:"wire_port_base,omitempty"`
 	ControlPortBase  int            `json:"control_port_base,omitempty"`
+	EGMEndpoint      Endpoint       `json:"egm_endpoint,omitempty"`
+	HostEndpoint     HostEndpoint   `json:"host_endpoint,omitempty"`
 	TrustMode        string         `json:"trust_mode,omitempty"`
 	PackFile         string         `json:"pack_file,omitempty"`
 	OverlayFiles     []string       `json:"overlay_files,omitempty"`
@@ -40,6 +55,9 @@ type Profile struct {
 	PackFile        string            `json:"pack_file"`
 	OverlayFiles    []string          `json:"overlay_files,omitempty"`
 	LogicalCommands map[string]string `json:"logical_commands"`
+	HostID          string            `json:"host_id,omitempty"`
+	EGMEndpoint     Endpoint          `json:"egm_endpoint,omitempty"`
+	HostEndpoint    HostEndpoint      `json:"host_endpoint,omitempty"`
 	AdvertisedHost  string            `json:"advertised_host,omitempty"`
 	AdvertisedIP    string            `json:"advertised_ip,omitempty"`
 	DNSServers      []string          `json:"dns_servers,omitempty"`
@@ -64,10 +82,13 @@ type Group struct {
 type Instance struct {
 	InstanceID     string         `json:"instance_id"`
 	EGMID          string         `json:"egm_id"`
+	HostID         string         `json:"host_id,omitempty"`
 	Group          string         `json:"group"`
 	WirePort       int            `json:"wire_port,omitempty"`
 	ControlPort    int            `json:"control_port,omitempty"`
 	BindHost       string         `json:"bind_host,omitempty"`
+	EGMEndpoint    Endpoint       `json:"egm_endpoint,omitempty"`
+	HostEndpoint   HostEndpoint   `json:"host_endpoint,omitempty"`
 	AdvertisedHost string         `json:"advertised_host,omitempty"`
 	AdvertisedIP   string         `json:"advertised_ip,omitempty"`
 	DNSServers     []string       `json:"dns_servers,omitempty"`
@@ -85,12 +106,15 @@ type Instance struct {
 type EffectiveInstance struct {
 	InstanceID      string            `json:"instance_id"`
 	EGMID           string            `json:"egm_id"`
+	HostID          string            `json:"host_id"`
 	Group           string            `json:"group"`
 	Profile         string            `json:"profile"`
 	Manufacturer    string            `json:"manufacturer,omitempty"`
 	ListenHost      string            `json:"listen_host"`
 	WirePort        int               `json:"wire_port"`
 	ControlPort     int               `json:"control_port"`
+	EGMEndpoint     Endpoint          `json:"egm_endpoint"`
+	HostEndpoint    HostEndpoint      `json:"host_endpoint,omitempty"`
 	AdvertisedHost  string            `json:"advertised_host,omitempty"`
 	AdvertisedIP    string            `json:"advertised_ip,omitempty"`
 	DNSServers      []string          `json:"dns_servers,omitempty"`
