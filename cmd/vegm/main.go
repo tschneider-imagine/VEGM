@@ -30,6 +30,7 @@ func main() {
 	if err := srv.Start(ctx); err != nil {
 		log.Fatal(err)
 	}
+	srv.StartSessionEngine(ctx)
 	fmt.Printf("VEGM wire=%s control=%s\n", srv.WireAddr(), srv.ControlAddr())
 	<-ctx.Done()
 	_ = srv.Shutdown(context.Background())
