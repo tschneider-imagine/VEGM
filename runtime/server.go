@@ -381,10 +381,11 @@ func (s *Server) handleControlHostsAdd(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.state.AllowedHostIDs = append(s.state.AllowedHostIDs, in.HostID)
+	s.state.RegisteredHosts = append(s.state.RegisteredHosts, packpkg.RegisteredHost{HostID: in.HostID, Role: "guest", Enabled: true})
 	sort.Strings(s.state.AllowedHostIDs)
 	s.state.RegistrationState = "restricted"
 	s.logger.Log("info", "control", "host added", map[string]any{"host_id": in.HostID})
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs})
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs, "registered_hosts": s.state.RegisteredHosts})
 }
 
 func (s *Server) handleControlHostsRemove(w http.ResponseWriter, r *http.Request) {
@@ -406,11 +407,18 @@ func (s *Server) handleControlHostsRemove(w http.ResponseWriter, r *http.Request
 		}
 	}
 	s.state.AllowedHostIDs = out
+	hosts := s.state.RegisteredHosts[:0]
+	for _, h := range s.state.RegisteredHosts {
+		if h.HostID != in.HostID {
+			hosts = append(hosts, h)
+		}
+	}
+	s.state.RegisteredHosts = hosts
 	if len(s.state.AllowedHostIDs) == 0 && s.pack.StateDefaults.RegistrationMode == "open" {
 		s.state.RegistrationState = "open"
 	}
 	s.logger.Log("info", "control", "host removed", map[string]any{"host_id": in.HostID})
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs})
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "allowed_host_ids": s.state.AllowedHostIDs, "registered_hosts": s.state.RegisteredHosts})
 }
 
 func (s *Server) handleControlSecurityMode(w http.ResponseWriter, r *http.Request) {
@@ -553,8 +561,19 @@ func (s *Server) hostAllowed(hostID string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	mode := s.pack.StateDefaults.RegistrationMode
-	if mode == "open" || hostID == "" {
+	if mode == "open" {
 		return true
+	}
+	if hostID == "" {
+		return false
+	}
+	if len(s.state.RegisteredHosts) > 0 {
+		for _, h := range s.state.RegisteredHosts {
+			if h.HostID == hostID {
+				return h.Enabled
+			}
+		}
+		return false
 	}
 	for _, v := range s.state.AllowedHostIDs {
 		if v == hostID {
