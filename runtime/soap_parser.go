@@ -24,6 +24,7 @@ func ParseG2SMessage(data []byte) (ParsedG2SMessage, error) {
 	dec := xml.NewDecoder(bytes.NewReader(data))
 	var stack []xml.StartElement
 	inBody := false
+	var soapNS string
 	var msg *xml.StartElement
 	fields := map[string]string{}
 	for {
@@ -41,9 +42,11 @@ func ParseG2SMessage(data []byte) (ParsedG2SMessage, error) {
 				if !strings.EqualFold(t.Name.Local, "Envelope") {
 					return ParsedG2SMessage{}, fmt.Errorf("soap envelope is required")
 				}
-				if t.Name.Space != "" && t.Name.Space != SOAP11Namespace && t.Name.Space != SOAP12Namespace {
-					return ParsedG2SMessage{}, fmt.Errorf("unsupported soap namespace %q", t.Name.Space)
+				soapNS = t.Name.Space
+				if soapNS != "" && soapNS != SOAP11Namespace && soapNS != SOAP12Namespace {
+					return ParsedG2SMessage{}, fmt.Errorf("unsupported soap namespace %q", soapNS)
 				}
+				continue
 			}
 			if len(stack) == 2 && strings.EqualFold(t.Name.Local, "Body") {
 				inBody = true
@@ -71,12 +74,11 @@ func ParseG2SMessage(data []byte) (ParsedG2SMessage, error) {
 			}
 		}
 	}
+	if !strings.Contains(string(data), "Body") {
+		return ParsedG2SMessage{}, fmt.Errorf("soap body is required")
+	}
 	if msg == nil {
 		return ParsedG2SMessage{}, fmt.Errorf("soap body message is required")
-	}
-	soapNS := ""
-	if len(stack) > 0 {
-		soapNS = stack[0].Name.Space
 	}
 	return ParsedG2SMessage{RootLocalName: msg.Name.Local, RootNamespace: msg.Name.Space, SOAPNamespace: soapNS, HasEnvelope: true, HasBody: true, Fields: fields}, nil
 }
