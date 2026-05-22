@@ -8,20 +8,21 @@ import (
 )
 
 type Config struct {
-	InstanceID   string            `json:"instance_id"`
-	HostID       string            `json:"host_id,omitempty"`
-	EGMID        string            `json:"egm_id"`
-	EGMEndpoint  EGMEndpointConfig `json:"egm_endpoint,omitempty"`
-	HostEndpoint HostEndpointConfig `json:"host_endpoint,omitempty"`
-	Listen       ListenConfig      `json:"listen"`
-	Security     SecurityConfig    `json:"security"`
-	Logging      LoggingConfig     `json:"logging"`
-	Storage      StorageConfig     `json:"storage,omitempty"`
-	Control      ControlConfig     `json:"control"`
-	Outbound     OutboundConfig    `json:"outbound,omitempty"`
-	PackFile     string            `json:"pack_file"`
-	Overlay      []string          `json:"overlay_files,omitempty"`
-	Notes        map[string]string `json:"notes,omitempty"`
+	InstanceID    string              `json:"instance_id"`
+	HostID        string              `json:"host_id,omitempty"`
+	EGMID         string              `json:"egm_id"`
+	EGMEndpoint   EGMEndpointConfig   `json:"egm_endpoint,omitempty"`
+	HostEndpoint  HostEndpointConfig  `json:"host_endpoint,omitempty"`
+	SessionEngine SessionEngineConfig `json:"session_engine,omitempty"`
+	Listen        ListenConfig        `json:"listen"`
+	Security      SecurityConfig      `json:"security"`
+	Logging       LoggingConfig       `json:"logging"`
+	Storage       StorageConfig       `json:"storage,omitempty"`
+	Control       ControlConfig       `json:"control"`
+	Outbound      OutboundConfig      `json:"outbound,omitempty"`
+	PackFile      string              `json:"pack_file"`
+	Overlay       []string            `json:"overlay_files,omitempty"`
+	Notes         map[string]string   `json:"notes,omitempty"`
 }
 
 type EGMEndpointConfig struct {
@@ -34,6 +35,14 @@ type EGMEndpointConfig struct {
 
 type HostEndpointConfig struct {
 	URL string `json:"url,omitempty"`
+}
+
+type SessionEngineConfig struct {
+	Enabled             bool `json:"enabled,omitempty"`
+	AutoStart           bool `json:"auto_start,omitempty"`
+	CommsOnlineTimeoutMS int `json:"comms_online_timeout_ms,omitempty"`
+	KeepAliveIntervalMS int  `json:"keep_alive_interval_ms,omitempty"`
+	ReconnectIntervalMS int  `json:"reconnect_interval_ms,omitempty"`
 }
 
 type ListenConfig struct {
@@ -111,11 +120,15 @@ func ValidateConfig(cfg *Config) error {
 		return fmt.Errorf("egm_id is required")
 	}
 	applyEndpointDefaults(cfg)
+	applySessionEngineDefaults(cfg)
 	if err := validateEGMEndpoint(cfg.EGMEndpoint); err != nil {
 		return err
 	}
 	if err := validateHostEndpoint(cfg.HostEndpoint); err != nil {
 		return err
+	}
+	if cfg.SessionEngine.Enabled && cfg.HostEndpoint.URL == "" {
+		return fmt.Errorf("host_endpoint.url is required when session_engine.enabled is true")
 	}
 	if cfg.Listen.Host == "" {
 		cfg.Listen.Host = cfg.EGMEndpoint.BindIP
@@ -190,6 +203,18 @@ func applyEndpointDefaults(cfg *Config) {
 	}
 	if cfg.Outbound.DefaultTargetURL == "" && cfg.HostEndpoint.URL != "" {
 		cfg.Outbound.DefaultTargetURL = cfg.HostEndpoint.URL
+	}
+}
+
+func applySessionEngineDefaults(cfg *Config) {
+	if cfg.SessionEngine.CommsOnlineTimeoutMS == 0 {
+		cfg.SessionEngine.CommsOnlineTimeoutMS = 3000
+	}
+	if cfg.SessionEngine.KeepAliveIntervalMS == 0 {
+		cfg.SessionEngine.KeepAliveIntervalMS = 5000
+	}
+	if cfg.SessionEngine.ReconnectIntervalMS == 0 {
+		cfg.SessionEngine.ReconnectIntervalMS = 5000
 	}
 }
 
