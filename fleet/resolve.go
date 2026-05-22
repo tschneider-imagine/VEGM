@@ -53,6 +53,15 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 		root := firstNonEmpty(m.Defaults.SQLiteRoot, logDir)
 		sqlitePath = filepath.Join(root, inst.InstanceID+"-index.db")
 	}
+	advertisedHost := firstNonEmpty(inst.AdvertisedHost, profile.AdvertisedHost, m.Defaults.AdvertisedHost)
+	advertisedIP := firstNonEmpty(inst.AdvertisedIP, profile.AdvertisedIP, m.Defaults.AdvertisedIP)
+	dnsServers := firstNonEmptySlice(inst.DNSServers, profile.DNSServers, m.Defaults.DNSServers)
+	subnetMask := firstNonEmpty(inst.SubnetMask, profile.SubnetMask, m.Defaults.SubnetMask)
+	gateway := firstNonEmpty(inst.Gateway, profile.Gateway, m.Defaults.Gateway)
+	serverName := firstNonEmpty(inst.ServerName, profile.ServerName, m.Defaults.ServerName)
+	certFile := firstNonEmpty(inst.CertFile, profile.CertFile, m.Defaults.CertFile)
+	keyFile := firstNonEmpty(inst.KeyFile, profile.KeyFile, m.Defaults.KeyFile)
+	caFile := firstNonEmpty(inst.CAFile, profile.CAFile, m.Defaults.CAFile)
 	heartbeat := mergeMaps(m.Defaults.Heartbeat, profile.Heartbeat)
 	normalizedState := mergeMaps(m.Defaults.NormalizedState, profile.NormalizedState)
 	faults := mergeMaps(m.Defaults.Faults, profile.Faults)
@@ -87,6 +96,12 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 		ListenHost:      listenHost,
 		WirePort:        wirePort,
 		ControlPort:     controlPort,
+		AdvertisedHost:  advertisedHost,
+		AdvertisedIP:    advertisedIP,
+		DNSServers:      dnsServers,
+		SubnetMask:      subnetMask,
+		Gateway:         gateway,
+		ServerName:      serverName,
 		TrustMode:       trustMode,
 		PackFile:        packFile,
 		OverlayFiles:    overlays,
@@ -97,9 +112,9 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 		Heartbeat:       heartbeat,
 		NormalizedState: normalizedState,
 		Faults:          faults,
-		CertFile:        inst.CertFile,
-		KeyFile:         inst.KeyFile,
-		CAFile:          inst.CAFile,
+		CertFile:        certFile,
+		KeyFile:         keyFile,
+		CAFile:          caFile,
 	}, nil
 }
 
@@ -110,6 +125,17 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func firstNonEmptySlice(values ...[]string) []string {
+	for _, v := range values {
+		if len(v) > 0 {
+			out := make([]string, len(v))
+			copy(out, v)
+			return out
+		}
+	}
+	return nil
 }
 
 func mergeMaps(base, overlay map[string]any) map[string]any {
