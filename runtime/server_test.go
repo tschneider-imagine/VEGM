@@ -16,6 +16,7 @@ func TestHandleWire_CommsOnLineHappyPath(t *testing.T) {
 	srv := newTestServer(t)
 	reqBody := `<Envelope><Body><commsOnLine><hostId>HOST-001</hostId><sessionId>S-1</sessionId></commsOnLine></Body></Envelope>`
 	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
 	rr := httptest.NewRecorder()
 
 	srv.handleWire(rr, req)
@@ -38,12 +39,51 @@ func TestHandleWire_UnregisteredHostRejected(t *testing.T) {
 	srv := newTestServer(t)
 	reqBody := `<Envelope><Body><keepAlive><hostId>HOST-999</hostId><sessionId>S-9</sessionId></keepAlive></Body></Envelope>`
 	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
 	rr := httptest.NewRecorder()
 
 	srv.handleWire(rr, req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected 403, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestHandleWire_BindingRejectsWrongMethod(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/g2s", nil)
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	rr := httptest.NewRecorder()
+
+	srv.handleWire(rr, req)
+
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestHandleWire_BindingRejectsMissingContentType(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(`<Envelope/>`))
+	rr := httptest.NewRecorder()
+
+	srv.handleWire(rr, req)
+
+	if rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("expected 415, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestHandleWire_BindingRejectsUnsupportedContentType(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(`{"not":"xml"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	srv.handleWire(rr, req)
+
+	if rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("expected 415, got %d body=%s", rr.Code, rr.Body.String())
 	}
 }
 
@@ -161,7 +201,9 @@ func newTestServer(t *testing.T) *Server {
 	}
 	cfg := &Config{
 		InstanceID: "vegm-test",
+		HostID:     "HOST-001",
 		EGMID:      "EGM-TEST",
+		EGMEndpoint: EGMEndpointConfig{Scheme: "http", BindIP: "127.0.0.1", Host: "127.0.0.1", Port: 18443, Path: "/g2s"},
 		Listen:     ListenConfig{Host: "127.0.0.1", Port: 0},
 		Security:   SecurityConfig{TrustMode: "plaintext_lab"},
 		Logging:    LoggingConfig{Dir: filepath.Join(dir, "logs"), CaptureRawXML: true, CaptureRenderedXML: true},
