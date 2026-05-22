@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/tschneider-imagine/VEGM/fleet"
 )
 
 type childIndicators struct {
@@ -185,7 +183,6 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 			KeyFile:        inst.KeyFile,
 			CAFile:         inst.CAFile,
 		}, nil
-		}
 	}
 	return instanceSettings{}, fmt.Errorf("instance %q not found", id)
 }
