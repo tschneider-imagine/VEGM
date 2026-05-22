@@ -14,12 +14,8 @@ import (
 
 func TestHandleWire_CommsOnLineHappyPath(t *testing.T) {
 	srv := newTestServer(t)
-	reqBody := `<Envelope><Body><commsOnLine><hostId>HOST-001</hostId><sessionId>S-1</sessionId></commsOnLine></Body></Envelope>`
-	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(reqBody))
-	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	rr := httptest.NewRecorder()
-
-	srv.handleWire(rr, req)
+	reqBody := soapBody("commsOnLine", "<hostId>HOST-001</hostId><sessionId>S-1</sessionId>")
+	rr := postG2S(t, srv, reqBody)
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
@@ -37,15 +33,55 @@ func TestHandleWire_CommsOnLineHappyPath(t *testing.T) {
 
 func TestHandleWire_UnregisteredHostRejected(t *testing.T) {
 	srv := newTestServer(t)
-	reqBody := `<Envelope><Body><keepAlive><hostId>HOST-999</hostId><sessionId>S-9</sessionId></keepAlive></Body></Envelope>`
-	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(reqBody))
-	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	rr := httptest.NewRecorder()
-
-	srv.handleWire(rr, req)
+	reqBody := soapBody("keepAlive", "<hostId>HOST-999</hostId><sessionId>S-9</sessionId>")
+	rr := postG2S(t, srv, reqBody)
 
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected 403, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestHandleWire_AudioMuteOnUpdatesState(t *testing.T) {
+	srv := newTestServer(t)
+	rr := postG2S(t, srv, soapBody("audioMuteOn", "<hostId>HOST-001</hostId><sessionId>S-MUTE</sessionId>"))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rr.Code, rr.Body.String())
+	}
+	if srv.state.AudioState != "muted" {
+		t.Fatalf("expected audio muted, got %q", srv.state.AudioState)
+	}
+	if !strings.Contains(rr.Body.String(), "audioMuteOnAck") {
+		t.Fatalf("expected audioMuteOnAck, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleWire_HoldAndLockUpdateState(t *testing.T) {
+	srv := newTestServer(t)
+	rr := postG2S(t, srv, soapBody("holdOn", "<hostId>HOST-001</hostId><sessionId>S-HOLD</sessionId>"))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected hold 200, got %d body=%s", rr.Code, rr.Body.String())
+	}
+	if srv.state.HoldState != "active" || srv.state.MachineState != "held" {
+		t.Fatalf("expected hold active/held, got hold=%q machine=%q", srv.state.HoldState, srv.state.MachineState)
+	}
+	rr = postG2S(t, srv, soapBody("lockOn", "<hostId>HOST-001</hostId><sessionId>S-LOCK</sessionId>"))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected lock 200, got %d body=%s", rr.Code, rr.Body.String())
+	}
+	if srv.state.LockState != "active" || srv.state.MachineState != "locked" {
+		t.Fatalf("expected lock active/locked, got lock=%q machine=%q", srv.state.LockState, srv.state.MachineState)
+	}
+}
+
+func TestHandleWire_TargetIsolationBetweenServers(t *testing.T) {
+	srvA := newTestServer(t)
+	srvB := newTestServer(t)
+	_ = postG2S(t, srvA, soapBody("audioMuteOn", "<hostId>HOST-001</hostId><sessionId>S-A</sessionId>"))
+	if srvA.state.AudioState != "muted" {
+		t.Fatalf("expected target server muted")
+	}
+	if srvB.state.AudioState != "normal" {
+		t.Fatalf("expected non-target server unchanged, got %q", srvB.state.AudioState)
 	}
 }
 
@@ -135,6 +171,19 @@ func TestControlOverlay_ChangesRegistrationMode(t *testing.T) {
 	}
 }
 
+func postG2S(t *testing.T, srv *Server, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/g2s", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	rr := httptest.NewRecorder()
+	srv.handleWire(rr, req)
+	return rr
+}
+
+func soapBody(op, inner string) string {
+	return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:g2s="urn:test:g2s"><soapenv:Body><g2s:` + op + `>` + inner + `</g2s:` + op + `></soapenv:Body></soapenv:Envelope>`
+}
+
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
 	dir := t.TempDir()
@@ -193,6 +242,27 @@ func newTestServer(t *testing.T) *Server {
         "template": "<Envelope><Body><keepAliveAck><sessionId>{{request.sessionId}}</sessionId></keepAliveAck></Body></Envelope>",
         "http_status": 200
       }]
+    },
+    "audioMuteOn": {
+      "enabled": true,
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "audioMuteOn"}],
+      "extract": [],
+      "responses": [{"variant_name": "ack", "template": "<Envelope><Body><audioMuteOnAck/></Body></Envelope>", "set_state": {"audio_state": "muted", "machine_state": "available"}, "http_status": 200}]
+    },
+    "holdOn": {
+      "enabled": true,
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "holdOn"}],
+      "extract": [],
+      "responses": [{"variant_name": "ack", "template": "<Envelope><Body><holdOnAck/></Body></Envelope>", "set_state": {"hold_state": "active", "machine_state": "held"}, "http_status": 200}]
+    },
+    "lockOn": {
+      "enabled": true,
+      "direction": "inbound",
+      "match": [{"kind": "message_type", "value": "lockOn"}],
+      "extract": [],
+      "responses": [{"variant_name": "ack", "template": "<Envelope><Body><lockOnAck/></Body></Envelope>", "set_state": {"lock_state": "active", "machine_state": "locked"}, "http_status": 200}]
     }
   }
 }`
