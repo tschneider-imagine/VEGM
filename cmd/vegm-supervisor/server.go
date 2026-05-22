@@ -26,39 +26,42 @@ type supervisorServer struct {
 }
 
 type instanceView struct {
-	InstanceID      string   `json:"instance_id"`
-	EGMID           string   `json:"egm_id"`
-	Group           string   `json:"group"`
-	Profile         string   `json:"profile"`
-	Manufacturer    string   `json:"manufacturer,omitempty"`
-	WireURL         string   `json:"wire_url"`
-	ControlURL      string   `json:"control_url"`
-	UIURL           string   `json:"ui_url"`
-	ConfigPath      string   `json:"config_path"`
-	Running         bool     `json:"running"`
-	Healthy         bool     `json:"healthy"`
-	LogDir          string   `json:"log_dir"`
-	ListenHost      string   `json:"listen_host"`
-	WirePort        int      `json:"wire_port"`
-	ControlPort     int      `json:"control_port"`
-	AdvertisedHost  string   `json:"advertised_host,omitempty"`
-	AdvertisedIP    string   `json:"advertised_ip,omitempty"`
-	DNSServers      []string `json:"dns_servers,omitempty"`
-	SubnetMask      string   `json:"subnet_mask,omitempty"`
-	Gateway         string   `json:"gateway,omitempty"`
-	ServerName      string   `json:"server_name,omitempty"`
-	TrustMode       string   `json:"trust_mode"`
-	CertFile        string   `json:"cert_file,omitempty"`
-	KeyFile         string   `json:"key_file,omitempty"`
-	CAFile          string   `json:"ca_file,omitempty"`
-	SessionState    string   `json:"session_state,omitempty"`
-	HeartbeatState  string   `json:"heartbeat_state,omitempty"`
-	ConnectionState string   `json:"connection_state,omitempty"`
-	AudioState      string   `json:"audio_state,omitempty"`
-	HoldState       string   `json:"hold_state,omitempty"`
-	LockState       string   `json:"lock_state,omitempty"`
-	MachineState    string   `json:"machine_state,omitempty"`
-	LastCommandType string   `json:"last_command_type,omitempty"`
+	InstanceID      string        `json:"instance_id"`
+	EGMID           string        `json:"egm_id"`
+	HostID          string        `json:"host_id"`
+	Group           string        `json:"group"`
+	Profile         string        `json:"profile"`
+	Manufacturer    string        `json:"manufacturer,omitempty"`
+	EGMEndpoint     fleet.Endpoint `json:"egm_endpoint"`
+	HostEndpoint    fleet.HostEndpoint `json:"host_endpoint,omitempty"`
+	WireURL         string        `json:"wire_url"`
+	ControlURL      string        `json:"control_url"`
+	UIURL           string        `json:"ui_url"`
+	ConfigPath      string        `json:"config_path"`
+	Running         bool          `json:"running"`
+	Healthy         bool          `json:"healthy"`
+	LogDir          string        `json:"log_dir"`
+	ListenHost      string        `json:"listen_host"`
+	WirePort        int           `json:"wire_port"`
+	ControlPort     int           `json:"control_port"`
+	AdvertisedHost  string        `json:"advertised_host,omitempty"`
+	AdvertisedIP    string        `json:"advertised_ip,omitempty"`
+	DNSServers      []string      `json:"dns_servers,omitempty"`
+	SubnetMask      string        `json:"subnet_mask,omitempty"`
+	Gateway         string        `json:"gateway,omitempty"`
+	ServerName      string        `json:"server_name,omitempty"`
+	TrustMode       string        `json:"trust_mode"`
+	CertFile        string        `json:"cert_file,omitempty"`
+	KeyFile         string        `json:"key_file,omitempty"`
+	CAFile          string        `json:"ca_file,omitempty"`
+	SessionState    string        `json:"session_state,omitempty"`
+	HeartbeatState  string        `json:"heartbeat_state,omitempty"`
+	ConnectionState string        `json:"connection_state,omitempty"`
+	AudioState      string        `json:"audio_state,omitempty"`
+	HoldState       string        `json:"hold_state,omitempty"`
+	LockState       string        `json:"lock_state,omitempty"`
+	MachineState    string        `json:"machine_state,omitempty"`
+	LastCommandType string        `json:"last_command_type,omitempty"`
 }
 
 func newSupervisorServer(manifestPath, generatedDir string, generated []fleet.GeneratedConfig) *supervisorServer {
@@ -189,7 +192,7 @@ func (s *supervisorServer) instanceViews() []instanceView {
 	for _, gen := range s.generated {
 		inst := gen.Instance
 		controlURL := fmt.Sprintf("http://%s:%d", inst.ListenHost, inst.ControlPort)
-		wireURL := fmt.Sprintf("http://%s:%d", inst.ListenHost, inst.WirePort)
+		wireURL := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.EGMEndpoint.Port, inst.EGMEndpoint.Path)
 		cmd, running := s.cmds[inst.InstanceID]
 		healthy := false
 		indicators := childIndicators{}
@@ -202,9 +205,12 @@ func (s *supervisorServer) instanceViews() []instanceView {
 		out = append(out, instanceView{
 			InstanceID:      inst.InstanceID,
 			EGMID:           inst.EGMID,
+			HostID:          inst.HostID,
 			Group:           inst.Group,
 			Profile:         inst.Profile,
 			Manufacturer:    inst.Manufacturer,
+			EGMEndpoint:     inst.EGMEndpoint,
+			HostEndpoint:    inst.HostEndpoint,
 			WireURL:         wireURL,
 			ControlURL:      controlURL,
 			UIURL:           controlURL + "/ui/scenario-runner.html",
