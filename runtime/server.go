@@ -207,10 +207,14 @@ func (s *Server) startControl() error {
 func (s *Server) startWire() error {
 	mux := http.NewServeMux()
 	path := s.cfg.EGMEndpoint.Path
-	if path == "" { path = s.pack.Wire.Paths.DefaultListenerPath }
+	if path == "" {
+		path = s.pack.Wire.Paths.DefaultListenerPath
+	}
 	mux.HandleFunc(path, s.handleWire)
 	for _, p := range s.pack.Wire.Paths.AlternateListenerPaths {
-		if p != path { mux.HandleFunc(p, s.handleWire) }
+		if p != path {
+			mux.HandleFunc(p, s.handleWire)
+		}
 	}
 	addr := net.JoinHostPort(s.cfg.Listen.Host, fmt.Sprint(s.cfg.Listen.Port))
 	ln, err := net.Listen("tcp", addr)
@@ -460,7 +464,15 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	parsed := ParseMessage(body)
+	parsed, err := ParseG2SMessage(body)
+	if err != nil {
+		if s.cfg.Logging.CaptureRawXML {
+			_, _ = s.logger.WritePayload("inbound_bad_soap", "invalid", body)
+		}
+		s.logger.Log("warn", "soap", "soap parse failed", map[string]any{"error": err.Error()})
+		http.Error(w, "invalid soap xml", http.StatusBadRequest)
+		return
+	}
 	if s.cfg.Logging.CaptureRawXML {
 		_, _ = s.logger.WritePayload("inbound_request", parsed.RootLocalName, body)
 	}
@@ -488,7 +500,7 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 		s.state.LastCommandAt = time.Now().UTC()
 		s.state.LastCommandSource = hostID
 		s.mu.Unlock()
-		s.logger.Log("warn", "wire", "unsupported operation", map[string]any{"message_type": parsed.RootLocalName})
+		s.logger.Log("warn", "wire", "unsupported operation", map[string]any{"message_type": parsed.RootLocalName, "namespace": parsed.RootNamespace})
 		return
 	}
 	s.mu.Lock()
@@ -534,7 +546,7 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", status)
 	s.mu.Unlock()
-	s.logger.Log("info", "wire", "operation handled", map[string]any{"message_type": parsed.RootLocalName, "host_id": hostID, "session_id": sessionID, "status": status})
+	s.logger.Log("info", "wire", "operation handled", map[string]any{"message_type": parsed.RootLocalName, "namespace": parsed.RootNamespace, "host_id": hostID, "session_id": sessionID, "status": status})
 }
 
 func (s *Server) hostAllowed(hostID string) bool {
