@@ -3,9 +3,19 @@
   "fleet_name": "lab-floor-a",
   "description": "Example mixed-floor manifest for supervisor-driven VEGM generation and launch.",
   "defaults": {
+    "host_id": "HOST-001",
     "listen_host": "127.0.0.1",
     "wire_port_base": 18443,
     "control_port_base": 19001,
+    "egm_endpoint": {
+      "scheme": "http",
+      "bind_ip": "127.0.0.1",
+      "host": "127.0.0.1",
+      "path": "/g2s"
+    },
+    "host_endpoint": {
+      "url": "http://127.0.0.1:18080/g2s"
+    },
     "trust_mode": "plaintext_lab",
     "pack_file": "./example.pack.json",
     "overlay_files": [],
@@ -91,27 +101,45 @@
     {
       "instance_id": "vegm-001",
       "egm_id": "EGM-001",
+      "host_id": "HOST-001",
       "group": "bank_a",
       "wire_port": 18443,
       "control_port": 19001,
+      "egm_endpoint": {
+        "host": "vegm-001.floor.local",
+        "port": 18443,
+        "path": "/g2s"
+      },
       "advertised_host": "vegm-001.floor.local",
       "advertised_ip": "192.168.10.101"
     },
     {
       "instance_id": "vegm-002",
       "egm_id": "EGM-002",
+      "host_id": "HOST-001",
       "group": "bank_a",
       "wire_port": 18444,
       "control_port": 19002,
+      "egm_endpoint": {
+        "host": "vegm-002.floor.local",
+        "port": 18444,
+        "path": "/g2s"
+      },
       "advertised_host": "vegm-002.floor.local",
       "advertised_ip": "192.168.10.102"
     },
     {
       "instance_id": "vegm-011",
       "egm_id": "EGM-011",
+      "host_id": "HOST-001",
       "group": "bank_b",
       "wire_port": 18453,
       "control_port": 19011,
+      "egm_endpoint": {
+        "host": "vegm-011.vendor.local",
+        "port": 18453,
+        "path": "/g2s"
+      },
       "advertised_host": "vegm-011.vendor.local",
       "advertised_ip": "192.168.20.111",
       "dns_servers": ["10.0.0.10", "10.0.0.11"],
