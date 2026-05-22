@@ -2,6 +2,7 @@ package fleet
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 )
@@ -28,6 +29,8 @@ func ValidateManifest(m *Manifest) error {
 	if len(m.Instances) == 0 {
 		errs = append(errs, "instances must not be empty")
 	}
+	validateEndpoint("defaults.egm_endpoint", m.Defaults.EGMEndpoint, &errs)
+	validateHostEndpoint("defaults.host_endpoint", m.Defaults.HostEndpoint, &errs)
 	for name, p := range m.Profiles {
 		if strings.TrimSpace(name) == "" {
 			errs = append(errs, "profiles contains empty key")
@@ -39,6 +42,8 @@ func ValidateManifest(m *Manifest) error {
 		if len(p.LogicalCommands) == 0 {
 			errs = append(errs, fmt.Sprintf("profiles.%s.logical_commands must not be empty", name))
 		}
+		validateEndpoint(fmt.Sprintf("profiles.%s.egm_endpoint", name), p.EGMEndpoint, &errs)
+		validateHostEndpoint(fmt.Sprintf("profiles.%s.host_endpoint", name), p.HostEndpoint, &errs)
 	}
 	for name, g := range m.Groups {
 		if strings.TrimSpace(name) == "" {
@@ -72,6 +77,9 @@ func ValidateManifest(m *Manifest) error {
 		} else {
 			seenEGMIDs[inst.EGMID] = true
 		}
+		if resolvedHostID(m, inst) == "" {
+			errs = append(errs, fmt.Sprintf("instances[%d].host_id is required through instance/profile/default", i))
+		}
 		if strings.TrimSpace(inst.Group) == "" {
 			errs = append(errs, fmt.Sprintf("instances[%d].group is required", i))
 		} else if _, ok := m.Groups[inst.Group]; !ok {
@@ -83,6 +91,8 @@ func ValidateManifest(m *Manifest) error {
 		if inst.ControlPort < 0 {
 			errs = append(errs, fmt.Sprintf("instances[%d].control_port must be >= 0", i))
 		}
+		validateEndpoint(fmt.Sprintf("instances[%d].egm_endpoint", i), inst.EGMEndpoint, &errs)
+		validateHostEndpoint(fmt.Sprintf("instances[%d].host_endpoint", i), inst.HostEndpoint, &errs)
 		if inst.WirePort > 0 {
 			if prior, ok := seenWirePorts[inst.WirePort]; ok {
 				errs = append(errs, fmt.Sprintf("instances[%d].wire_port %d duplicates instance %q", i, inst.WirePort, prior))
@@ -103,4 +113,53 @@ func ValidateManifest(m *Manifest) error {
 		return fmt.Errorf("fleet manifest validation failed:\n- %s", strings.Join(errs, "\n- "))
 	}
 	return nil
+}
+
+func validateEndpoint(label string, ep Endpoint, errs *[]string) {
+	if ep == (Endpoint{}) {
+		return
+	}
+	if ep.Scheme != "" && ep.Scheme != "http" && ep.Scheme != "https" {
+		*errs = append(*errs, fmt.Sprintf("%s.scheme must be http or https", label))
+	}
+	if ep.Port < 0 || ep.Port > 65535 {
+		*errs = append(*errs, fmt.Sprintf("%s.port must be between 0 and 65535", label))
+	}
+	if ep.Path != "" && !strings.HasPrefix(ep.Path, "/") {
+		*errs = append(*errs, fmt.Sprintf("%s.path must start with /", label))
+	}
+}
+
+func validateHostEndpoint(label string, ep HostEndpoint, errs *[]string) {
+	if ep.URL == "" {
+		return
+	}
+	u, err := url.Parse(ep.URL)
+	if err != nil {
+		*errs = append(*errs, fmt.Sprintf("%s.url is invalid: %v", label, err))
+		return
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		*errs = append(*errs, fmt.Sprintf("%s.url scheme must be http or https", label))
+	}
+	if u.Host == "" {
+		*errs = append(*errs, fmt.Sprintf("%s.url must include host", label))
+	}
+	if u.Path == "" || !strings.HasPrefix(u.Path, "/") {
+		*errs = append(*errs, fmt.Sprintf("%s.url must include path", label))
+	}
+}
+
+func resolvedHostID(m *Manifest, inst Instance) string {
+	if inst.HostID != "" {
+		return inst.HostID
+	}
+	g, ok := m.Groups[inst.Group]
+	if ok {
+		p, ok := m.Profiles[g.Profile]
+		if ok && p.HostID != "" {
+			return p.HostID
+		}
+	}
+	return m.Defaults.HostID
 }
