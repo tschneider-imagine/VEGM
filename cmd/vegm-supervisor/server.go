@@ -8,10 +8,8 @@ import (
 	"net"
 	"net/http"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/tschneider-imagine/VEGM/fleet"
 	"github.com/tschneider-imagine/VEGM/webui"
