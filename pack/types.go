@@ -66,11 +66,14 @@ type StateDefaultsConfig struct {
 }
 
 type RegisteredHost struct {
-	HostID      string `json:"host_id"`
-	DisplayName string `json:"display_name,omitempty"`
-	Role        string `json:"role,omitempty"`
-	Enabled     bool   `json:"enabled"`
-	Notes       string `json:"notes,omitempty"`
+	HostID         string   `json:"host_id"`
+	DisplayName    string   `json:"display_name,omitempty"`
+	URL            string   `json:"url,omitempty"`
+	Role           string   `json:"role,omitempty"`
+	AllowedClasses []string `json:"allowed_classes,omitempty"`
+	CertIdentity   string   `json:"cert_identity,omitempty"`
+	Enabled        bool     `json:"enabled"`
+	Notes          string   `json:"notes,omitempty"`
 }
 
 type LoggingHintsConfig struct {
