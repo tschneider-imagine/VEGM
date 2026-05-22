@@ -206,9 +206,11 @@ func (s *Server) startControl() error {
 
 func (s *Server) startWire() error {
 	mux := http.NewServeMux()
-	mux.HandleFunc(s.pack.Wire.Paths.DefaultListenerPath, s.handleWire)
+	path := s.cfg.EGMEndpoint.Path
+	if path == "" { path = s.pack.Wire.Paths.DefaultListenerPath }
+	mux.HandleFunc(path, s.handleWire)
 	for _, p := range s.pack.Wire.Paths.AlternateListenerPaths {
-		mux.HandleFunc(p, s.handleWire)
+		if p != path { mux.HandleFunc(p, s.handleWire) }
 	}
 	addr := net.JoinHostPort(s.cfg.Listen.Host, fmt.Sprint(s.cfg.Listen.Port))
 	ln, err := net.Listen("tcp", addr)
@@ -447,8 +449,10 @@ func (s *Server) handleControlPackOperations(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	binding := validateG2SBindingRequest(r)
+	if !binding.OK {
+		s.logger.Log("warn", "binding", "g2s binding rejected", map[string]any{"method": r.Method, "path": r.URL.Path, "content_type": r.Header.Get("Content-Type"), "status": binding.StatusCode, "reason": binding.Message})
+		http.Error(w, binding.Message, binding.StatusCode)
 		return
 	}
 	body, err := io.ReadAll(r.Body)
