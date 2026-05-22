@@ -9,7 +9,9 @@
     .wrap { padding: 16px; display: grid; gap: 16px; }
     .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    button { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    button, input, textarea { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    input { cursor: text; width: 100%; box-sizing: border-box; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
     .ok { color: #34d399; }
@@ -18,6 +20,10 @@
     .mono { font-family: Consolas, monospace; font-size: 12px; }
     a { color: #93c5fd; }
     .details { color: #cbd5e1; line-height: 1.4; }
+    .status-grid { display: grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 4px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #0f172a; border: 1px solid #475569; font-size: 12px; margin: 2px 4px 2px 0; }
+    .field { display: grid; gap: 4px; }
+    .small { font-size: 12px; }
   </style>
 </head>
 <body>
@@ -29,7 +35,7 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
     </div>
-    <div class="muted" style="margin-top:8px;">Supervisor-level lifecycle controls and per-VEGM network/security settings for the simulated floor.</div>
+    <div class="muted small" style="margin-top:8px;">Supervisor lifecycle, live machine status, and per-VEGM network/certificate settings for the simulated floor.</div>
   </div>
   <div class="panel">
     <table>
@@ -37,6 +43,7 @@
         <tr>
           <th>Instance</th>
           <th>Status</th>
+          <th>State</th>
           <th>Network</th>
           <th>Security</th>
           <th>Links</th>
@@ -46,8 +53,35 @@
       <tbody id="rows"></tbody>
     </table>
   </div>
+  <div class="panel">
+    <h2>Edit machine settings</h2>
+    <div class="muted small">Select a machine from the table below to edit generated config values, then Save or Save + Restart.</div>
+    <div id="editorNotice" class="muted" style="margin-top:8px;">No machine selected.</div>
+    <div class="grid" style="margin-top:10px;">
+      <div class="field"><label>Instance ID</label><input id="f_instance_id" disabled></div>
+      <div class="field"><label>Listen Host</label><input id="f_listen_host"></div>
+      <div class="field"><label>Wire Port</label><input id="f_wire_port" type="number"></div>
+      <div class="field"><label>Control Port</label><input id="f_control_port" type="number"></div>
+      <div class="field"><label>Advertised Host</label><input id="f_advertised_host"></div>
+      <div class="field"><label>Advertised IP</label><input id="f_advertised_ip"></div>
+      <div class="field"><label>DNS Servers (comma separated)</label><input id="f_dns_servers"></div>
+      <div class="field"><label>Subnet Mask</label><input id="f_subnet_mask"></div>
+      <div class="field"><label>Gateway</label><input id="f_gateway"></div>
+      <div class="field"><label>Server Name</label><input id="f_server_name"></div>
+      <div class="field"><label>Trust Mode</label><input id="f_trust_mode"></div>
+      <div class="field"><label>Cert File</label><input id="f_cert_file"></div>
+      <div class="field"><label>Key File</label><input id="f_key_file"></div>
+      <div class="field"><label>CA File</label><input id="f_ca_file"></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button id="saveBtn">Save</button>
+      <button id="saveRestartBtn">Save + Restart</button>
+    </div>
+  </div>
 </div>
 <script>
+let selectedInstance = null;
+
 async function fetchJson(url, opts) {
   const r = await fetch(url, opts);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
@@ -55,9 +89,11 @@ async function fetchJson(url, opts) {
 }
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
+function stateBadge(label, value) { return `<span class="badge"><strong>${esc(label)}:</strong> ${esc(value || 'n/a')}</span>`; }
+
 async function refresh() {
   const body = document.getElementById('rows');
-  body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+  body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
   try {
     const data = await fetchJson('/api/instances');
     body.innerHTML = (data.instances || []).map(inst => `
@@ -67,11 +103,24 @@ async function refresh() {
           <div class="mono">${esc(inst.egm_id)}</div>
           <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
           <div class="muted">${esc(inst.manufacturer || '')}</div>
+          <div style="margin-top:6px;"><button onclick="selectInstance('${esc(inst.instance_id)}')">Edit</button></div>
         </td>
         <td>
           <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
           <div class="${inst.healthy ? 'ok' : 'bad'}">healthy: ${inst.healthy}</div>
           <div class="muted">trust: ${esc(inst.trust_mode)}</div>
+        </td>
+        <td>
+          <div class="status-grid">
+            <div>${stateBadge('Mute', inst.audio_state)}</div>
+            <div>${stateBadge('Lock', inst.lock_state)}</div>
+            <div>${stateBadge('Hold', inst.hold_state)}</div>
+            <div>${stateBadge('Machine', inst.machine_state)}</div>
+            <div>${stateBadge('Session', inst.session_state)}</div>
+            <div>${stateBadge('Heartbeat', inst.heartbeat_state)}</div>
+            <div>${stateBadge('Connected', inst.connection_state)}</div>
+            <div>${stateBadge('Last cmd', inst.last_command_type)}</div>
+          </div>
         </td>
         <td class="details mono">
           <div>listen: ${esc(inst.listen_host)}:${esc(inst.wire_port)}</div>
@@ -102,16 +151,76 @@ async function refresh() {
       </tr>
     `).join('');
   } catch (err) {
-    body.innerHTML = `<tr><td colspan="6" class="bad">${esc(err.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="bad">${esc(err.message)}</td></tr>`;
   }
 }
+
 async function act(id, action) {
   await fetchJson(`/api/instances/${id}/${action}`, { method: 'POST' });
   await refresh();
 }
+
+async function selectInstance(id) {
+  const s = await fetchJson(`/api/instance-settings/${id}`);
+  selectedInstance = id;
+  document.getElementById('editorNotice').textContent = `Editing ${id}`;
+  document.getElementById('f_instance_id').value = s.instance_id || '';
+  document.getElementById('f_listen_host').value = s.listen_host || '';
+  document.getElementById('f_wire_port').value = s.wire_port || 0;
+  document.getElementById('f_control_port').value = s.control_port || 0;
+  document.getElementById('f_advertised_host').value = s.advertised_host || '';
+  document.getElementById('f_advertised_ip').value = s.advertised_ip || '';
+  document.getElementById('f_dns_servers').value = joinList(s.dns_servers);
+  document.getElementById('f_subnet_mask').value = s.subnet_mask || '';
+  document.getElementById('f_gateway').value = s.gateway || '';
+  document.getElementById('f_server_name').value = s.server_name || '';
+  document.getElementById('f_trust_mode').value = s.trust_mode || '';
+  document.getElementById('f_cert_file').value = s.cert_file || '';
+  document.getElementById('f_key_file').value = s.key_file || '';
+  document.getElementById('f_ca_file').value = s.ca_file || '';
+}
+
+function collectSettings() {
+  return {
+    instance_id: document.getElementById('f_instance_id').value,
+    listen_host: document.getElementById('f_listen_host').value,
+    wire_port: Number(document.getElementById('f_wire_port').value || 0),
+    control_port: Number(document.getElementById('f_control_port').value || 0),
+    advertised_host: document.getElementById('f_advertised_host').value,
+    advertised_ip: document.getElementById('f_advertised_ip').value,
+    dns_servers: document.getElementById('f_dns_servers').value.split(',').map(x => x.trim()).filter(Boolean),
+    subnet_mask: document.getElementById('f_subnet_mask').value,
+    gateway: document.getElementById('f_gateway').value,
+    server_name: document.getElementById('f_server_name').value,
+    trust_mode: document.getElementById('f_trust_mode').value,
+    cert_file: document.getElementById('f_cert_file').value,
+    key_file: document.getElementById('f_key_file').value,
+    ca_file: document.getElementById('f_ca_file').value
+  };
+}
+
+async function saveSettings(restartAfter) {
+  if (!selectedInstance) {
+    alert('Select a machine first.');
+    return;
+  }
+  await fetchJson(`/api/instance-settings/${selectedInstance}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(collectSettings())
+  });
+  if (restartAfter) {
+    await act(selectedInstance, 'restart');
+  } else {
+    await refresh();
+  }
+}
+
 document.getElementById('refreshBtn').addEventListener('click', refresh);
 document.getElementById('startAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/start-all', { method: 'POST' }); await refresh(); });
 document.getElementById('stopAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/stop-all', { method: 'POST' }); await refresh(); });
+document.getElementById('saveBtn').addEventListener('click', async () => { await saveSettings(false); });
+document.getElementById('saveRestartBtn').addEventListener('click', async () => { await saveSettings(true); });
 refresh();
 setInterval(refresh, 3000);
 </script>
