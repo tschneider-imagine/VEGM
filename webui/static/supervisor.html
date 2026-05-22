@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VEGM Supervisor</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
+    .wrap { padding: 16px; display: grid; gap: 16px; }
+    .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; }
+    .ok { color: #34d399; }
+    .bad { color: #f87171; }
+    .muted { color: #94a3b8; }
+    .mono { font-family: Consolas, monospace; }
+    a { color: #93c5fd; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <h1>VEGM Supervisor</h1>
+    <div class="row">
+      <button id="refreshBtn">Refresh</button>
+      <button id="startAllBtn">Start all</button>
+      <button id="stopAllBtn">Stop all</button>
+    </div>
+    <div class="muted" style="margin-top:8px;">Supervisor-level lifecycle controls for the simulated floor.</div>
+  </div>
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>Instance</th><th>EGM</th><th>Group</th><th>Profile</th><th>Running</th><th>Healthy</th><th>Control</th><th>UI</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+async function fetchJson(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return await r.json();
+}
+function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+async function refresh() {
+  const body = document.getElementById('rows');
+  body.innerHTML = '<tr><td colspan="9">Loading...</td></tr>';
+  try {
+    const data = await fetchJson('/api/instances');
+    body.innerHTML = (data.instances || []).map(inst => `
+      <tr>
+        <td class="mono">${esc(inst.instance_id)}</td>
+        <td class="mono">${esc(inst.egm_id)}</td>
+        <td>${esc(inst.group)}</td>
+        <td>${esc(inst.profile)}</td>
+        <td class="${inst.running ? 'ok' : 'muted'}">${inst.running}</td>
+        <td class="${inst.healthy ? 'ok' : 'bad'}">${inst.healthy}</td>
+        <td><a target="_blank" href="${esc(inst.control_url)}">control</a></td>
+        <td><a target="_blank" href="${esc(inst.ui_url)}">ui</a></td>
+        <td>
+          <button onclick="act('${esc(inst.instance_id)}','start')">Start</button>
+          <button onclick="act('${esc(inst.instance_id)}','stop')">Stop</button>
+          <button onclick="act('${esc(inst.instance_id)}','restart')">Restart</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    body.innerHTML = `<tr><td colspan="9" class="bad">${esc(err.message)}</td></tr>`;
+  }
+}
+async function act(id, action) {
+  await fetchJson(`/api/instances/${id}/${action}`, { method: 'POST' });
+  await refresh();
+}
+document.getElementById('refreshBtn').addEventListener('click', refresh);
+document.getElementById('startAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/start-all', { method: 'POST' }); await refresh(); });
+document.getElementById('stopAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/stop-all', { method: 'POST' }); await refresh(); });
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>
