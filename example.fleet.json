@@ -12,6 +12,10 @@
     "log_root": "./logs/fleet-a",
     "storage_backend": "sqlite",
     "sqlite_root": "./logs/fleet-a",
+    "advertised_host": "lab-floor.local",
+    "dns_servers": ["8.8.8.8", "1.1.1.1"],
+    "subnet_mask": "255.255.255.0",
+    "gateway": "192.168.10.1",
     "heartbeat": {
       "enabled": true,
       "interval_ms": 5000,
@@ -39,7 +43,8 @@
         "hold_off": "holdOff",
         "lock_on": "lockOn",
         "lock_off": "lockOff"
-      }
+      },
+      "advertised_host": "generic-floor.local"
     },
     "vendorquirk": {
       "label": "Vendor quirk profile",
@@ -54,6 +59,11 @@
         "lock_on": "lockOn",
         "lock_off": "lockOff"
       },
+      "advertised_host": "vendor-floor.local",
+      "server_name": "vendor-floor.local",
+      "cert_file": "./certs/vendor/server.pem",
+      "key_file": "./certs/vendor/server.key",
+      "ca_file": "./certs/vendor/ca.pem",
       "heartbeat": {
         "interval_ms": 8000,
         "auto_start": false
@@ -83,14 +93,18 @@
       "egm_id": "EGM-001",
       "group": "bank_a",
       "wire_port": 18443,
-      "control_port": 19001
+      "control_port": 19001,
+      "advertised_host": "vegm-001.floor.local",
+      "advertised_ip": "192.168.10.101"
     },
     {
       "instance_id": "vegm-002",
       "egm_id": "EGM-002",
       "group": "bank_a",
       "wire_port": 18444,
-      "control_port": 19002
+      "control_port": 19002,
+      "advertised_host": "vegm-002.floor.local",
+      "advertised_ip": "192.168.10.102"
     },
     {
       "instance_id": "vegm-011",
@@ -98,6 +112,11 @@
       "group": "bank_b",
       "wire_port": 18453,
       "control_port": 19011,
+      "advertised_host": "vegm-011.vendor.local",
+      "advertised_ip": "192.168.20.111",
+      "dns_servers": ["10.0.0.10", "10.0.0.11"],
+      "subnet_mask": "255.255.254.0",
+      "gateway": "192.168.20.1",
       "overrides": {
         "normalized_state": {
           "audio_state": "normal",
