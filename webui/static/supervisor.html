@@ -11,12 +11,13 @@
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     button { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; }
+    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
     .ok { color: #34d399; }
     .bad { color: #f87171; }
     .muted { color: #94a3b8; }
-    .mono { font-family: Consolas, monospace; }
+    .mono { font-family: Consolas, monospace; font-size: 12px; }
     a { color: #93c5fd; }
+    .details { color: #cbd5e1; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -28,13 +29,18 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
     </div>
-    <div class="muted" style="margin-top:8px;">Supervisor-level lifecycle controls for the simulated floor.</div>
+    <div class="muted" style="margin-top:8px;">Supervisor-level lifecycle controls and per-VEGM network/security settings for the simulated floor.</div>
   </div>
   <div class="panel">
     <table>
       <thead>
         <tr>
-          <th>Instance</th><th>EGM</th><th>Group</th><th>Profile</th><th>Running</th><th>Healthy</th><th>Control</th><th>UI</th><th>Actions</th>
+          <th>Instance</th>
+          <th>Status</th>
+          <th>Network</th>
+          <th>Security</th>
+          <th>Links</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -48,21 +54,46 @@ async function fetchJson(url, opts) {
   return await r.json();
 }
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
 async function refresh() {
   const body = document.getElementById('rows');
-  body.innerHTML = '<tr><td colspan="9">Loading...</td></tr>';
+  body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
   try {
     const data = await fetchJson('/api/instances');
     body.innerHTML = (data.instances || []).map(inst => `
       <tr>
-        <td class="mono">${esc(inst.instance_id)}</td>
-        <td class="mono">${esc(inst.egm_id)}</td>
-        <td>${esc(inst.group)}</td>
-        <td>${esc(inst.profile)}</td>
-        <td class="${inst.running ? 'ok' : 'muted'}">${inst.running}</td>
-        <td class="${inst.healthy ? 'ok' : 'bad'}">${inst.healthy}</td>
-        <td><a target="_blank" href="${esc(inst.control_url)}">control</a></td>
-        <td><a target="_blank" href="${esc(inst.ui_url)}">ui</a></td>
+        <td>
+          <div><strong>${esc(inst.instance_id)}</strong></div>
+          <div class="mono">${esc(inst.egm_id)}</div>
+          <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
+          <div class="muted">${esc(inst.manufacturer || '')}</div>
+        </td>
+        <td>
+          <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
+          <div class="${inst.healthy ? 'ok' : 'bad'}">healthy: ${inst.healthy}</div>
+          <div class="muted">trust: ${esc(inst.trust_mode)}</div>
+        </td>
+        <td class="details mono">
+          <div>listen: ${esc(inst.listen_host)}:${esc(inst.wire_port)}</div>
+          <div>control: ${esc(inst.listen_host)}:${esc(inst.control_port)}</div>
+          <div>adv host: ${esc(inst.advertised_host)}</div>
+          <div>adv ip: ${esc(inst.advertised_ip)}</div>
+          <div>dns: ${esc(joinList(inst.dns_servers))}</div>
+          <div>subnet: ${esc(inst.subnet_mask)}</div>
+          <div>gateway: ${esc(inst.gateway)}</div>
+        </td>
+        <td class="details mono">
+          <div>server name: ${esc(inst.server_name)}</div>
+          <div>cert: ${esc(inst.cert_file)}</div>
+          <div>key: ${esc(inst.key_file)}</div>
+          <div>ca: ${esc(inst.ca_file)}</div>
+          <div>log: ${esc(inst.log_dir)}</div>
+        </td>
+        <td>
+          <div><a target="_blank" href="${esc(inst.control_url)}">control</a></div>
+          <div><a target="_blank" href="${esc(inst.ui_url)}">ui</a></div>
+          <div><a target="_blank" href="${esc(inst.wire_url)}">wire</a></div>
+        </td>
         <td>
           <button onclick="act('${esc(inst.instance_id)}','start')">Start</button>
           <button onclick="act('${esc(inst.instance_id)}','stop')">Stop</button>
@@ -71,7 +102,7 @@ async function refresh() {
       </tr>
     `).join('');
   } catch (err) {
-    body.innerHTML = `<tr><td colspan="9" class="bad">${esc(err.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="bad">${esc(err.message)}</td></tr>`;
   }
 }
 async function act(id, action) {
