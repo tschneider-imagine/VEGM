@@ -26,18 +26,31 @@ type supervisorServer struct {
 }
 
 type instanceView struct {
-	InstanceID  string `json:"instance_id"`
-	EGMID       string `json:"egm_id"`
-	Group       string `json:"group"`
-	Profile     string `json:"profile"`
-	Manufacturer string `json:"manufacturer,omitempty"`
-	WireURL     string `json:"wire_url"`
-	ControlURL  string `json:"control_url"`
-	UIURL       string `json:"ui_url"`
-	ConfigPath  string `json:"config_path"`
-	Running     bool   `json:"running"`
-	Healthy     bool   `json:"healthy"`
-	LogDir      string `json:"log_dir"`
+	InstanceID     string   `json:"instance_id"`
+	EGMID          string   `json:"egm_id"`
+	Group          string   `json:"group"`
+	Profile        string   `json:"profile"`
+	Manufacturer   string   `json:"manufacturer,omitempty"`
+	WireURL        string   `json:"wire_url"`
+	ControlURL     string   `json:"control_url"`
+	UIURL          string   `json:"ui_url"`
+	ConfigPath     string   `json:"config_path"`
+	Running        bool     `json:"running"`
+	Healthy        bool     `json:"healthy"`
+	LogDir         string   `json:"log_dir"`
+	ListenHost     string   `json:"listen_host"`
+	WirePort       int      `json:"wire_port"`
+	ControlPort    int      `json:"control_port"`
+	AdvertisedHost string   `json:"advertised_host,omitempty"`
+	AdvertisedIP   string   `json:"advertised_ip,omitempty"`
+	DNSServers     []string `json:"dns_servers,omitempty"`
+	SubnetMask     string   `json:"subnet_mask,omitempty"`
+	Gateway        string   `json:"gateway,omitempty"`
+	ServerName     string   `json:"server_name,omitempty"`
+	TrustMode      string   `json:"trust_mode"`
+	CertFile       string   `json:"cert_file,omitempty"`
+	KeyFile        string   `json:"key_file,omitempty"`
+	CAFile         string   `json:"ca_file,omitempty"`
 }
 
 func newSupervisorServer(manifestPath, generatedDir string, generated []fleet.GeneratedConfig) *supervisorServer {
@@ -173,7 +186,33 @@ func (s *supervisorServer) instanceViews() []instanceView {
 		if running && cmd != nil && cmd.Process != nil {
 			healthy, _ = isHealthy(controlURL + "/healthz")
 		}
-		out = append(out, instanceView{InstanceID: inst.InstanceID, EGMID: inst.EGMID, Group: inst.Group, Profile: inst.Profile, Manufacturer: inst.Manufacturer, WireURL: wireURL, ControlURL: controlURL, UIURL: controlURL + "/ui/scenario-runner.html", ConfigPath: gen.Path, Running: running, Healthy: healthy, LogDir: inst.LogDir})
+		out = append(out, instanceView{
+			InstanceID:     inst.InstanceID,
+			EGMID:          inst.EGMID,
+			Group:          inst.Group,
+			Profile:        inst.Profile,
+			Manufacturer:   inst.Manufacturer,
+			WireURL:        wireURL,
+			ControlURL:     controlURL,
+			UIURL:          controlURL + "/ui/scenario-runner.html",
+			ConfigPath:     gen.Path,
+			Running:        running,
+			Healthy:        healthy,
+			LogDir:         inst.LogDir,
+			ListenHost:     inst.ListenHost,
+			WirePort:       inst.WirePort,
+			ControlPort:    inst.ControlPort,
+			AdvertisedHost: inst.AdvertisedHost,
+			AdvertisedIP:   inst.AdvertisedIP,
+			DNSServers:     inst.DNSServers,
+			SubnetMask:     inst.SubnetMask,
+			Gateway:        inst.Gateway,
+			ServerName:     inst.ServerName,
+			TrustMode:      inst.TrustMode,
+			CertFile:       inst.CertFile,
+			KeyFile:        inst.KeyFile,
+			CAFile:         inst.CAFile,
+		})
 	}
 	return out
 }
