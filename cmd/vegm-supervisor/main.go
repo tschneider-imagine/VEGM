@@ -1,15 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/tschneider-imagine/VEGM/fleet"
 )
@@ -19,8 +15,8 @@ func main() {
 	output := flag.String("output", "summary", "output mode: summary or json")
 	generateDir := flag.String("generate-dir", "./generated", "directory for generated per-instance configs")
 	generate := flag.Bool("generate", true, "generate per-instance configs from the manifest")
-	launch := flag.Bool("launch", false, "launch resolved VEGM instances after generation")
-	waitSeconds := flag.Int("wait-seconds", 60, "max seconds to wait for launched instances to become healthy")
+	serve := flag.Bool("serve", false, "serve the supervisor web UI and lifecycle API")
+	bind := flag.String("bind", "127.0.0.1:18081", "supervisor HTTP bind address when -serve is used")
 	flag.Parse()
 
 	m, err := fleet.LoadManifest(*manifestPath)
@@ -33,7 +29,7 @@ func main() {
 	}
 
 	var generated []fleet.GeneratedConfig
-	if *generate || *launch {
+	if *generate || *serve {
 		generated, err = fleet.GenerateConfigs(m, *generateDir)
 		if err != nil {
 			log.Fatal(err)
@@ -49,6 +45,9 @@ func main() {
 		fmt.Printf("Instances: %d\n", len(effective))
 		if len(generated) > 0 {
 			fmt.Printf("Generated configs: %s\n", *generateDir)
+		}
+		if *serve {
+			fmt.Printf("Supervisor UI: http://%s/ui/supervisor.html\n", *bind)
 		}
 		fmt.Println()
 		for _, inst := range effective {
@@ -73,27 +72,11 @@ func main() {
 		log.Fatalf("unsupported output mode %q", *output)
 	}
 
-	if !*launch {
-		return
-	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	cmds, err := launchFleet(ctx, generated)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := waitForFleetHealthy(generated, time.Duration(*waitSeconds)*time.Second); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Fleet healthy. UI URLs:")
-	for _, gen := range generated {
-		fmt.Printf("- %s: http://%s:%d/ui/scenario-runner.html\n", gen.Instance.InstanceID, gen.Instance.ListenHost, gen.Instance.ControlPort)
-	}
-	<-ctx.Done()
-	for _, cmd := range cmds {
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
+	if *serve {
+		server := newSupervisorServer(*manifestPath, *generateDir, generated)
+		if err := serveSupervisor(*bind, server); err != nil {
+			log.Fatal(err)
 		}
+		select {}
 	}
 }
