@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/tschneider-imagine/VEGM/fleet"
 )
 
 type childIndicators struct {
@@ -21,20 +23,23 @@ type childIndicators struct {
 }
 
 type instanceSettings struct {
-	InstanceID     string   `json:"instance_id"`
-	ListenHost     string   `json:"listen_host"`
-	WirePort       int      `json:"wire_port"`
-	ControlPort    int      `json:"control_port"`
-	AdvertisedHost string   `json:"advertised_host,omitempty"`
-	AdvertisedIP   string   `json:"advertised_ip,omitempty"`
-	DNSServers     []string `json:"dns_servers,omitempty"`
-	SubnetMask     string   `json:"subnet_mask,omitempty"`
-	Gateway        string   `json:"gateway,omitempty"`
-	ServerName     string   `json:"server_name,omitempty"`
-	TrustMode      string   `json:"trust_mode"`
-	CertFile       string   `json:"cert_file,omitempty"`
-	KeyFile        string   `json:"key_file,omitempty"`
-	CAFile         string   `json:"ca_file,omitempty"`
+	InstanceID      string             `json:"instance_id"`
+	HostID          string             `json:"host_id"`
+	EGMEndpoint     fleet.Endpoint     `json:"egm_endpoint"`
+	HostEndpoint    fleet.HostEndpoint `json:"host_endpoint,omitempty"`
+	ListenHost      string             `json:"listen_host"`
+	WirePort        int                `json:"wire_port"`
+	ControlPort     int                `json:"control_port"`
+	AdvertisedHost  string             `json:"advertised_host,omitempty"`
+	AdvertisedIP    string             `json:"advertised_ip,omitempty"`
+	DNSServers      []string           `json:"dns_servers,omitempty"`
+	SubnetMask      string             `json:"subnet_mask,omitempty"`
+	Gateway         string             `json:"gateway,omitempty"`
+	ServerName      string             `json:"server_name,omitempty"`
+	TrustMode       string             `json:"trust_mode"`
+	CertFile        string             `json:"cert_file,omitempty"`
+	KeyFile         string             `json:"key_file,omitempty"`
+	CAFile          string             `json:"ca_file,omitempty"`
 }
 
 func fetchChildIndicators(controlBase string) (childIndicators, error) {
@@ -96,6 +101,9 @@ func (s *supervisorServer) getInstanceSettings(id string) (instanceSettings, err
 			inst := gen.Instance
 			return instanceSettings{
 				InstanceID:     inst.InstanceID,
+				HostID:         inst.HostID,
+				EGMEndpoint:    inst.EGMEndpoint,
+				HostEndpoint:   inst.HostEndpoint,
 				ListenHost:     inst.ListenHost,
 				WirePort:       inst.WirePort,
 				ControlPort:    inst.ControlPort,
@@ -126,6 +134,9 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		inst := &gen.Instance
 		cfg := &gen.Config
 
+		inst.HostID = in.HostID
+		inst.EGMEndpoint = in.EGMEndpoint
+		inst.HostEndpoint = in.HostEndpoint
 		inst.ListenHost = in.ListenHost
 		inst.WirePort = in.WirePort
 		inst.ControlPort = in.ControlPort
@@ -140,6 +151,13 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		inst.KeyFile = in.KeyFile
 		inst.CAFile = in.CAFile
 
+		cfg.HostID = in.HostID
+		cfg.EGMEndpoint.Scheme = in.EGMEndpoint.Scheme
+		cfg.EGMEndpoint.BindIP = in.EGMEndpoint.BindIP
+		cfg.EGMEndpoint.Host = in.EGMEndpoint.Host
+		cfg.EGMEndpoint.Port = in.EGMEndpoint.Port
+		cfg.EGMEndpoint.Path = in.EGMEndpoint.Path
+		cfg.HostEndpoint.URL = in.HostEndpoint.URL
 		cfg.Listen.Host = in.ListenHost
 		cfg.Listen.Port = in.WirePort
 		cfg.Control.Bind = fmt.Sprintf("%s:%d", in.ListenHost, in.ControlPort)
@@ -150,6 +168,12 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		if cfg.Notes == nil {
 			cfg.Notes = map[string]string{}
 		}
+		cfg.Notes["host_id"] = in.HostID
+		cfg.Notes["egm_endpoint_scheme"] = in.EGMEndpoint.Scheme
+		cfg.Notes["egm_endpoint_bind_ip"] = in.EGMEndpoint.BindIP
+		cfg.Notes["egm_endpoint_host"] = in.EGMEndpoint.Host
+		cfg.Notes["egm_endpoint_path"] = in.EGMEndpoint.Path
+		cfg.Notes["host_endpoint_url"] = in.HostEndpoint.URL
 		cfg.Notes["advertised_host"] = in.AdvertisedHost
 		cfg.Notes["advertised_ip"] = in.AdvertisedIP
 		cfg.Notes["dns_servers"] = strings.Join(in.DNSServers, ",")
@@ -169,6 +193,9 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		}
 		return instanceSettings{
 			InstanceID:     inst.InstanceID,
+			HostID:         inst.HostID,
+			EGMEndpoint:    inst.EGMEndpoint,
+			HostEndpoint:   inst.HostEndpoint,
 			ListenHost:     inst.ListenHost,
 			WirePort:       inst.WirePort,
 			ControlPort:    inst.ControlPort,
