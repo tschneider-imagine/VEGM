@@ -3,21 +3,37 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 )
 
 type Config struct {
-	InstanceID string            `json:"instance_id"`
-	EGMID      string            `json:"egm_id"`
-	Listen     ListenConfig      `json:"listen"`
-	Security   SecurityConfig    `json:"security"`
-	Logging    LoggingConfig     `json:"logging"`
-	Storage    StorageConfig     `json:"storage,omitempty"`
-	Control    ControlConfig     `json:"control"`
-	Outbound   OutboundConfig    `json:"outbound,omitempty"`
-	PackFile   string            `json:"pack_file"`
-	Overlay    []string          `json:"overlay_files,omitempty"`
-	Notes      map[string]string `json:"notes,omitempty"`
+	InstanceID   string            `json:"instance_id"`
+	HostID       string            `json:"host_id,omitempty"`
+	EGMID        string            `json:"egm_id"`
+	EGMEndpoint  EGMEndpointConfig `json:"egm_endpoint,omitempty"`
+	HostEndpoint HostEndpointConfig `json:"host_endpoint,omitempty"`
+	Listen       ListenConfig      `json:"listen"`
+	Security     SecurityConfig    `json:"security"`
+	Logging      LoggingConfig     `json:"logging"`
+	Storage      StorageConfig     `json:"storage,omitempty"`
+	Control      ControlConfig     `json:"control"`
+	Outbound     OutboundConfig    `json:"outbound,omitempty"`
+	PackFile     string            `json:"pack_file"`
+	Overlay      []string          `json:"overlay_files,omitempty"`
+	Notes        map[string]string `json:"notes,omitempty"`
+}
+
+type EGMEndpointConfig struct {
+	Scheme string `json:"scheme,omitempty"`
+	BindIP string `json:"bind_ip,omitempty"`
+	Host   string `json:"host,omitempty"`
+	Port   int    `json:"port,omitempty"`
+	Path   string `json:"path,omitempty"`
+}
+
+type HostEndpointConfig struct {
+	URL string `json:"url,omitempty"`
 }
 
 type ListenConfig struct {
@@ -88,11 +104,24 @@ func ValidateConfig(cfg *Config) error {
 	if cfg.InstanceID == "" {
 		return fmt.Errorf("instance_id is required")
 	}
+	if cfg.HostID == "" {
+		cfg.HostID = firstNonEmpty(cfg.Notes["host_id"], "HOST-001")
+	}
 	if cfg.EGMID == "" {
 		return fmt.Errorf("egm_id is required")
 	}
+	applyEndpointDefaults(cfg)
+	if err := validateEGMEndpoint(cfg.EGMEndpoint); err != nil {
+		return err
+	}
+	if err := validateHostEndpoint(cfg.HostEndpoint); err != nil {
+		return err
+	}
 	if cfg.Listen.Host == "" {
-		cfg.Listen.Host = "127.0.0.1"
+		cfg.Listen.Host = cfg.EGMEndpoint.BindIP
+	}
+	if cfg.Listen.Port == 0 {
+		cfg.Listen.Port = cfg.EGMEndpoint.Port
 	}
 	if cfg.Logging.Dir == "" {
 		return fmt.Errorf("logging.dir is required")
@@ -135,6 +164,70 @@ func ValidateConfig(cfg *Config) error {
 		}
 	default:
 		return fmt.Errorf("unsupported trust_mode %q", cfg.Security.TrustMode)
+	}
+	return nil
+}
+
+func applyEndpointDefaults(cfg *Config) {
+	if cfg.EGMEndpoint.Scheme == "" {
+		if cfg.Security.TrustMode == "plaintext_lab" || cfg.Security.TrustMode == "" {
+			cfg.EGMEndpoint.Scheme = "http"
+		} else {
+			cfg.EGMEndpoint.Scheme = "https"
+		}
+	}
+	if cfg.EGMEndpoint.BindIP == "" {
+		cfg.EGMEndpoint.BindIP = firstNonEmpty(cfg.Listen.Host, "127.0.0.1")
+	}
+	if cfg.EGMEndpoint.Host == "" {
+		cfg.EGMEndpoint.Host = cfg.EGMEndpoint.BindIP
+	}
+	if cfg.EGMEndpoint.Port == 0 {
+		cfg.EGMEndpoint.Port = cfg.Listen.Port
+	}
+	if cfg.EGMEndpoint.Path == "" {
+		cfg.EGMEndpoint.Path = "/g2s"
+	}
+	if cfg.Outbound.DefaultTargetURL == "" && cfg.HostEndpoint.URL != "" {
+		cfg.Outbound.DefaultTargetURL = cfg.HostEndpoint.URL
+	}
+}
+
+func validateEGMEndpoint(ep EGMEndpointConfig) error {
+	if ep.Scheme != "http" && ep.Scheme != "https" {
+		return fmt.Errorf("egm_endpoint.scheme must be http or https")
+	}
+	if ep.BindIP == "" {
+		return fmt.Errorf("egm_endpoint.bind_ip is required")
+	}
+	if ep.Host == "" {
+		return fmt.Errorf("egm_endpoint.host is required")
+	}
+	if ep.Port <= 0 || ep.Port > 65535 {
+		return fmt.Errorf("egm_endpoint.port must be between 1 and 65535")
+	}
+	if ep.Path == "" || ep.Path[0] != '/' {
+		return fmt.Errorf("egm_endpoint.path must start with /")
+	}
+	return nil
+}
+
+func validateHostEndpoint(ep HostEndpointConfig) error {
+	if ep.URL == "" {
+		return nil
+	}
+	u, err := url.Parse(ep.URL)
+	if err != nil {
+		return fmt.Errorf("host_endpoint.url is invalid: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("host_endpoint.url scheme must be http or https")
+	}
+	if u.Host == "" {
+		return fmt.Errorf("host_endpoint.url must include host")
+	}
+	if u.Path == "" || u.Path[0] != '/' {
+		return fmt.Errorf("host_endpoint.url must include path")
 	}
 	return nil
 }
