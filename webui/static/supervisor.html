@@ -35,7 +35,7 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
     </div>
-    <div class="muted small" style="margin-top:8px;">Supervisor lifecycle, live machine status, and per-VEGM network/certificate settings for the simulated floor.</div>
+    <div class="muted small" style="margin-top:8px;">Supervisor lifecycle, live machine status, and G2S endpoint settings for the simulated floor.</div>
   </div>
   <div class="panel">
     <table>
@@ -44,8 +44,8 @@
           <th>Instance</th>
           <th>Status</th>
           <th>State</th>
-          <th>Network</th>
-          <th>Security</th>
+          <th>G2S Endpoints</th>
+          <th>Network / Security</th>
           <th>Links</th>
           <th>Actions</th>
         </tr>
@@ -55,10 +55,17 @@
   </div>
   <div class="panel">
     <h2>Edit machine settings</h2>
-    <div class="muted small">Select a machine from the table below to edit generated config values, then Save or Save + Restart.</div>
+    <div class="muted small">Per projectplan.md Pass 1: edit hostId, EGM endpoint, Host endpoint, protocol, and path first. Save + Restart applies runtime fields.</div>
     <div id="editorNotice" class="muted" style="margin-top:8px;">No machine selected.</div>
     <div class="grid" style="margin-top:10px;">
       <div class="field"><label>Instance ID</label><input id="f_instance_id" disabled></div>
+      <div class="field"><label>Host ID</label><input id="f_host_id"></div>
+      <div class="field"><label>EGM Endpoint Scheme</label><input id="f_ep_scheme"></div>
+      <div class="field"><label>EGM Endpoint Bind IP</label><input id="f_ep_bind_ip"></div>
+      <div class="field"><label>EGM Endpoint Host</label><input id="f_ep_host"></div>
+      <div class="field"><label>EGM Endpoint Port</label><input id="f_ep_port" type="number"></div>
+      <div class="field"><label>EGM Endpoint Path</label><input id="f_ep_path"></div>
+      <div class="field"><label>Host Endpoint URL</label><input id="f_host_endpoint_url"></div>
       <div class="field"><label>Listen Host</label><input id="f_listen_host"></div>
       <div class="field"><label>Wire Port</label><input id="f_wire_port" type="number"></div>
       <div class="field"><label>Control Port</label><input id="f_control_port" type="number"></div>
@@ -90,6 +97,10 @@ async function fetchJson(url, opts) {
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
 function stateBadge(label, value) { return `<span class="badge"><strong>${esc(label)}:</strong> ${esc(value || 'n/a')}</span>`; }
+function endpointText(ep) {
+  if (!ep) return '';
+  return `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}`;
+}
 
 async function refresh() {
   const body = document.getElementById('rows');
@@ -101,8 +112,8 @@ async function refresh() {
         <td>
           <div><strong>${esc(inst.instance_id)}</strong></div>
           <div class="mono">${esc(inst.egm_id)}</div>
+          <div class="mono">hostId: ${esc(inst.host_id)}</div>
           <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
-          <div class="muted">${esc(inst.manufacturer || '')}</div>
           <div style="margin-top:6px;"><button onclick="selectInstance('${esc(inst.instance_id)}')">Edit</button></div>
         </td>
         <td>
@@ -123,25 +134,25 @@ async function refresh() {
           </div>
         </td>
         <td class="details mono">
+          <div>EGM: ${esc(endpointText(inst.egm_endpoint))}</div>
+          <div>bind: ${esc(inst.egm_endpoint?.bind_ip || '')}</div>
+          <div>host: ${esc(inst.egm_endpoint?.host || '')}</div>
+          <div>path: ${esc(inst.egm_endpoint?.path || '')}</div>
+          <div>Host URL: ${esc(inst.host_endpoint?.url || '')}</div>
+        </td>
+        <td class="details mono">
           <div>listen: ${esc(inst.listen_host)}:${esc(inst.wire_port)}</div>
           <div>control: ${esc(inst.listen_host)}:${esc(inst.control_port)}</div>
           <div>adv host: ${esc(inst.advertised_host)}</div>
           <div>adv ip: ${esc(inst.advertised_ip)}</div>
           <div>dns: ${esc(joinList(inst.dns_servers))}</div>
-          <div>subnet: ${esc(inst.subnet_mask)}</div>
-          <div>gateway: ${esc(inst.gateway)}</div>
-        </td>
-        <td class="details mono">
-          <div>server name: ${esc(inst.server_name)}</div>
           <div>cert: ${esc(inst.cert_file)}</div>
-          <div>key: ${esc(inst.key_file)}</div>
           <div>ca: ${esc(inst.ca_file)}</div>
-          <div>log: ${esc(inst.log_dir)}</div>
         </td>
         <td>
           <div><a target="_blank" href="${esc(inst.control_url)}">control</a></div>
           <div><a target="_blank" href="${esc(inst.ui_url)}">ui</a></div>
-          <div><a target="_blank" href="${esc(inst.wire_url)}">wire</a></div>
+          <div><a target="_blank" href="${esc(inst.wire_url)}">g2s</a></div>
         </td>
         <td>
           <button onclick="act('${esc(inst.instance_id)}','start')">Start</button>
@@ -165,6 +176,13 @@ async function selectInstance(id) {
   selectedInstance = id;
   document.getElementById('editorNotice').textContent = `Editing ${id}`;
   document.getElementById('f_instance_id').value = s.instance_id || '';
+  document.getElementById('f_host_id').value = s.host_id || '';
+  document.getElementById('f_ep_scheme').value = s.egm_endpoint?.scheme || '';
+  document.getElementById('f_ep_bind_ip').value = s.egm_endpoint?.bind_ip || '';
+  document.getElementById('f_ep_host').value = s.egm_endpoint?.host || '';
+  document.getElementById('f_ep_port').value = s.egm_endpoint?.port || 0;
+  document.getElementById('f_ep_path').value = s.egm_endpoint?.path || '';
+  document.getElementById('f_host_endpoint_url').value = s.host_endpoint?.url || '';
   document.getElementById('f_listen_host').value = s.listen_host || '';
   document.getElementById('f_wire_port').value = s.wire_port || 0;
   document.getElementById('f_control_port').value = s.control_port || 0;
@@ -183,6 +201,15 @@ async function selectInstance(id) {
 function collectSettings() {
   return {
     instance_id: document.getElementById('f_instance_id').value,
+    host_id: document.getElementById('f_host_id').value,
+    egm_endpoint: {
+      scheme: document.getElementById('f_ep_scheme').value,
+      bind_ip: document.getElementById('f_ep_bind_ip').value,
+      host: document.getElementById('f_ep_host').value,
+      port: Number(document.getElementById('f_ep_port').value || 0),
+      path: document.getElementById('f_ep_path').value
+    },
+    host_endpoint: { url: document.getElementById('f_host_endpoint_url').value },
     listen_host: document.getElementById('f_listen_host').value,
     wire_port: Number(document.getElementById('f_wire_port').value || 0),
     control_port: Number(document.getElementById('f_control_port').value || 0),
