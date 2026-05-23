@@ -30,26 +30,34 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 	var out []GeneratedConfig
 	for _, eff := range effective {
 		notes := map[string]string{
-			"group":             eff.Group,
-			"profile":           eff.Profile,
-			"manufacturer":      eff.Manufacturer,
-			"host_id":           eff.HostID,
-			"egm_endpoint_scheme": eff.EGMEndpoint.Scheme,
+			"group":                eff.Group,
+			"profile":              eff.Profile,
+			"manufacturer":         eff.Manufacturer,
+			"host_id":              eff.HostID,
+			"egm_endpoint_scheme":  eff.EGMEndpoint.Scheme,
 			"egm_endpoint_bind_ip": eff.EGMEndpoint.BindIP,
-			"egm_endpoint_host": eff.EGMEndpoint.Host,
-			"egm_endpoint_path": eff.EGMEndpoint.Path,
-			"host_endpoint_url": eff.HostEndpoint.URL,
-			"advertised_host":   eff.AdvertisedHost,
-			"advertised_ip":     eff.AdvertisedIP,
-			"subnet_mask":       eff.SubnetMask,
-			"gateway":           eff.Gateway,
-			"server_name":       eff.ServerName,
-			"dns_servers":       strings.Join(eff.DNSServers, ","),
-			"cert_file":         eff.CertFile,
-			"key_file":          eff.KeyFile,
-			"ca_file":           eff.CAFile,
-			"storage_backend":   eff.StorageBackend,
-			"sqlite_path":       eff.SQLitePath,
+			"egm_endpoint_host":    eff.EGMEndpoint.Host,
+			"egm_endpoint_path":    eff.EGMEndpoint.Path,
+			"host_endpoint_url":    eff.HostEndpoint.URL,
+			"advertised_host":      eff.AdvertisedHost,
+			"advertised_ip":        eff.AdvertisedIP,
+			"subnet_mask":          eff.SubnetMask,
+			"gateway":              eff.Gateway,
+			"server_name":          eff.ServerName,
+			"dns_servers":          strings.Join(eff.DNSServers, ","),
+			"cert_file":            eff.CertFile,
+			"key_file":             eff.KeyFile,
+			"ca_file":              eff.CAFile,
+			"storage_backend":      eff.StorageBackend,
+			"sqlite_path":          eff.SQLitePath,
+		}
+		sessionEngine := runtimecfg.SessionEngineConfig{}
+		if eff.HostEndpoint.URL != "" {
+			sessionEngine.Enabled = true
+			sessionEngine.AutoStart = true
+			sessionEngine.CommsOnlineTimeoutMS = 3000
+			sessionEngine.KeepAliveIntervalMS = 5000
+			sessionEngine.ReconnectIntervalMS = 5000
 		}
 		cfg := runtimecfg.Config{
 			InstanceID: eff.InstanceID,
@@ -62,7 +70,8 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 				Port:   eff.EGMEndpoint.Port,
 				Path:   eff.EGMEndpoint.Path,
 			},
-			HostEndpoint: runtimecfg.HostEndpointConfig{URL: eff.HostEndpoint.URL},
+			HostEndpoint:  runtimecfg.HostEndpointConfig{URL: eff.HostEndpoint.URL},
+			SessionEngine: sessionEngine,
 			Listen: runtimecfg.ListenConfig{
 				Host: eff.ListenHost,
 				Port: eff.WirePort,
