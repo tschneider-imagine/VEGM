@@ -10,7 +10,7 @@
     .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    button, input, textarea { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    button, input, textarea, .buttonlink { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; text-decoration: none; display: inline-block; }
     input { cursor: text; width: 100%; box-sizing: border-box; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
@@ -35,8 +35,9 @@
       <button id="refreshBtn">Refresh</button>
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
+      <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
-    <div class="muted small" style="margin-top:8px;">Pass 8 test bench: lifecycle, endpoints, cert status, live state, and evidence links from one screen.</div>
+    <div class="muted small" style="margin-top:8px;">Pass 9 evidence: fleet export opens a JSON run bundle; per-VEGM export links remain in each row.</div>
   </div>
   <div class="panel">
     <table>
