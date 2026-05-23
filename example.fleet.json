@@ -4,17 +4,17 @@
   "description": "Example mixed-floor manifest for supervisor-driven VEGM generation and launch.",
   "defaults": {
     "host_id": "HOST-001",
-    "listen_host": "127.0.0.1",
+    "listen_host": "192.168.10.162",
     "wire_port_base": 18443,
     "control_port_base": 19001,
     "egm_endpoint": {
       "scheme": "http",
-      "bind_ip": "127.0.0.1",
-      "host": "127.0.0.1",
+      "bind_ip": "192.168.10.162",
+      "host": "192.168.10.162",
       "path": "/g2s"
     },
     "host_endpoint": {
-      "url": "http://127.0.0.1:18080/g2s"
+      "url": "http://192.168.10.25:8444/g2s"
     },
     "trust_mode": "plaintext_lab",
     "pack_file": "./example.pack.json",
@@ -22,7 +22,8 @@
     "log_root": "./logs/fleet-a",
     "storage_backend": "sqlite",
     "sqlite_root": "./logs/fleet-a",
-    "advertised_host": "lab-floor.local",
+    "advertised_host": "192.168.10.162",
+    "advertised_ip": "192.168.10.162",
     "dns_servers": ["8.8.8.8", "1.1.1.1"],
     "subnet_mask": "255.255.255.0",
     "gateway": "192.168.10.1",
@@ -54,7 +55,7 @@
         "lock_on": "lockOn",
         "lock_off": "lockOff"
       },
-      "advertised_host": "generic-floor.local"
+      "advertised_host": "192.168.10.162"
     },
     "vendorquirk": {
       "label": "Vendor quirk profile",
@@ -69,8 +70,8 @@
         "lock_on": "lockOn",
         "lock_off": "lockOff"
       },
-      "advertised_host": "vendor-floor.local",
-      "server_name": "vendor-floor.local",
+      "advertised_host": "192.168.10.162",
+      "server_name": "192.168.10.162",
       "cert_file": "./certs/vendor/server.pem",
       "key_file": "./certs/vendor/server.key",
       "ca_file": "./certs/vendor/ca.pem",
@@ -106,12 +107,15 @@
       "wire_port": 18443,
       "control_port": 19001,
       "egm_endpoint": {
-        "host": "vegm-001.floor.local",
+        "host": "192.168.10.162",
         "port": 18443,
         "path": "/g2s"
       },
-      "advertised_host": "vegm-001.floor.local",
-      "advertised_ip": "192.168.10.101"
+      "host_endpoint": {
+        "url": "http://192.168.10.25:8444/g2s"
+      },
+      "advertised_host": "192.168.10.162",
+      "advertised_ip": "192.168.10.162"
     },
     {
       "instance_id": "vegm-002",
@@ -121,12 +125,15 @@
       "wire_port": 18444,
       "control_port": 19002,
       "egm_endpoint": {
-        "host": "vegm-002.floor.local",
+        "host": "192.168.10.162",
         "port": 18444,
         "path": "/g2s"
       },
-      "advertised_host": "vegm-002.floor.local",
-      "advertised_ip": "192.168.10.102"
+      "host_endpoint": {
+        "url": "http://192.168.10.25:8444/g2s"
+      },
+      "advertised_host": "192.168.10.162",
+      "advertised_ip": "192.168.10.162"
     },
     {
       "instance_id": "vegm-011",
@@ -136,15 +143,17 @@
       "wire_port": 18453,
       "control_port": 19011,
       "egm_endpoint": {
-        "host": "vegm-011.vendor.local",
+        "host": "192.168.10.162",
         "port": 18453,
         "path": "/g2s"
       },
-      "advertised_host": "vegm-011.vendor.local",
-      "advertised_ip": "192.168.20.111",
-      "dns_servers": ["10.0.0.10", "10.0.0.11"],
-      "subnet_mask": "255.255.254.0",
-      "gateway": "192.168.20.1",
+      "host_endpoint": {
+        "url": "http://192.168.10.25:8444/g2s"
+      },
+      "advertised_host": "192.168.10.162",
+      "advertised_ip": "192.168.10.162",
+      "subnet_mask": "255.255.255.0",
+      "gateway": "192.168.10.1",
       "overrides": {
         "normalized_state": {
           "audio_state": "normal",
