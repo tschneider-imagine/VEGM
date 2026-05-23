@@ -11,6 +11,7 @@ import (
 )
 
 type addInstanceRequest struct {
+	Remove         bool               `json:"remove,omitempty"`
 	InstanceID     string             `json:"instance_id"`
 	EGMID          string             `json:"egm_id"`
 	HostID         string             `json:"host_id,omitempty"`
@@ -36,6 +37,20 @@ func (s *supervisorServer) handleFleetInstancesAdd(w http.ResponseWriter, r *htt
 	var in addInstanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if in.Remove {
+		id := strings.TrimSpace(in.InstanceID)
+		if id == "" {
+			http.Error(w, "instance_id is required", http.StatusBadRequest)
+			return
+		}
+		if err := s.removeFleetInstance(id); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "removed": id, "instances": s.instanceViews()})
 		return
 	}
 	inst := fleet.Instance{
