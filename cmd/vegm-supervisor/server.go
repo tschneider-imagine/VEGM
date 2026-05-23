@@ -81,6 +81,7 @@ func (s *supervisorServer) routes() http.Handler {
 	mux.HandleFunc("/api/instances/stop-all", s.handleStopAll)
 	mux.HandleFunc("/api/instances/", s.handleInstanceAction)
 	mux.HandleFunc("/api/instance-settings/", s.handleInstanceSettings)
+	mux.HandleFunc("/api/export/fleet", s.handleFleetExport)
 	return withSupervisorCORS(mux)
 }
 
