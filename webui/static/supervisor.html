@@ -39,7 +39,7 @@
       <a class="buttonlink" target="_blank" href="/ui/fleet-export.html">Fleet export page</a>
       <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
-    <div class="muted small" style="margin-top:8px;">Navigation: supervisor dashboard, fleet machine add/remove, fleet export, and per-VEGM evidence links.</div>
+    <div class="muted small" style="margin-top:8px;">Navigation: supervisor dashboard, fleet machine add/remove, fleet export, initiate session, and per-VEGM evidence links.</div>
   </div>
   <div class="panel">
     <table>
@@ -99,6 +99,7 @@ async function fetchJson(url, opts) {
   return await r.json();
 }
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function jsq(v) { return String(v ?? '').replaceAll('\\', '\\\\').replaceAll("'", "\\'"); }
 function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
 function stateBadge(label, value) { return `<span class="badge"><strong>${esc(label)}:</strong> ${esc(value || 'n/a')}</span>`; }
 function endpointText(ep) {
@@ -121,7 +122,7 @@ async function refresh() {
           <div class="mono">egmId: ${esc(inst.egm_id)}</div>
           <div class="mono">hostId: ${esc(inst.host_id)}</div>
           <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
-          <div style="margin-top:6px;"><button onclick="selectInstance('${esc(inst.instance_id)}')">Edit</button></div>
+          <div style="margin-top:6px;"><button onclick="selectInstance('${jsq(inst.instance_id)}')">Edit</button></div>
         </td>
         <td>
           <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
@@ -163,9 +164,10 @@ async function refresh() {
           <div><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></div>
         </td>
         <td>
-          <button onclick="act('${esc(inst.instance_id)}','start')">Start</button>
-          <button onclick="act('${esc(inst.instance_id)}','stop')">Stop</button>
-          <button onclick="act('${esc(inst.instance_id)}','restart')">Restart</button>
+          <button onclick="act('${jsq(inst.instance_id)}','start')">Start</button>
+          <button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button>
+          <button onclick="act('${jsq(inst.instance_id)}','stop')">Stop</button>
+          <button onclick="act('${jsq(inst.instance_id)}','restart')">Restart</button>
         </td>
       </tr>`;
     }).join('');
@@ -176,6 +178,10 @@ async function refresh() {
 
 async function act(id, action) {
   await fetchJson(`/api/instances/${id}/${action}`, { method: 'POST' });
+  await refresh();
+}
+async function initiate(controlUrl) {
+  await fetchJson(`${controlUrl}/control/outbound/session/open`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   await refresh();
 }
 
