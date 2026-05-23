@@ -63,7 +63,6 @@ func (s *Server) runKeepAliveLoop(ctx context.Context, sessionID string) bool {
 	if interval <= 0 {
 		interval = 5 * time.Second
 	}
-	// Send one immediately after startup exchange, then continue on interval.
 	if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
 		s.recordKeepAliveFailure(sessionID, err)
 		return true
@@ -150,8 +149,6 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	s.state.LastSessionID = sessionID
 	s.state.LastHostID = s.cfg.HostID
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
-	s.state.LastCommsOnlineAt = now
-	s.state.LastAckAt = now
 	s.state.LastError = ""
 	s.mu.Unlock()
 	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck"})
