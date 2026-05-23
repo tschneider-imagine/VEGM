@@ -22,6 +22,7 @@ type supervisorServer struct {
 	generated    []fleet.GeneratedConfig
 	mu           sync.Mutex
 	cmds         map[string]*exec.Cmd
+	restart      map[string]restartMeta
 	ctx          context.Context
 	cancel       context.CancelFunc
 }
@@ -41,6 +42,9 @@ type instanceView struct {
 	ConfigPath        string                       `json:"config_path"`
 	Running           bool                         `json:"running"`
 	Healthy           bool                         `json:"healthy"`
+	RestartDesired    bool                         `json:"restart_desired"`
+	RestartCount      int                          `json:"restart_count"`
+	LastExit          string                       `json:"last_exit,omitempty"`
 	LogDir            string                       `json:"log_dir"`
 	ListenHost        string                       `json:"listen_host"`
 	WirePort          int                          `json:"wire_port"`
@@ -68,7 +72,7 @@ type instanceView struct {
 
 func newSupervisorServer(manifestPath, generatedDir string, generated []fleet.GeneratedConfig) *supervisorServer {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &supervisorServer{manifestPath: manifestPath, generatedDir: generatedDir, generated: generated, cmds: map[string]*exec.Cmd{}, ctx: ctx, cancel: cancel}
+	return &supervisorServer{manifestPath: manifestPath, generatedDir: generatedDir, generated: generated, cmds: map[string]*exec.Cmd{}, restart: map[string]restartMeta{}, ctx: ctx, cancel: cancel}
 }
 
 func (s *supervisorServer) routes() http.Handler {
@@ -196,10 +200,12 @@ func (s *supervisorServer) instanceViews() []instanceView {
 		inst := gen.Instance
 		controlURL := fmt.Sprintf("http://%s:%d", inst.ListenHost, inst.ControlPort)
 		wireURL := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.EGMEndpoint.Port, inst.EGMEndpoint.Path)
-		cmd, running := s.cmds[inst.InstanceID]
+		cmd := s.cmds[inst.InstanceID]
+		running := processRunning(cmd)
+		meta := s.restartMeta(inst.InstanceID)
 		healthy := false
 		indicators := childIndicators{}
-		if running && cmd != nil && cmd.Process != nil {
+		if running {
 			healthy, _ = isHealthy(controlURL + "/healthz")
 			if healthy {
 				indicators, _ = fetchChildIndicators(controlURL)
@@ -220,6 +226,9 @@ func (s *supervisorServer) instanceViews() []instanceView {
 			ConfigPath:        gen.Path,
 			Running:           running,
 			Healthy:           healthy,
+			RestartDesired:    meta.Desired,
+			RestartCount:      meta.RestartCount,
+			LastExit:          meta.LastExit,
 			LogDir:            inst.LogDir,
 			ListenHost:        inst.ListenHost,
 			WirePort:          inst.WirePort,
@@ -251,9 +260,10 @@ func (s *supervisorServer) instanceViews() []instanceView {
 func (s *supervisorServer) startOne(instanceID string) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if cmd := s.cmds[instanceID]; cmd != nil && cmd.Process != nil {
+	if cmd := s.cmds[instanceID]; processRunning(cmd) {
 		return false, nil
 	}
+	delete(s.cmds, instanceID)
 	gen, ok := s.generatedByID(instanceID)
 	if !ok {
 		return false, fmt.Errorf("instance %q not found", instanceID)
@@ -263,14 +273,18 @@ func (s *supervisorServer) startOne(instanceID string) (bool, error) {
 		return false, err
 	}
 	s.cmds[instanceID] = cmd
+	s.markDesired(instanceID, true)
+	go s.monitorChild(instanceID)
 	return true, nil
 }
 
 func (s *supervisorServer) stopOne(instanceID string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.markDesired(instanceID, false)
 	cmd := s.cmds[instanceID]
 	if cmd == nil || cmd.Process == nil {
+		delete(s.cmds, instanceID)
 		return false
 	}
 	_ = cmd.Process.Kill()
@@ -292,6 +306,11 @@ func (s *supervisorServer) shutdown() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for id, cmd := range s.cmds {
+		if s.restart != nil {
+			meta := s.restart[id]
+			meta.Desired = false
+			s.restart[id] = meta
+		}
 		if cmd != nil && cmd.Process != nil {
 			_ = cmd.Process.Kill()
 		}
