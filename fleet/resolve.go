@@ -17,7 +17,34 @@ func ResolveInstances(m *Manifest) ([]EffectiveInstance, error) {
 		}
 		out = append(out, eff)
 	}
+	if err := validateResolvedInstances(out); err != nil {
+		return nil, err
+	}
 	return out, nil
+}
+
+func validateResolvedInstances(instances []EffectiveInstance) error {
+	wireByBind := map[string]string{}
+	controlByBind := map[string]string{}
+	egmsByEndpoint := map[string]string{}
+	for _, inst := range instances {
+		wireKey := fmt.Sprintf("%s:%d", inst.ListenHost, inst.WirePort)
+		if prior, ok := wireByBind[wireKey]; ok {
+			return fmt.Errorf("resolved wire endpoint %s for %q duplicates %q", wireKey, inst.InstanceID, prior)
+		}
+		wireByBind[wireKey] = inst.InstanceID
+		controlKey := fmt.Sprintf("%s:%d", inst.ListenHost, inst.ControlPort)
+		if prior, ok := controlByBind[controlKey]; ok {
+			return fmt.Errorf("resolved control endpoint %s for %q duplicates %q", controlKey, inst.InstanceID, prior)
+		}
+		controlByBind[controlKey] = inst.InstanceID
+		egmKey := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.EGMEndpoint.Port, inst.EGMEndpoint.Path)
+		if prior, ok := egmsByEndpoint[egmKey]; ok {
+			return fmt.Errorf("resolved egm endpoint %s for %q duplicates %q", egmKey, inst.InstanceID, prior)
+		}
+		egmsByEndpoint[egmKey] = inst.InstanceID
+	}
+	return nil
 }
 
 func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, error) {
