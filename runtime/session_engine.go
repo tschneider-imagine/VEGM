@@ -36,6 +36,19 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			}
 			continue
 		}
+		if err := s.runStartupExchange(ctx, sessionID); err != nil {
+			s.mu.Lock()
+			s.state.SessionState = "startup_failed"
+			s.state.ConnectionState = "host_connected"
+			s.state.HeartbeatState = "failed"
+			s.state.LastError = err.Error()
+			s.mu.Unlock()
+			s.logger.Log("warn", "session", "startup exchange failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID})
+			if !sleepOrDone(ctx, time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS)*time.Millisecond) {
+				return
+			}
+			continue
+		}
 		if ok := s.runKeepAliveLoop(ctx, sessionID); !ok {
 			return
 		}
@@ -50,7 +63,7 @@ func (s *Server) runKeepAliveLoop(ctx context.Context, sessionID string) bool {
 	if interval <= 0 {
 		interval = 5 * time.Second
 	}
-	// Send one immediately after commsOnLineAck, then continue on interval.
+	// Send one immediately after startup exchange, then continue on interval.
 	if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
 		s.recordKeepAliveFailure(sessionID, err)
 		return true
@@ -126,16 +139,19 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	if parsed.RootLocalName != "commsOnLineAck" {
 		return "", fmt.Errorf("expected commsOnLineAck, got %s", parsed.RootLocalName)
 	}
+	now := time.Now().UTC()
 	s.mu.Lock()
 	s.state.SessionState = "online"
 	s.state.ConnectionState = "host_connected"
 	s.state.HeartbeatState = "idle"
 	s.state.LastMessageType = "commsOnLineAck"
 	s.state.LastCommandType = "commsOnLine"
-	s.state.LastCommandAt = time.Now().UTC()
+	s.state.LastCommandAt = now
 	s.state.LastSessionID = sessionID
 	s.state.LastHostID = s.cfg.HostID
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
+	s.state.LastCommsOnlineAt = now
+	s.state.LastAckAt = now
 	s.state.LastError = ""
 	s.mu.Unlock()
 	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck"})
