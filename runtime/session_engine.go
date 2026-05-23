@@ -22,7 +22,8 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			return
 		default:
 		}
-		if err := s.runCommsOnlineOnce(ctx); err != nil {
+		sessionID, err := s.runCommsOnlineOnce(ctx)
+		if err != nil {
 			s.mu.Lock()
 			s.state.SessionState = "connect_failed"
 			s.state.ConnectionState = "host_unreachable"
@@ -36,13 +37,20 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 				continue
 			}
 		}
+		if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
+			s.mu.Lock()
+			s.state.HeartbeatState = "failed"
+			s.state.LastError = err.Error()
+			s.mu.Unlock()
+			s.logger.Log("warn", "session", "keepAlive failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "message_type": "keepAlive"})
+		}
 		return
 	}
 }
 
-func (s *Server) runCommsOnlineOnce(ctx context.Context) error {
+func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	if s.cfg.HostEndpoint.URL == "" {
-		return fmt.Errorf("host endpoint url is empty")
+		return "", fmt.Errorf("host endpoint url is empty")
 	}
 	sessionID := fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UTC().UnixNano())
 	body := s.renderCommsOnline(sessionID)
@@ -52,12 +60,12 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) error {
 	client := &http.Client{Timeout: time.Duration(s.cfg.SessionEngine.CommsOnlineTimeoutMS) * time.Millisecond}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.HostEndpoint.URL, bytes.NewBufferString(body))
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 	buf := new(bytes.Buffer)
@@ -66,14 +74,14 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) error {
 		_, _ = s.logger.WritePayload("inbound_response", "commsOnLineAck", buf.Bytes())
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("commsOnLine status %d", resp.StatusCode)
+		return "", fmt.Errorf("commsOnLine status %d", resp.StatusCode)
 	}
 	parsed, err := ParseG2SMessage(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("parse commsOnLineAck: %w", err)
+		return "", fmt.Errorf("parse commsOnLineAck: %w", err)
 	}
 	if parsed.RootLocalName != "commsOnLineAck" {
-		return fmt.Errorf("expected commsOnLineAck, got %s", parsed.RootLocalName)
+		return "", fmt.Errorf("expected commsOnLineAck, got %s", parsed.RootLocalName)
 	}
 	s.mu.Lock()
 	s.state.SessionState = "online"
@@ -87,8 +95,8 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) error {
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
 	s.state.LastError = ""
 	s.mu.Unlock()
-	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode})
-	return nil
+	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck"})
+	return sessionID, nil
 }
 
 func (s *Server) renderCommsOnline(sessionID string) string {
