@@ -33,7 +33,7 @@
       <button id="refreshBtn">Refresh</button>
       <button id="nextBtn">Fill next machine</button>
     </div>
-    <p class="muted">Add/remove test machines from the fleet manifest. Changes regenerate configs immediately. Removing a running machine stops it first.</p>
+    <p class="muted">Add/remove test machines from the fleet manifest. Lab network defaults: VEGM host IP 192.168.10.162, controller http://tspi4.local:8444/g2s, subnet 255.255.255.0.</p>
   </div>
 
   <div class="panel">
@@ -45,11 +45,12 @@
       <div class="field"><label>Group</label><input id="add_group" value="bank_a"></div>
       <div class="field"><label>Wire Port</label><input id="add_wire_port" type="number" value="18445"></div>
       <div class="field"><label>Control Port</label><input id="add_control_port" type="number" value="19003"></div>
-      <div class="field"><label>EGM Endpoint Host</label><input id="add_endpoint_host" value="vegm-003.floor.local"></div>
+      <div class="field"><label>EGM Endpoint Host</label><input id="add_endpoint_host" value="192.168.10.162"></div>
       <div class="field"><label>EGM Endpoint Port</label><input id="add_endpoint_port" type="number" value="18445"></div>
       <div class="field"><label>EGM Endpoint Path</label><input id="add_endpoint_path" value="/g2s"></div>
-      <div class="field"><label>Advertised Host</label><input id="add_advertised_host" value="vegm-003.floor.local"></div>
-      <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" value="192.168.10.103"></div>
+      <div class="field"><label>Host Endpoint URL</label><input id="add_host_endpoint_url" value="http://tspi4.local:8444/g2s"></div>
+      <div class="field"><label>Advertised Host</label><input id="add_advertised_host" value="192.168.10.162"></div>
+      <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" value="192.168.10.162"></div>
     </div>
     <div class="row" style="margin-top:12px;">
       <button id="addBtn">Add machine</button>
@@ -80,6 +81,8 @@
   </div>
 </div>
 <script>
+const LAB_VEGM_HOST_IP = '192.168.10.162';
+const LAB_CONTROLLER_URL = 'http://tspi4.local:8444/g2s';
 let currentInstances = [];
 async function fetchJson(url, opts) {
   const r = await fetch(url, opts);
@@ -111,12 +114,6 @@ function trailingNumber(value) {
 function replaceTrailingNumber(value, next, width) {
   return String(value || '').replace(/(\d+)(?!.*\d)/, pad(next, width));
 }
-function nextIPv4(ip) {
-  const parts = String(ip || '').split('.').map(Number);
-  if (parts.length !== 4 || parts.some(x => !Number.isInteger(x) || x < 0 || x > 255)) return '192.168.10.103';
-  parts[3] = Math.min(254, parts[3] + 1);
-  return parts.join('.');
-}
 function fillNextMachine(instances) {
   const list = instances || [];
   let last = null;
@@ -136,21 +133,18 @@ function fillNextMachine(instances) {
   const nextEGM = last?.egm_id ? replaceTrailingNumber(last.egm_id, next, egmWidth) : `EGM-${pad(next, 3)}`;
   const nextWire = Math.max(18442, ...list.map(x => Number(x.wire_port || x.egm_endpoint?.port || 0))) + 1;
   const nextControl = Math.max(19000, ...list.map(x => Number(x.control_port || 0))) + 1;
-  const endpointHost = last?.egm_endpoint?.host || last?.advertised_host || `${nextInstance}.floor.local`;
-  const nextEndpointHost = trailingNumber(endpointHost) ? replaceTrailingNumber(endpointHost, next, idWidth) : `${nextInstance}.floor.local`;
-  const advertisedHost = last?.advertised_host || endpointHost;
-  const nextAdvertisedHost = trailingNumber(advertisedHost) ? replaceTrailingNumber(advertisedHost, next, idWidth) : nextEndpointHost;
   setv('add_instance_id', nextInstance);
   setv('add_egm_id', nextEGM);
   setv('add_host_id', last?.host_id || 'HOST-001');
   setv('add_group', last?.group || 'bank_a');
   setv('add_wire_port', nextWire);
   setv('add_control_port', nextControl);
-  setv('add_endpoint_host', nextEndpointHost);
+  setv('add_endpoint_host', LAB_VEGM_HOST_IP);
   setv('add_endpoint_port', nextWire);
   setv('add_endpoint_path', last?.egm_endpoint?.path || '/g2s');
-  setv('add_advertised_host', nextAdvertisedHost);
-  setv('add_advertised_ip', nextIPv4(last?.advertised_ip));
+  setv('add_host_endpoint_url', last?.host_endpoint?.url || LAB_CONTROLLER_URL);
+  setv('add_advertised_host', LAB_VEGM_HOST_IP);
+  setv('add_advertised_ip', LAB_VEGM_HOST_IP);
   setv('remove_instance_id', nextInstance);
 }
 async function refresh() {
@@ -188,8 +182,11 @@ async function addMachine() {
       port: endpointPort,
       path: v('add_endpoint_path') || '/g2s'
     },
+    host_endpoint: {
+      url: v('add_host_endpoint_url') || LAB_CONTROLLER_URL
+    },
     advertised_host: v('add_advertised_host') || endpointHost,
-    advertised_ip: v('add_advertised_ip')
+    advertised_ip: v('add_advertised_ip') || LAB_VEGM_HOST_IP
   };
   try {
     const data = await fetchJson('/api/fleet/instances/add', {
