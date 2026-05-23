@@ -28,8 +28,12 @@ func TestRunCommsOnlineOnce_MockHostAck(t *testing.T) {
 	srv.cfg.SessionEngine.Enabled = true
 	srv.cfg.SessionEngine.CommsOnlineTimeoutMS = 3000
 
-	if err := srv.runCommsOnlineOnce(context.Background()); err != nil {
+	sessionID, err := srv.runCommsOnlineOnce(context.Background())
+	if err != nil {
 		t.Fatalf("runCommsOnlineOnce failed: %v", err)
+	}
+	if sessionID == "" {
+		t.Fatalf("expected returned session id")
 	}
 	if !seenRequest {
 		t.Fatalf("mock host did not receive commsOnLine")
@@ -60,7 +64,7 @@ func TestRunCommsOnlineOnce_RejectsWrongAck(t *testing.T) {
 	srv.cfg.SessionEngine.Enabled = true
 	srv.cfg.SessionEngine.CommsOnlineTimeoutMS = 3000
 
-	if err := srv.runCommsOnlineOnce(context.Background()); err == nil {
+	if _, err := srv.runCommsOnlineOnce(context.Background()); err == nil {
 		t.Fatalf("expected wrong ACK error")
 	}
 }
