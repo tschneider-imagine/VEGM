@@ -47,25 +47,43 @@ type EventFilter struct {
 
 type ExportOptions struct {
 	OutputDir        string
+	RunID            string
 	Since            time.Time
 	Until            time.Time
 	IncludePayloads  bool
 	StateSnapshot    any
 	ConfigSnapshot   any
 	PackSummary      any
+	PassFailNotes    string
 }
 
 type ExportBundle struct {
-	GeneratedAt     time.Time `json:"generated_at"`
-	InstanceID      string    `json:"instance_id"`
-	Since           time.Time `json:"since,omitempty"`
-	Until           time.Time `json:"until,omitempty"`
-	IncludePayloads bool      `json:"include_payloads"`
-	Events          []Event   `json:"events"`
-	PayloadFiles    []string  `json:"payload_files,omitempty"`
-	StateSnapshot   any       `json:"state_snapshot,omitempty"`
-	ConfigSnapshot  any       `json:"config_snapshot,omitempty"`
-	PackSummary     any       `json:"pack_summary,omitempty"`
+	GeneratedAt          time.Time             `json:"generated_at"`
+	RunID                string                `json:"run_id"`
+	InstanceID           string                `json:"instance_id"`
+	Since                time.Time             `json:"since,omitempty"`
+	Until                time.Time             `json:"until,omitempty"`
+	IncludePayloads      bool                  `json:"include_payloads"`
+	ReasonBucket         string                `json:"reason_bucket"`
+	PassFailNotes        string                `json:"pass_fail_notes,omitempty"`
+	Events               []Event               `json:"events"`
+	MessageSummary       []MessageSummaryEntry `json:"message_summary,omitempty"`
+	PayloadFiles         []string              `json:"payload_files,omitempty"`
+	StateTransitions     []Event               `json:"state_transitions,omitempty"`
+	FirstMessageWorksheet map[string]any        `json:"first_message_worksheet,omitempty"`
+	StateSnapshot        any                   `json:"state_snapshot,omitempty"`
+	ConfigSnapshot       any                   `json:"config_snapshot,omitempty"`
+	PackSummary          any                   `json:"pack_summary,omitempty"`
+}
+
+type MessageSummaryEntry struct {
+	Time        time.Time `json:"time"`
+	Category    string    `json:"category"`
+	Message     string    `json:"message"`
+	MessageType string    `json:"message_type,omitempty"`
+	HostID      string    `json:"host_id,omitempty"`
+	SessionID   string    `json:"session_id,omitempty"`
+	Status      string    `json:"status,omitempty"`
 }
 
 func NewLogger(dir, instanceID string) (*Logger, error) {
@@ -154,7 +172,11 @@ func (l *Logger) ExportBundle(opts ExportOptions) (string, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", err
 	}
-	bundlePath := filepath.Join(outDir, fmt.Sprintf("%s_%s_bundle.json", time.Now().UTC().Format("20060102T150405Z"), sanitizeFilePart(l.instanceID)))
+	runID := opts.RunID
+	if runID == "" {
+		runID = time.Now().UTC().Format("20060102T150405Z")
+	}
+	bundlePath := filepath.Join(outDir, fmt.Sprintf("%s_%s_bundle.json", sanitizeFilePart(runID), sanitizeFilePart(l.instanceID)))
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	events, err := l.queryEventsLocked(EventFilter{Since: opts.Since, Until: opts.Until})
@@ -162,15 +184,21 @@ func (l *Logger) ExportBundle(opts ExportOptions) (string, error) {
 		return "", err
 	}
 	bundle := ExportBundle{
-		GeneratedAt:     time.Now().UTC(),
-		InstanceID:      l.instanceID,
-		Since:           opts.Since,
-		Until:           opts.Until,
-		IncludePayloads: opts.IncludePayloads,
-		Events:          events,
-		StateSnapshot:   opts.StateSnapshot,
-		ConfigSnapshot:  opts.ConfigSnapshot,
-		PackSummary:     opts.PackSummary,
+		GeneratedAt:          time.Now().UTC(),
+		RunID:                runID,
+		InstanceID:           l.instanceID,
+		Since:                opts.Since,
+		Until:                opts.Until,
+		IncludePayloads:      opts.IncludePayloads,
+		ReasonBucket:         reasonBucket(events),
+		PassFailNotes:        opts.PassFailNotes,
+		Events:               events,
+		MessageSummary:       summarizeMessages(events),
+		StateTransitions:     filterEventsByCategory(events, "state"),
+		FirstMessageWorksheet: firstMessageWorksheet(events),
+		StateSnapshot:        opts.StateSnapshot,
+		ConfigSnapshot:       opts.ConfigSnapshot,
+		PackSummary:          opts.PackSummary,
 	}
 	if opts.IncludePayloads {
 		entries, err := os.ReadDir(l.payloadDir)
@@ -271,6 +299,66 @@ func flattenFields(fields map[string]any) string {
 		b.WriteByte(' ')
 	}
 	return b.String()
+}
+
+func reasonBucket(events []Event) string {
+	for _, evt := range events {
+		if evt.Level == "warn" || evt.Level == "error" {
+			switch evt.Category {
+			case "binding", "soap", "wire", "session":
+				return evt.Category
+			default:
+				return "runtime"
+			}
+		}
+	}
+	return "none"
+}
+
+func summarizeMessages(events []Event) []MessageSummaryEntry {
+	var out []MessageSummaryEntry
+	for _, evt := range events {
+		if evt.Category != "wire" && evt.Category != "session" && evt.Category != "binding" && evt.Category != "soap" {
+			continue
+		}
+		out = append(out, MessageSummaryEntry{
+			Time:        evt.Time,
+			Category:    evt.Category,
+			Message:     evt.Message,
+			MessageType: firstField(evt.Fields, "message_type", "messageType"),
+			HostID:      firstField(evt.Fields, "host_id", "hostId"),
+			SessionID:   firstField(evt.Fields, "session_id", "sessionId"),
+			Status:      firstField(evt.Fields, "status"),
+		})
+	}
+	return out
+}
+
+func filterEventsByCategory(events []Event, category string) []Event {
+	var out []Event
+	for _, evt := range events {
+		if evt.Category == category {
+			out = append(out, evt)
+		}
+	}
+	return out
+}
+
+func firstMessageWorksheet(events []Event) map[string]any {
+	for _, evt := range events {
+		if evt.Category == "wire" || evt.Category == "session" {
+			return map[string]any{
+				"time":         evt.Time,
+				"category":     evt.Category,
+				"message":      evt.Message,
+				"message_type": firstField(evt.Fields, "message_type", "messageType"),
+				"host_id":      firstField(evt.Fields, "host_id", "hostId"),
+				"session_id":   firstField(evt.Fields, "session_id", "sessionId"),
+				"status":       firstField(evt.Fields, "status"),
+			}
+		}
+	}
+	return nil
 }
 
 func sanitizeFilePart(s string) string {
