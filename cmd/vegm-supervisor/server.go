@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/tschneider-imagine/VEGM/fleet"
+	runtimecfg "github.com/tschneider-imagine/VEGM/runtime"
 	"github.com/tschneider-imagine/VEGM/webui"
 )
 
@@ -26,42 +27,43 @@ type supervisorServer struct {
 }
 
 type instanceView struct {
-	InstanceID      string        `json:"instance_id"`
-	EGMID           string        `json:"egm_id"`
-	HostID          string        `json:"host_id"`
-	Group           string        `json:"group"`
-	Profile         string        `json:"profile"`
-	Manufacturer    string        `json:"manufacturer,omitempty"`
-	EGMEndpoint     fleet.Endpoint `json:"egm_endpoint"`
-	HostEndpoint    fleet.HostEndpoint `json:"host_endpoint,omitempty"`
-	WireURL         string        `json:"wire_url"`
-	ControlURL      string        `json:"control_url"`
-	UIURL           string        `json:"ui_url"`
-	ConfigPath      string        `json:"config_path"`
-	Running         bool          `json:"running"`
-	Healthy         bool          `json:"healthy"`
-	LogDir          string        `json:"log_dir"`
-	ListenHost      string        `json:"listen_host"`
-	WirePort        int           `json:"wire_port"`
-	ControlPort     int           `json:"control_port"`
-	AdvertisedHost  string        `json:"advertised_host,omitempty"`
-	AdvertisedIP    string        `json:"advertised_ip,omitempty"`
-	DNSServers      []string      `json:"dns_servers,omitempty"`
-	SubnetMask      string        `json:"subnet_mask,omitempty"`
-	Gateway         string        `json:"gateway,omitempty"`
-	ServerName      string        `json:"server_name,omitempty"`
-	TrustMode       string        `json:"trust_mode"`
-	CertFile        string        `json:"cert_file,omitempty"`
-	KeyFile         string        `json:"key_file,omitempty"`
-	CAFile          string        `json:"ca_file,omitempty"`
-	SessionState    string        `json:"session_state,omitempty"`
-	HeartbeatState  string        `json:"heartbeat_state,omitempty"`
-	ConnectionState string        `json:"connection_state,omitempty"`
-	AudioState      string        `json:"audio_state,omitempty"`
-	HoldState       string        `json:"hold_state,omitempty"`
-	LockState       string        `json:"lock_state,omitempty"`
-	MachineState    string        `json:"machine_state,omitempty"`
-	LastCommandType string        `json:"last_command_type,omitempty"`
+	InstanceID        string                       `json:"instance_id"`
+	EGMID             string                       `json:"egm_id"`
+	HostID            string                       `json:"host_id"`
+	Group             string                       `json:"group"`
+	Profile           string                       `json:"profile"`
+	Manufacturer      string                       `json:"manufacturer,omitempty"`
+	EGMEndpoint       fleet.Endpoint               `json:"egm_endpoint"`
+	HostEndpoint      fleet.HostEndpoint           `json:"host_endpoint,omitempty"`
+	WireURL           string                       `json:"wire_url"`
+	ControlURL        string                       `json:"control_url"`
+	UIURL             string                       `json:"ui_url"`
+	ConfigPath        string                       `json:"config_path"`
+	Running           bool                         `json:"running"`
+	Healthy           bool                         `json:"healthy"`
+	LogDir            string                       `json:"log_dir"`
+	ListenHost        string                       `json:"listen_host"`
+	WirePort          int                          `json:"wire_port"`
+	ControlPort       int                          `json:"control_port"`
+	AdvertisedHost    string                       `json:"advertised_host,omitempty"`
+	AdvertisedIP      string                       `json:"advertised_ip,omitempty"`
+	DNSServers        []string                     `json:"dns_servers,omitempty"`
+	SubnetMask        string                       `json:"subnet_mask,omitempty"`
+	Gateway           string                       `json:"gateway,omitempty"`
+	ServerName        string                       `json:"server_name,omitempty"`
+	TrustMode         string                       `json:"trust_mode"`
+	CertFile          string                       `json:"cert_file,omitempty"`
+	KeyFile           string                       `json:"key_file,omitempty"`
+	CAFile            string                       `json:"ca_file,omitempty"`
+	CertificateStatus runtimecfg.CertificateStatus `json:"certificate_status"`
+	SessionState      string                       `json:"session_state,omitempty"`
+	HeartbeatState    string                       `json:"heartbeat_state,omitempty"`
+	ConnectionState   string                       `json:"connection_state,omitempty"`
+	AudioState        string                       `json:"audio_state,omitempty"`
+	HoldState         string                       `json:"hold_state,omitempty"`
+	LockState         string                       `json:"lock_state,omitempty"`
+	MachineState      string                       `json:"machine_state,omitempty"`
+	LastCommandType   string                       `json:"last_command_type,omitempty"`
 }
 
 func newSupervisorServer(manifestPath, generatedDir string, generated []fleet.GeneratedConfig) *supervisorServer {
@@ -203,42 +205,43 @@ func (s *supervisorServer) instanceViews() []instanceView {
 			}
 		}
 		out = append(out, instanceView{
-			InstanceID:      inst.InstanceID,
-			EGMID:           inst.EGMID,
-			HostID:          inst.HostID,
-			Group:           inst.Group,
-			Profile:         inst.Profile,
-			Manufacturer:    inst.Manufacturer,
-			EGMEndpoint:     inst.EGMEndpoint,
-			HostEndpoint:    inst.HostEndpoint,
-			WireURL:         wireURL,
-			ControlURL:      controlURL,
-			UIURL:           controlURL + "/ui/scenario-runner.html",
-			ConfigPath:      gen.Path,
-			Running:         running,
-			Healthy:         healthy,
-			LogDir:          inst.LogDir,
-			ListenHost:      inst.ListenHost,
-			WirePort:        inst.WirePort,
-			ControlPort:     inst.ControlPort,
-			AdvertisedHost:  inst.AdvertisedHost,
-			AdvertisedIP:    inst.AdvertisedIP,
-			DNSServers:      inst.DNSServers,
-			SubnetMask:      inst.SubnetMask,
-			Gateway:         inst.Gateway,
-			ServerName:      inst.ServerName,
-			TrustMode:       inst.TrustMode,
-			CertFile:        inst.CertFile,
-			KeyFile:         inst.KeyFile,
-			CAFile:          inst.CAFile,
-			SessionState:    indicators.SessionState,
-			HeartbeatState:  indicators.HeartbeatState,
-			ConnectionState: indicators.ConnectionState,
-			AudioState:      indicators.AudioState,
-			HoldState:       indicators.HoldState,
-			LockState:       indicators.LockState,
-			MachineState:    indicators.MachineState,
-			LastCommandType: indicators.LastCommandType,
+			InstanceID:        inst.InstanceID,
+			EGMID:             inst.EGMID,
+			HostID:            inst.HostID,
+			Group:             inst.Group,
+			Profile:           inst.Profile,
+			Manufacturer:      inst.Manufacturer,
+			EGMEndpoint:       inst.EGMEndpoint,
+			HostEndpoint:      inst.HostEndpoint,
+			WireURL:           wireURL,
+			ControlURL:        controlURL,
+			UIURL:             controlURL + "/ui/scenario-runner.html",
+			ConfigPath:        gen.Path,
+			Running:           running,
+			Healthy:           healthy,
+			LogDir:            inst.LogDir,
+			ListenHost:        inst.ListenHost,
+			WirePort:          inst.WirePort,
+			ControlPort:       inst.ControlPort,
+			AdvertisedHost:    inst.AdvertisedHost,
+			AdvertisedIP:      inst.AdvertisedIP,
+			DNSServers:        inst.DNSServers,
+			SubnetMask:        inst.SubnetMask,
+			Gateway:           inst.Gateway,
+			ServerName:        inst.ServerName,
+			TrustMode:         inst.TrustMode,
+			CertFile:          inst.CertFile,
+			KeyFile:           inst.KeyFile,
+			CAFile:            inst.CAFile,
+			CertificateStatus: runtimecfg.BuildCertificateStatus(&gen.Config),
+			SessionState:      indicators.SessionState,
+			HeartbeatState:    indicators.HeartbeatState,
+			ConnectionState:   indicators.ConnectionState,
+			AudioState:        indicators.AudioState,
+			HoldState:         indicators.HoldState,
+			LockState:         indicators.LockState,
+			MachineState:      indicators.MachineState,
+			LastCommandType:   indicators.LastCommandType,
 		})
 	}
 	return out
