@@ -29,6 +29,10 @@ func TestSessionEngineAutoStartSendsRecurringKeepAlive(t *testing.T) {
 		switch parsed.RootLocalName {
 		case "commsOnLine":
 			_, _ = io.WriteString(w, soapResponse("commsOnLineAck", parsed.Fields["hostId"], parsed.Fields["egmId"], parsed.Fields["sessionId"]))
+		case "getDescriptor":
+			_, _ = io.WriteString(w, soapResponse("descriptorList", parsed.Fields["hostId"], parsed.Fields["egmId"], parsed.Fields["sessionId"]))
+		case "setKeepAlive":
+			_, _ = io.WriteString(w, soapResponse("setKeepAliveAck", parsed.Fields["hostId"], parsed.Fields["egmId"], parsed.Fields["sessionId"]))
 		case "keepAlive":
 			_, _ = io.WriteString(w, soapResponse("keepAliveAck", parsed.Fields["hostId"], parsed.Fields["egmId"], parsed.Fields["sessionId"]))
 		default:
@@ -80,9 +84,11 @@ func TestSessionEngineAutoStartSendsRecurringKeepAlive(t *testing.T) {
 	for time.Now().Before(deadline) {
 		mu.Lock()
 		comms := counts["commsOnLine"]
+		descriptor := counts["getDescriptor"]
+		setKeepAlive := counts["setKeepAlive"]
 		keep := counts["keepAlive"]
 		mu.Unlock()
-		if comms >= 1 && keep >= 2 {
+		if comms >= 1 && descriptor >= 1 && setKeepAlive >= 1 && keep >= 2 {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -90,10 +96,18 @@ func TestSessionEngineAutoStartSendsRecurringKeepAlive(t *testing.T) {
 
 	mu.Lock()
 	comms := counts["commsOnLine"]
+	descriptor := counts["getDescriptor"]
+	setKeepAlive := counts["setKeepAlive"]
 	keep := counts["keepAlive"]
 	mu.Unlock()
 	if comms < 1 {
 		t.Fatalf("expected commsOnLine, got %d", comms)
+	}
+	if descriptor < 1 {
+		t.Fatalf("expected getDescriptor, got %d", descriptor)
+	}
+	if setKeepAlive < 1 {
+		t.Fatalf("expected setKeepAlive, got %d", setKeepAlive)
 	}
 	if keep < 2 {
 		t.Fatalf("expected recurring keepAlive, got %d", keep)
