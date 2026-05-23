@@ -27,24 +27,67 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			s.mu.Lock()
 			s.state.SessionState = "connect_failed"
 			s.state.ConnectionState = "host_unreachable"
-			s.state.LastError = err.Error()
-			s.mu.Unlock()
-			s.logger.Log("warn", "session", "commsOnLine failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL})
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS) * time.Millisecond):
-				continue
-			}
-		}
-		if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
-			s.mu.Lock()
 			s.state.HeartbeatState = "failed"
 			s.state.LastError = err.Error()
 			s.mu.Unlock()
-			s.logger.Log("warn", "session", "keepAlive failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "message_type": "keepAlive"})
+			s.logger.Log("warn", "session", "commsOnLine failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "message_type": "commsOnLine"})
+			if !sleepOrDone(ctx, time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS)*time.Millisecond) {
+				return
+			}
+			continue
 		}
-		return
+		if ok := s.runKeepAliveLoop(ctx, sessionID); !ok {
+			return
+		}
+		if !sleepOrDone(ctx, time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS)*time.Millisecond) {
+			return
+		}
+	}
+}
+
+func (s *Server) runKeepAliveLoop(ctx context.Context, sessionID string) bool {
+	interval := time.Duration(s.cfg.SessionEngine.KeepAliveIntervalMS) * time.Millisecond
+	if interval <= 0 {
+		interval = 5 * time.Second
+	}
+	// Send one immediately after commsOnLineAck, then continue on interval.
+	if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
+		s.recordKeepAliveFailure(sessionID, err)
+		return true
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-ticker.C:
+			if err := s.runKeepAliveOnce(ctx, sessionID); err != nil {
+				s.recordKeepAliveFailure(sessionID, err)
+				return true
+			}
+		}
+	}
+}
+
+func (s *Server) recordKeepAliveFailure(sessionID string, err error) {
+	s.mu.Lock()
+	s.state.HeartbeatState = "failed"
+	s.state.ConnectionState = "host_unreachable"
+	s.state.LastError = err.Error()
+	s.mu.Unlock()
+	s.logger.Log("warn", "session", "keepAlive failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "message_type": "keepAlive"})
+}
+
+func sleepOrDone(ctx context.Context, d time.Duration) bool {
+	if d <= 0 {
+		d = 5 * time.Second
+	}
+	select {
+	case <-ctx.Done():
+		return false
+	case <-time.After(d):
+		return true
 	}
 }
 
