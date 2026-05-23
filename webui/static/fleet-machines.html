@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VEGM Fleet Machines</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
+    .wrap { padding: 16px; display: grid; gap: 16px; max-width: 1100px; }
+    .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
+    .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button, input, select { background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    input, select { width: 100%; box-sizing: border-box; }
+    label { font-size: 12px; color: #cbd5e1; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
+    a { color: #93c5fd; }
+    .ok { color: #34d399; }
+    .bad { color: #f87171; }
+    .muted { color: #94a3b8; }
+    .mono { font-family: Consolas, monospace; font-size: 12px; }
+    .field { display: grid; gap: 4px; }
+    pre { white-space: pre-wrap; background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 12px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <h1>VEGM Fleet Machines</h1>
+    <div class="row">
+      <a href="/ui/supervisor.html">Back to Supervisor</a>
+      <button id="refreshBtn">Refresh</button>
+    </div>
+    <p class="muted">Add/remove test machines from the fleet manifest. Changes regenerate configs immediately. Removing a running machine stops it first.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Add test machine</h2>
+    <div class="grid">
+      <div class="field"><label>Instance ID</label><input id="add_instance_id" placeholder="vegm-003"></div>
+      <div class="field"><label>EGM ID</label><input id="add_egm_id" placeholder="EGM-003"></div>
+      <div class="field"><label>Host ID</label><input id="add_host_id" value="HOST-001"></div>
+      <div class="field"><label>Group</label><input id="add_group" value="bank_a"></div>
+      <div class="field"><label>Wire Port</label><input id="add_wire_port" type="number" placeholder="18445"></div>
+      <div class="field"><label>Control Port</label><input id="add_control_port" type="number" placeholder="19003"></div>
+      <div class="field"><label>EGM Endpoint Host</label><input id="add_endpoint_host" placeholder="vegm-003.floor.local"></div>
+      <div class="field"><label>EGM Endpoint Port</label><input id="add_endpoint_port" type="number" placeholder="18445"></div>
+      <div class="field"><label>EGM Endpoint Path</label><input id="add_endpoint_path" value="/g2s"></div>
+      <div class="field"><label>Advertised Host</label><input id="add_advertised_host" placeholder="vegm-003.floor.local"></div>
+      <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" placeholder="192.168.10.103"></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button id="addBtn">Add machine</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Remove test machine</h2>
+    <div class="grid">
+      <div class="field"><label>Instance ID</label><input id="remove_instance_id" placeholder="vegm-003"></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button id="removeBtn">Remove machine</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Current machines</h2>
+    <table>
+      <thead><tr><th>Instance</th><th>EGM</th><th>Group</th><th>Wire</th><th>Control</th><th>Endpoint</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Result</h2>
+    <pre id="result">Ready.</pre>
+  </div>
+</div>
+<script>
+async function fetchJson(url, opts) {
+  const r = await fetch(url, opts);
+  const text = await r.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { error: text }; }
+  if (!r.ok) throw new Error(data.error || text || `${r.status} ${r.statusText}`);
+  return data;
+}
+function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function endpointText(ep) {
+  if (!ep) return '';
+  return `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}`;
+}
+function n(id) { return Number(document.getElementById(id).value || 0); }
+function v(id) { return document.getElementById(id).value.trim(); }
+function show(data, ok=true) {
+  const result = document.getElementById('result');
+  result.className = ok ? 'ok' : 'bad';
+  result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+async function refresh() {
+  try {
+    const data = await fetchJson('/api/instances');
+    document.getElementById('rows').innerHTML = (data.instances || []).map(inst => `
+      <tr>
+        <td class="mono">${esc(inst.instance_id)}</td>
+        <td class="mono">${esc(inst.egm_id)}</td>
+        <td>${esc(inst.group)}</td>
+        <td class="mono">${esc(inst.listen_host)}:${esc(inst.wire_port)}</td>
+        <td class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</td>
+        <td class="mono">${esc(endpointText(inst.egm_endpoint))}</td>
+        <td>${inst.running ? '<span class="ok">running</span>' : '<span class="muted">stopped</span>'}</td>
+      </tr>`).join('');
+  } catch (err) {
+    show(err.message, false);
+  }
+}
+async function addMachine() {
+  const wirePort = n('add_wire_port');
+  const endpointPort = n('add_endpoint_port') || wirePort;
+  const endpointHost = v('add_endpoint_host');
+  const payload = {
+    instance_id: v('add_instance_id'),
+    egm_id: v('add_egm_id'),
+    host_id: v('add_host_id'),
+    group: v('add_group'),
+    wire_port: wirePort,
+    control_port: n('add_control_port'),
+    egm_endpoint: {
+      host: endpointHost,
+      port: endpointPort,
+      path: v('add_endpoint_path') || '/g2s'
+    },
+    advertised_host: v('add_advertised_host') || endpointHost,
+    advertised_ip: v('add_advertised_ip')
+  };
+  try {
+    const data = await fetchJson('/api/fleet/instances/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    show(data, true);
+    await refresh();
+  } catch (err) {
+    show(err.message, false);
+  }
+}
+async function removeMachine() {
+  const payload = { remove: true, instance_id: v('remove_instance_id') };
+  try {
+    const data = await fetchJson('/api/fleet/instances/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    show(data, true);
+    await refresh();
+  } catch (err) {
+    show(err.message, false);
+  }
+}
+document.getElementById('refreshBtn').addEventListener('click', refresh);
+document.getElementById('addBtn').addEventListener('click', addMachine);
+document.getElementById('removeBtn').addEventListener('click', removeMachine);
+refresh();
+</script>
+</body>
+</html>
