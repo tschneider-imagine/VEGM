@@ -258,7 +258,7 @@ func (s *supervisorServer) startOne(instanceID string) (bool, error) {
 	if !ok {
 		return false, fmt.Errorf("instance %q not found", instanceID)
 	}
-	cmd, err := startVEGMProcess(s.ctx, gen.Path)
+	cmd, err := startVEGMProcessForScale(s.ctx, gen.Path, gen.Instance.LogDir)
 	if err != nil {
 		return false, err
 	}
