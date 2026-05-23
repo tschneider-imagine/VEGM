@@ -16,6 +16,7 @@
     th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
     .ok { color: #34d399; }
     .bad { color: #f87171; }
+    .warn { color: #fbbf24; }
     .muted { color: #94a3b8; }
     .mono { font-family: Consolas, monospace; font-size: 12px; }
     a { color: #93c5fd; }
@@ -35,18 +36,18 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
     </div>
-    <div class="muted small" style="margin-top:8px;">Supervisor lifecycle, live machine status, and G2S endpoint settings for the simulated floor.</div>
+    <div class="muted small" style="margin-top:8px;">Pass 8 test bench: lifecycle, endpoints, cert status, live state, and evidence links from one screen.</div>
   </div>
   <div class="panel">
     <table>
       <thead>
         <tr>
-          <th>Instance</th>
-          <th>Status</th>
-          <th>State</th>
-          <th>G2S Endpoints</th>
-          <th>Network / Security</th>
-          <th>Links</th>
+          <th>Machine</th>
+          <th>Lifecycle</th>
+          <th>Live State</th>
+          <th>G2S Path</th>
+          <th>Trust / Cert</th>
+          <th>Evidence</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -55,7 +56,7 @@
   </div>
   <div class="panel">
     <h2>Edit machine settings</h2>
-    <div class="muted small">Per projectplan.md Pass 1: edit hostId, EGM endpoint, Host endpoint, protocol, and path first. Save + Restart applies runtime fields.</div>
+    <div class="muted small">Edit hostId, G2S endpoints, protocol, ports, and cert paths. Save + Restart applies runtime fields.</div>
     <div id="editorNotice" class="muted" style="margin-top:8px;">No machine selected.</div>
     <div class="grid" style="margin-top:10px;">
       <div class="field"><label>Instance ID</label><input id="f_instance_id" disabled></div>
@@ -101,17 +102,20 @@ function endpointText(ep) {
   if (!ep) return '';
   return `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}`;
 }
+function clsBool(ok) { return ok ? 'ok' : 'bad'; }
 
 async function refresh() {
   const body = document.getElementById('rows');
   body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
   try {
     const data = await fetchJson('/api/instances');
-    body.innerHTML = (data.instances || []).map(inst => `
+    body.innerHTML = (data.instances || []).map(inst => {
+      const cert = inst.certificate_status || {};
+      return `
       <tr>
         <td>
           <div><strong>${esc(inst.instance_id)}</strong></div>
-          <div class="mono">${esc(inst.egm_id)}</div>
+          <div class="mono">egmId: ${esc(inst.egm_id)}</div>
           <div class="mono">hostId: ${esc(inst.host_id)}</div>
           <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
           <div style="margin-top:6px;"><button onclick="selectInstance('${esc(inst.instance_id)}')">Edit</button></div>
@@ -119,7 +123,7 @@ async function refresh() {
         <td>
           <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
           <div class="${inst.healthy ? 'ok' : 'bad'}">healthy: ${inst.healthy}</div>
-          <div class="muted">trust: ${esc(inst.trust_mode)}</div>
+          <div>control: <span class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</span></div>
         </td>
         <td>
           <div class="status-grid">
@@ -136,31 +140,32 @@ async function refresh() {
         <td class="details mono">
           <div>EGM: ${esc(endpointText(inst.egm_endpoint))}</div>
           <div>bind: ${esc(inst.egm_endpoint?.bind_ip || '')}</div>
-          <div>host: ${esc(inst.egm_endpoint?.host || '')}</div>
-          <div>path: ${esc(inst.egm_endpoint?.path || '')}</div>
           <div>Host URL: ${esc(inst.host_endpoint?.url || '')}</div>
+          <div>G2S link: <a target="_blank" href="${esc(inst.wire_url)}">endpoint</a></div>
         </td>
         <td class="details mono">
-          <div>listen: ${esc(inst.listen_host)}:${esc(inst.wire_port)}</div>
-          <div>control: ${esc(inst.listen_host)}:${esc(inst.control_port)}</div>
-          <div>adv host: ${esc(inst.advertised_host)}</div>
-          <div>adv ip: ${esc(inst.advertised_ip)}</div>
-          <div>dns: ${esc(joinList(inst.dns_servers))}</div>
+          <div>mode: ${esc(inst.trust_mode)}</div>
+          <div class="${clsBool(cert.ok)}">cert status: ${cert.ok ? 'ok' : 'not ok'}</div>
+          <div>subject: ${esc(cert.subject || '')}</div>
+          <div>dns san: ${esc(joinList(cert.dns_names))}</div>
           <div>cert: ${esc(inst.cert_file)}</div>
           <div>ca: ${esc(inst.ca_file)}</div>
+          <div class="bad">${esc(cert.error || '')}</div>
         </td>
         <td>
-          <div><a target="_blank" href="${esc(inst.control_url)}">control</a></div>
-          <div><a target="_blank" href="${esc(inst.ui_url)}">ui</a></div>
-          <div><a target="_blank" href="${esc(inst.wire_url)}">g2s</a></div>
+          <div><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a></div>
+          <div><a target="_blank" href="${esc(inst.control_url)}/control/state/history">state history</a></div>
+          <div><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a></div>
+          <div><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a></div>
+          <div><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></div>
         </td>
         <td>
           <button onclick="act('${esc(inst.instance_id)}','start')">Start</button>
           <button onclick="act('${esc(inst.instance_id)}','stop')">Stop</button>
           <button onclick="act('${esc(inst.instance_id)}','restart')">Restart</button>
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } catch (err) {
     body.innerHTML = `<tr><td colspan="7" class="bad">${esc(err.message)}</td></tr>`;
   }
