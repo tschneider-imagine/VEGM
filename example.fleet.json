@@ -14,7 +14,7 @@
       "path": "/g2s"
     },
     "host_endpoint": {
-      "url": "http://192.168.10.25:8444/g2s"
+      "url": "http://tspi4.local:8444/g2s"
     },
     "trust_mode": "plaintext_lab",
     "pack_file": "./example.pack.json",
@@ -112,7 +112,7 @@
         "path": "/g2s"
       },
       "host_endpoint": {
-        "url": "http://192.168.10.25:8444/g2s"
+        "url": "http://tspi4.local:8444/g2s"
       },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162"
@@ -130,7 +130,7 @@
         "path": "/g2s"
       },
       "host_endpoint": {
-        "url": "http://192.168.10.25:8444/g2s"
+        "url": "http://tspi4.local:8444/g2s"
       },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162"
@@ -148,7 +148,7 @@
         "path": "/g2s"
       },
       "host_endpoint": {
-        "url": "http://192.168.10.25:8444/g2s"
+        "url": "http://tspi4.local:8444/g2s"
       },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162",
