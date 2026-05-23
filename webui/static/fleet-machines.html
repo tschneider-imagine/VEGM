@@ -31,6 +31,7 @@
     <div class="row">
       <a href="/ui/supervisor.html">Back to Supervisor</a>
       <button id="refreshBtn">Refresh</button>
+      <button id="nextBtn">Fill next machine</button>
     </div>
     <p class="muted">Add/remove test machines from the fleet manifest. Changes regenerate configs immediately. Removing a running machine stops it first.</p>
   </div>
@@ -79,6 +80,7 @@
   </div>
 </div>
 <script>
+let currentInstances = [];
 async function fetchJson(url, opts) {
   const r = await fetch(url, opts);
   const text = await r.text();
@@ -94,15 +96,68 @@ function endpointText(ep) {
 }
 function n(id) { return Number(document.getElementById(id).value || 0); }
 function v(id) { return document.getElementById(id).value.trim(); }
+function setv(id, value) { document.getElementById(id).value = value; }
+function pad(num, width) { return String(num).padStart(width, '0'); }
 function show(data, ok=true) {
   const result = document.getElementById('result');
   result.className = ok ? 'ok' : 'bad';
   result.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
 }
+function trailingNumber(value) {
+  const m = String(value || '').match(/(\d+)(?!.*\d)/);
+  if (!m) return null;
+  return { value: Number(m[1]), width: m[1].length };
+}
+function replaceTrailingNumber(value, next, width) {
+  return String(value || '').replace(/(\d+)(?!.*\d)/, pad(next, width));
+}
+function nextIPv4(ip) {
+  const parts = String(ip || '').split('.').map(Number);
+  if (parts.length !== 4 || parts.some(x => !Number.isInteger(x) || x < 0 || x > 255)) return '192.168.10.103';
+  parts[3] = Math.min(254, parts[3] + 1);
+  return parts.join('.');
+}
+function fillNextMachine(instances) {
+  const list = instances || [];
+  let last = null;
+  let best = -1;
+  for (const inst of list) {
+    const tn = trailingNumber(inst.instance_id) || trailingNumber(inst.egm_id);
+    const score = tn ? tn.value : -1;
+    if (score > best) {
+      best = score;
+      last = inst;
+    }
+  }
+  const next = best >= 0 ? best + 1 : 3;
+  const idWidth = Math.max(3, (trailingNumber(last?.instance_id)?.width || 3));
+  const egmWidth = Math.max(3, (trailingNumber(last?.egm_id)?.width || 3));
+  const nextInstance = last?.instance_id ? replaceTrailingNumber(last.instance_id, next, idWidth) : `vegm-${pad(next, 3)}`;
+  const nextEGM = last?.egm_id ? replaceTrailingNumber(last.egm_id, next, egmWidth) : `EGM-${pad(next, 3)}`;
+  const nextWire = Math.max(18442, ...list.map(x => Number(x.wire_port || x.egm_endpoint?.port || 0))) + 1;
+  const nextControl = Math.max(19000, ...list.map(x => Number(x.control_port || 0))) + 1;
+  const endpointHost = last?.egm_endpoint?.host || last?.advertised_host || `${nextInstance}.floor.local`;
+  const nextEndpointHost = trailingNumber(endpointHost) ? replaceTrailingNumber(endpointHost, next, idWidth) : `${nextInstance}.floor.local`;
+  const advertisedHost = last?.advertised_host || endpointHost;
+  const nextAdvertisedHost = trailingNumber(advertisedHost) ? replaceTrailingNumber(advertisedHost, next, idWidth) : nextEndpointHost;
+  setv('add_instance_id', nextInstance);
+  setv('add_egm_id', nextEGM);
+  setv('add_host_id', last?.host_id || 'HOST-001');
+  setv('add_group', last?.group || 'bank_a');
+  setv('add_wire_port', nextWire);
+  setv('add_control_port', nextControl);
+  setv('add_endpoint_host', nextEndpointHost);
+  setv('add_endpoint_port', nextWire);
+  setv('add_endpoint_path', last?.egm_endpoint?.path || '/g2s');
+  setv('add_advertised_host', nextAdvertisedHost);
+  setv('add_advertised_ip', nextIPv4(last?.advertised_ip));
+  setv('remove_instance_id', nextInstance);
+}
 async function refresh() {
   try {
     const data = await fetchJson('/api/instances');
-    document.getElementById('rows').innerHTML = (data.instances || []).map(inst => `
+    currentInstances = data.instances || [];
+    document.getElementById('rows').innerHTML = currentInstances.map(inst => `
       <tr>
         <td class="mono">${esc(inst.instance_id)}</td>
         <td class="mono">${esc(inst.egm_id)}</td>
@@ -112,6 +167,7 @@ async function refresh() {
         <td class="mono">${esc(endpointText(inst.egm_endpoint))}</td>
         <td>${inst.running ? '<span class="ok">running</span>' : '<span class="muted">stopped</span>'}</td>
       </tr>`).join('');
+    fillNextMachine(currentInstances);
   } catch (err) {
     show(err.message, false);
   }
@@ -162,6 +218,7 @@ async function removeMachine() {
   }
 }
 document.getElementById('refreshBtn').addEventListener('click', refresh);
+document.getElementById('nextBtn').addEventListener('click', () => fillNextMachine(currentInstances));
 document.getElementById('addBtn').addEventListener('click', addMachine);
 document.getElementById('removeBtn').addEventListener('click', removeMachine);
 refresh();
