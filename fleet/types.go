@@ -22,6 +22,12 @@ type HostEndpoint struct {
 	URL string `json:"url,omitempty"`
 }
 
+type G2SXML struct {
+	Mode        string `json:"mode,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
+	EGMLocation string `json:"egm_location,omitempty"`
+}
+
 type Defaults struct {
 	HostID           string         `json:"host_id,omitempty"`
 	ListenHost       string         `json:"listen_host,omitempty"`
@@ -29,6 +35,7 @@ type Defaults struct {
 	ControlPortBase  int            `json:"control_port_base,omitempty"`
 	EGMEndpoint      Endpoint       `json:"egm_endpoint,omitempty"`
 	HostEndpoint     HostEndpoint   `json:"host_endpoint,omitempty"`
+	G2SXML           G2SXML         `json:"g2s_xml,omitempty"`
 	TrustMode        string         `json:"trust_mode,omitempty"`
 	PackFile         string         `json:"pack_file,omitempty"`
 	OverlayFiles     []string       `json:"overlay_files,omitempty"`
@@ -58,6 +65,7 @@ type Profile struct {
 	HostID          string            `json:"host_id,omitempty"`
 	EGMEndpoint     Endpoint          `json:"egm_endpoint,omitempty"`
 	HostEndpoint    HostEndpoint      `json:"host_endpoint,omitempty"`
+	G2SXML          G2SXML            `json:"g2s_xml,omitempty"`
 	AdvertisedHost  string            `json:"advertised_host,omitempty"`
 	AdvertisedIP    string            `json:"advertised_ip,omitempty"`
 	DNSServers      []string          `json:"dns_servers,omitempty"`
@@ -89,6 +97,7 @@ type Instance struct {
 	BindHost       string         `json:"bind_host,omitempty"`
 	EGMEndpoint    Endpoint       `json:"egm_endpoint,omitempty"`
 	HostEndpoint   HostEndpoint   `json:"host_endpoint,omitempty"`
+	G2SXML         G2SXML         `json:"g2s_xml,omitempty"`
 	AdvertisedHost string         `json:"advertised_host,omitempty"`
 	AdvertisedIP   string         `json:"advertised_ip,omitempty"`
 	DNSServers     []string       `json:"dns_servers,omitempty"`
@@ -115,6 +124,7 @@ type EffectiveInstance struct {
 	ControlPort     int               `json:"control_port"`
 	EGMEndpoint     Endpoint          `json:"egm_endpoint"`
 	HostEndpoint    HostEndpoint      `json:"host_endpoint,omitempty"`
+	G2SXML          G2SXML            `json:"g2s_xml,omitempty"`
 	AdvertisedHost  string            `json:"advertised_host,omitempty"`
 	AdvertisedIP    string            `json:"advertised_ip,omitempty"`
 	DNSServers      []string          `json:"dns_servers,omitempty"`
