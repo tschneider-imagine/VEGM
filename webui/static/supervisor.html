@@ -20,6 +20,7 @@
     .grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
     .field { display:grid; gap:4px; }
     .small { font-size:12px; }
+    .evidence { margin-top:6px; padding-top:6px; border-top:1px solid #374151; }
   </style>
 </head>
 <body>
@@ -34,7 +35,7 @@
       <a class="buttonlink" target="_blank" href="/ui/fleet-export.html">Fleet export page</a>
       <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
-    <div class="muted small">Dashboard, fleet add/remove, exports, session initiation, forced heartbeat, and per-VEGM evidence links.</div>
+    <div class="muted small">Dashboard, fleet add/remove, exports, session initiation, forced heartbeat, parsed G2S evidence, and per-VEGM evidence links.</div>
   </div>
 
   <div class="panel">
@@ -83,6 +84,7 @@ function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
 function badge(k,v) { return `<span class="badge"><b>${esc(k)}:</b> ${esc(v || 'n/a')}</span>`; }
 function endpoint(ep) { return ep ? `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}` : ''; }
 function fmtTime(v) { if (!v || String(v).startsWith('0001-')) return 'n/a'; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleTimeString(); }
+function evidenceText(state) { return `<div class="evidence mono">XML mode: ${esc(state.g2s_xml_mode || state.xml_mode || 'lab_legacy_xml')}<br>Parsed root kind: ${esc(state.last_parsed_root_kind || 'n/a')}<br>Parsed class: ${esc(state.last_parsed_class || 'n/a')}<br>Parsed operation: ${esc(state.last_parsed_operation || 'n/a')}<br>Raw root: ${esc(state.last_raw_root || 'n/a')}<br>Expected ACK: ${esc(state.last_expected_ack || 'n/a')}<br>Actual ACK: ${esc(state.last_actual_ack || 'n/a')}</div>`; }
 async function action(id, act) { await fetchJson(`/api/instances/${id}/${act}`, {method:'POST'}); await refresh(); }
 async function initiate(url) { await fetchJson(`${url}/control/outbound/session/open`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
 async function forceHeartbeat(url) { await fetchJson(`${url}/control/outbound/heartbeat`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
@@ -98,7 +100,7 @@ async function refresh() {
       rows.push(`<tr>
         <td><b>${esc(inst.instance_id)}</b><div class="mono">egmId: ${esc(inst.egm_id)}</div><div class="mono">hostId: ${esc(inst.host_id)}</div><div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div><button onclick="selectInstance('${id}')">Edit</button></td>
         <td><div class="${inst.running ? 'ok':'muted'}">running: ${inst.running}</div><div class="${inst.healthy ? 'ok':'bad'}">healthy: ${inst.healthy}</div><div class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</div></td>
-        <td>${badge('Mute',inst.audio_state)}${badge('Lock',inst.lock_state)}${badge('Hold',inst.hold_state)}${badge('Machine',inst.machine_state)}${badge('Session',inst.session_state)}${badge('Heartbeat',inst.heartbeat_state)}${badge('Connected',inst.connection_state)}${badge('Last cmd',inst.last_command_type)}<div class="mono">commsOnLine: ${fmtTime(state.last_comms_online_at)}<br>keepAlive: ${fmtTime(state.last_keep_alive_at)}<br>last ACK: ${fmtTime(state.last_ack_at)}</div></td>
+        <td>${badge('Mute',inst.audio_state)}${badge('Lock',inst.lock_state)}${badge('Hold',inst.hold_state)}${badge('Machine',inst.machine_state)}${badge('Session',inst.session_state)}${badge('Heartbeat',inst.heartbeat_state)}${badge('Connected',inst.connection_state)}${badge('Last cmd',inst.last_command_type)}<div class="mono">commsOnLine: ${fmtTime(state.last_comms_online_at)}<br>keepAlive: ${fmtTime(state.last_keep_alive_at)}<br>last ACK: ${fmtTime(state.last_ack_at)}</div>${evidenceText(state)}</td>
         <td class="mono"><div>EGM: ${esc(endpoint(inst.egm_endpoint))}</div><div>Host: ${esc(inst.host_endpoint?.url || '')}</div><div>mode: ${esc(inst.trust_mode)}</div></td>
         <td><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a><br><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a><br><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a><br><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a><br><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></td>
         <td><button onclick="action('${id}','start')">Start</button><button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button><button onclick="forceHeartbeat('${jsq(inst.control_url)}')">Force Heartbeat</button><button onclick="action('${id}','stop')">Stop</button><button onclick="action('${id}','restart')">Restart</button></td>
