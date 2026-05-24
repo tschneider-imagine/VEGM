@@ -39,6 +39,9 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 			"egm_endpoint_host":    eff.EGMEndpoint.Host,
 			"egm_endpoint_path":    eff.EGMEndpoint.Path,
 			"host_endpoint_url":    eff.HostEndpoint.URL,
+			"g2s_xml_mode":         eff.G2SXML.Mode,
+			"g2s_xml_namespace":    eff.G2SXML.Namespace,
+			"g2s_xml_egm_location": eff.G2SXML.EGMLocation,
 			"advertised_host":      eff.AdvertisedHost,
 			"advertised_ip":        eff.AdvertisedIP,
 			"subnet_mask":          eff.SubnetMask,
@@ -70,7 +73,12 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 				Port:   eff.EGMEndpoint.Port,
 				Path:   eff.EGMEndpoint.Path,
 			},
-			HostEndpoint:  runtimecfg.HostEndpointConfig{URL: eff.HostEndpoint.URL},
+			HostEndpoint: runtimecfg.HostEndpointConfig{URL: eff.HostEndpoint.URL},
+			G2SXML: runtimecfg.G2SXMLConfig{
+				Mode:        eff.G2SXML.Mode,
+				Namespace:   eff.G2SXML.Namespace,
+				EGMLocation: eff.G2SXML.EGMLocation,
+			},
 			SessionEngine: sessionEngine,
 			Listen: runtimecfg.ListenConfig{
 				Host: eff.ListenHost,
