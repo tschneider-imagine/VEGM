@@ -19,10 +19,21 @@ func TestParseG2SMessage_ValidSOAP11(t *testing.T) {
 	}
 }
 
-func TestParseG2SMessage_RejectsMissingEnvelope(t *testing.T) {
+func TestParseG2SMessage_AllowsXSDRootWithoutSOAPEnvelope(t *testing.T) {
+	body := []byte(`<g2s:g2sMessage xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3"><g2s:g2sBody hostId="HOST-001" egmId="EGM-001" dateTimeSent="2026-05-24T00:00:00Z"><g2s:communications><g2s:commsOnLineAck /></g2s:communications></g2s:g2sBody></g2s:g2sMessage>`)
+	msg, err := ParseG2SMessage(body)
+	if err != nil {
+		t.Fatalf("ParseG2SMessage failed: %v", err)
+	}
+	if msg.RootLocalName != "commsOnLineAck" {
+		t.Fatalf("expected commsOnLineAck, got %q", msg.RootLocalName)
+	}
+}
+
+func TestParseG2SMessage_RejectsNonG2SNonSOAPRoot(t *testing.T) {
 	_, err := ParseG2SMessage([]byte(`<Body><commsOnLine/></Body>`))
 	if err == nil {
-		t.Fatalf("expected missing envelope error")
+		t.Fatalf("expected non-G2S/non-SOAP parse error")
 	}
 }
 
