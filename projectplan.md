@@ -729,6 +729,36 @@ git pull
 go test ./...
 ```
 
+### Current pass status — comms and heartbeat ACK evidence
+
+This pass referenced this plan and continued Pass 2 after the user confirmed `go test ./...` was green.
+
+Landed:
+
+- `runtime/session_engine.go` now records parsed response evidence for:
+  - `commsOnLine -> commsOnLineAck`
+- `runtime/session_keepalive.go` now records parsed response evidence for:
+  - `keepAlive -> keepAliveAck`
+- success logs for `commsOnLineAck` and `keepAliveAck` now include:
+  - `parsed_root_kind`
+  - `parsed_class`
+  - `parsed_operation`
+  - `raw_root`
+  - `expected_ack`
+  - `actual_ack`
+- `runtime/session_engine_xsd_ack_test.go` was added to verify the session engine accepts XSD-shaped ACK responses for:
+  - `commsOnLineAck`
+  - `descriptorList`
+  - `setKeepAliveAck`
+  - `keepAliveAck`
+
+Needs validation:
+
+```powershell
+git pull
+go test ./...
+```
+
 ### Known blockers / continuation notes
 
 The next pass should be careful and small because some large full-file replacements were blocked by the GitHub write safety layer.
@@ -740,17 +770,22 @@ Blocked attempts:
 - large rewrite of `runtime/outbound.go`
 - large rewrite of `runtime/session_timestamps.go`
 
-Required next small commits:
+Resolved from the previous blocker list:
 
-1. Wire parsed response evidence into `runtime/session_engine.go` for:
-   - `commsOnLine -> commsOnLineAck`
-2. Wire parsed response evidence into `runtime/session_keepalive.go` for:
-   - `keepAlive -> keepAliveAck`
-3. Extend runtime JSON state exposure without rewriting the whole timestamp sidecar if possible.
+- parsed response evidence for `commsOnLine -> commsOnLineAck` is now wired
+- parsed response evidence for `keepAlive -> keepAliveAck` is now wired
+- XSD-shaped ACK session-loop test has been added
+
+Still required next small commits:
+
+1. Extend runtime JSON state exposure for parsed response evidence without rewriting the whole timestamp sidecar if possible.
    - Preferred safe approach: create a separate endpoint or compact helper rather than rewriting `RuntimeState.MarshalJSON` in one large patch.
-4. Add tests proving session-engine strict ACK validation accepts XSD-shaped ACKs.
-5. Keep Force Heartbeat generic `g2sResponse` acceptance limited to lab/debug forced-heartbeat path only.
+2. Keep Force Heartbeat generic `g2sResponse` acceptance limited to lab/debug forced-heartbeat path only.
    - Do not relax normal session engine strict ACK requirements.
+3. After test validation, begin Pass 3 work:
+   - surface XML mode / namespace / parsed evidence in supervisor UI
+   - make `xsd_g2s_message` selectable per VEGM or manifest
+   - add mock-host XSD-mode startup flow test if not already sufficient
 
 ### Current lab endpoint context
 
@@ -783,9 +818,16 @@ Current lab issue observed:
 
 ### Next recommended pass
 
-Run tests first. If green, continue Pass 2 with the smallest possible patches:
+Run tests first. If green, continue with a small evidence/UI bridge pass:
 
-1. Patch `session_engine.go` only around the `ParseG2SMessage` block in `runCommsOnlineOnce`.
-2. Patch `session_keepalive.go` only around the `ParseG2SMessage` block in `runKeepAliveOnce`.
-3. Add tests for XSD-shaped `commsOnLineAck` and `keepAliveAck` in the existing session loop mock.
+1. Expose parsed response evidence in runtime state or a small dedicated control endpoint.
+2. Add supervisor UI display for:
+   - XML mode
+   - parsed root kind
+   - parsed class
+   - parsed operation
+   - raw root
+   - expected ACK
+   - actual ACK
+3. Keep default XML mode as `lab_legacy_xml` until manually switched.
 4. Update this status section again after test results.
