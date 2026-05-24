@@ -3,7 +3,7 @@ param(
     [string]$Template = ".\example.fleet.json",
     [string]$OutFile = ".\generated\fleet-$Count.json",
     [string]$VegmHostIp = "192.168.10.162",
-    [string]$HostEndpointUrl = "http://tspi4.local:8444/g2s",
+    [string]$HostEndpointUrl = "http://192.168.10.25:8444/g2s",
     [string]$SubnetMask = "255.255.255.0",
     [string]$Gateway = "192.168.10.1",
     [int]$WirePortBase = 18443,
