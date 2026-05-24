@@ -157,6 +157,16 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 }
 
 func (s *Server) renderCommsOnline(sessionID string) string {
+	if s.shouldRenderXSDG2SMessage() {
+		return s.renderXSDCommunicationsMessage("commsOnLine", map[string]string{
+			"equipmentType":    "G2S_egm",
+			"egmLocation":      s.cfg.G2SXML.EGMLocation,
+			"deviceReset":      boolAttr(false),
+			"deviceChanged":    boolAttr(false),
+			"subscriptionLost": boolAttr(false),
+			"metersReset":      boolAttr(false),
+		})
+	}
 	soapNS := firstNonEmpty(s.pack.Wire.Namespaces["soapenv"], SOAP11Namespace)
 	g2sNS := firstNonEmpty(s.pack.Wire.Namespaces["g2s"], "urn:g2s:lab")
 	return fmt.Sprintf(`<soapenv:Envelope xmlns:soapenv="%s" xmlns:g2s="%s"><soapenv:Body><g2s:commsOnLine><g2s:hostId>%s</g2s:hostId><g2s:egmId>%s</g2s:egmId><g2s:sessionId>%s</g2s:sessionId></g2s:commsOnLine></soapenv:Body></soapenv:Envelope>`, soapNS, g2sNS, s.cfg.HostID, s.cfg.EGMID, sessionID)
