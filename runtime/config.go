@@ -138,6 +138,7 @@ func ValidateConfig(cfg *Config) error {
 	if err := validateG2SXML(cfg.G2SXML); err != nil {
 		return err
 	}
+	rememberXMLModeInfo(cfg.InstanceID, cfg.G2SXML)
 	if cfg.SessionEngine.Enabled && cfg.HostEndpoint.URL == "" {
 		return fmt.Errorf("host_endpoint.url is required when session_engine.enabled is true")
 	}
