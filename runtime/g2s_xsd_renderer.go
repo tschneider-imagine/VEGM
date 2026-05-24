@@ -27,14 +27,14 @@ func (s *Server) renderXSDCommunicationsMessage(operationName string, attrs map[
 		"dateTimeSent": time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	var b bytes.Buffer
-	b.WriteString(`<g2s:g2sMessage xmlns:g2s="`)
+	b.WriteString("<g2s:g2sMessage xmlns:g2s=\"")
 	b.WriteString(xmlEscape(ns))
-	b.WriteString(`"><g2s:g2sBody`)
+	b.WriteString("\"><g2s:g2sBody")
 	writeXMLAttrs(&b, bodyAttrs)
-	b.WriteString(`><g2s:communications><g2s:`)
+	b.WriteString("><g2s:communications><g2s:")
 	b.WriteString(operationName)
 	writeXMLAttrs(&b, attrs)
-	b.WriteString(` /></g2s:communications></g2s:g2sBody></g2s:g2sMessage>`)
+	b.WriteString(" /></g2s:communications></g2s:g2sBody></g2s:g2sMessage>")
 	return b.String()
 }
 
@@ -50,7 +50,7 @@ func writeXMLAttrs(b *bytes.Buffer, attrs map[string]string) {
 	for _, k := range keys {
 		b.WriteByte(' ')
 		b.WriteString(k)
-		b.WriteString(`="`)
+		b.WriteString("=\"")
 		b.WriteString(xmlEscape(attrs[k]))
 		b.WriteByte('"')
 	}
