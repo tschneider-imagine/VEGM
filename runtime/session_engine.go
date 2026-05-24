@@ -131,12 +131,14 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("commsOnLine status %d", resp.StatusCode)
 	}
-	parsed, err := ParseG2SMessage(buf.Bytes())
+	parsed, err := ParseG2SEnvelope(buf.Bytes())
 	if err != nil {
 		return "", fmt.Errorf("parse commsOnLineAck: %w", err)
 	}
-	if parsed.RootLocalName != "commsOnLineAck" {
-		return "", fmt.Errorf("expected commsOnLineAck, got %s", parsed.RootLocalName)
+	s.recordParsedResponseEvidence("commsOnLineAck", parsed)
+	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	if actual != "commsOnLineAck" {
+		return "", fmt.Errorf("expected commsOnLineAck, got %s", actual)
 	}
 	now := time.Now().UTC()
 	s.mu.Lock()
@@ -152,7 +154,7 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	s.state.LastError = ""
 	s.mu.Unlock()
 	s.recordSessionTimestamp("commsOnLine", now)
-	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck"})
+	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck", "parsed_root_kind": parsed.RootKind, "parsed_class": parsed.ClassName, "parsed_operation": parsed.OperationName, "raw_root": parsed.RawRoot, "expected_ack": "commsOnLineAck", "actual_ack": actual})
 	return sessionID, nil
 }
 
