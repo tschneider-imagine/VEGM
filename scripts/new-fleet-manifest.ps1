@@ -107,10 +107,8 @@ if ($outDir -and !(Test-Path $outDir)) {
 
 $json = $manifest | ConvertTo-Json -Depth 30
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText((Resolve-Path $OutFile -ErrorAction SilentlyContinue), $json + [Environment]::NewLine, $utf8NoBom)
-if (!(Test-Path $OutFile)) {
-    [System.IO.File]::WriteAllText((Join-Path (Resolve-Path $outDir) (Split-Path -Leaf $OutFile)), $json + [Environment]::NewLine, $utf8NoBom)
-}
+$outPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutFile)
+[System.IO.File]::WriteAllText($outPath, $json + [Environment]::NewLine, $utf8NoBom)
 
 Write-Host "Wrote $Count-VEGM manifest: $OutFile"
 Write-Host "Wire ports: $WirePortBase - $($WirePortBase + $Count - 1)"
