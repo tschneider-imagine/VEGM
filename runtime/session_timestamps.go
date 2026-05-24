@@ -49,6 +49,7 @@ func (r RuntimeState) MarshalJSON() ([]byte, error) {
 		set.LastAckAt = r.LastCommandAt
 	}
 	evidence := parseEvidenceForInstance(r.InstanceID)
+	xmlInfo := xmlModeInfoForInstance(r.InstanceID)
 	return json.Marshal(struct {
 		runtimeStateAlias
 		LastCommsOnlineAt   time.Time `json:"last_comms_online_at,omitempty"`
@@ -68,9 +69,9 @@ func (r RuntimeState) MarshalJSON() ([]byte, error) {
 		LastCommsOnlineAt:   set.LastCommsOnlineAt,
 		LastKeepAliveAt:     set.LastKeepAliveAt,
 		LastAckAt:           set.LastAckAt,
-		G2SXMLMode:          evidence.G2SXMLMode,
-		G2SXMLNamespace:     evidence.G2SXMLNamespace,
-		G2SXMLEGMLocation:   evidence.G2SXMLEGMLocation,
+		G2SXMLMode:          firstNonEmpty(evidence.G2SXMLMode, xmlInfo.Mode),
+		G2SXMLNamespace:     firstNonEmpty(evidence.G2SXMLNamespace, xmlInfo.Namespace),
+		G2SXMLEGMLocation:   firstNonEmpty(evidence.G2SXMLEGMLocation, xmlInfo.EGMLocation),
 		LastParsedRootKind:  evidence.LastParsedRootKind,
 		LastParsedClass:     evidence.LastParsedClass,
 		LastParsedOperation: evidence.LastParsedOperation,
