@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tschneider-imagine/VEGM/fleet"
+	runtimecfg "github.com/tschneider-imagine/VEGM/runtime"
 )
 
 type childIndicators struct {
@@ -26,23 +27,24 @@ type childIndicators struct {
 }
 
 type instanceSettings struct {
-	InstanceID      string             `json:"instance_id"`
-	HostID          string             `json:"host_id"`
-	EGMEndpoint     fleet.Endpoint     `json:"egm_endpoint"`
-	HostEndpoint    fleet.HostEndpoint `json:"host_endpoint,omitempty"`
-	ListenHost      string             `json:"listen_host"`
-	WirePort        int                `json:"wire_port"`
-	ControlPort     int                `json:"control_port"`
-	AdvertisedHost  string             `json:"advertised_host,omitempty"`
-	AdvertisedIP    string             `json:"advertised_ip,omitempty"`
-	DNSServers      []string           `json:"dns_servers,omitempty"`
-	SubnetMask      string             `json:"subnet_mask,omitempty"`
-	Gateway         string             `json:"gateway,omitempty"`
-	ServerName      string             `json:"server_name,omitempty"`
-	TrustMode       string             `json:"trust_mode"`
-	CertFile        string             `json:"cert_file,omitempty"`
-	KeyFile         string             `json:"key_file,omitempty"`
-	CAFile          string             `json:"ca_file,omitempty"`
+	InstanceID      string                  `json:"instance_id"`
+	HostID          string                  `json:"host_id"`
+	EGMEndpoint     fleet.Endpoint          `json:"egm_endpoint"`
+	HostEndpoint    fleet.HostEndpoint      `json:"host_endpoint,omitempty"`
+	G2SXML          runtimecfg.G2SXMLConfig `json:"g2s_xml,omitempty"`
+	ListenHost      string                  `json:"listen_host"`
+	WirePort        int                     `json:"wire_port"`
+	ControlPort     int                     `json:"control_port"`
+	AdvertisedHost  string                  `json:"advertised_host,omitempty"`
+	AdvertisedIP    string                  `json:"advertised_ip,omitempty"`
+	DNSServers      []string                `json:"dns_servers,omitempty"`
+	SubnetMask      string                  `json:"subnet_mask,omitempty"`
+	Gateway         string                  `json:"gateway,omitempty"`
+	ServerName      string                  `json:"server_name,omitempty"`
+	TrustMode       string                  `json:"trust_mode"`
+	CertFile        string                  `json:"cert_file,omitempty"`
+	KeyFile         string                  `json:"key_file,omitempty"`
+	CAFile          string                  `json:"ca_file,omitempty"`
 }
 
 func fetchChildIndicators(controlBase string) (childIndicators, error) {
@@ -107,6 +109,7 @@ func (s *supervisorServer) getInstanceSettings(id string) (instanceSettings, err
 				HostID:         inst.HostID,
 				EGMEndpoint:    inst.EGMEndpoint,
 				HostEndpoint:   inst.HostEndpoint,
+				G2SXML:         gen.Config.G2SXML,
 				ListenHost:     inst.ListenHost,
 				WirePort:       inst.WirePort,
 				ControlPort:    inst.ControlPort,
@@ -161,6 +164,7 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		cfg.EGMEndpoint.Port = in.EGMEndpoint.Port
 		cfg.EGMEndpoint.Path = in.EGMEndpoint.Path
 		cfg.HostEndpoint.URL = in.HostEndpoint.URL
+		cfg.G2SXML = in.G2SXML
 		cfg.Listen.Host = in.ListenHost
 		cfg.Listen.Port = in.WirePort
 		cfg.Control.Bind = fmt.Sprintf("%s:%d", in.ListenHost, in.ControlPort)
@@ -177,6 +181,9 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		cfg.Notes["egm_endpoint_host"] = in.EGMEndpoint.Host
 		cfg.Notes["egm_endpoint_path"] = in.EGMEndpoint.Path
 		cfg.Notes["host_endpoint_url"] = in.HostEndpoint.URL
+		cfg.Notes["g2s_xml_mode"] = in.G2SXML.Mode
+		cfg.Notes["g2s_xml_namespace"] = in.G2SXML.Namespace
+		cfg.Notes["g2s_xml_egm_location"] = in.G2SXML.EGMLocation
 		cfg.Notes["advertised_host"] = in.AdvertisedHost
 		cfg.Notes["advertised_ip"] = in.AdvertisedIP
 		cfg.Notes["dns_servers"] = strings.Join(in.DNSServers, ",")
@@ -199,6 +206,7 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 			HostID:         inst.HostID,
 			EGMEndpoint:    inst.EGMEndpoint,
 			HostEndpoint:   inst.HostEndpoint,
+			G2SXML:         cfg.G2SXML,
 			ListenHost:     inst.ListenHost,
 			WirePort:       inst.WirePort,
 			ControlPort:    inst.ControlPort,
