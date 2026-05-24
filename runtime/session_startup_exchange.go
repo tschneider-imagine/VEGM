@@ -42,12 +42,14 @@ func (s *Server) runGetDescriptorOnce(ctx context.Context, sessionID string) err
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("getDescriptor status %d", resp.StatusCode)
 	}
-	parsed, err := ParseG2SMessage(buf.Bytes())
+	parsed, err := ParseG2SEnvelope(buf.Bytes())
 	if err != nil {
 		return fmt.Errorf("parse descriptorList: %w", err)
 	}
-	if parsed.RootLocalName != "descriptorList" {
-		return fmt.Errorf("expected descriptorList, got %s", parsed.RootLocalName)
+	s.recordParsedResponseEvidence("descriptorList", parsed)
+	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	if actual != "descriptorList" {
+		return fmt.Errorf("expected descriptorList, got %s", actual)
 	}
 	s.mu.Lock()
 	s.state.LastMessageType = "descriptorList"
@@ -58,7 +60,7 @@ func (s *Server) runGetDescriptorOnce(ctx context.Context, sessionID string) err
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
 	s.state.LastError = ""
 	s.mu.Unlock()
-	s.logger.Log("info", "session", "descriptorList received", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "descriptorList"})
+	s.logger.Log("info", "session", "descriptorList received", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "descriptorList", "parsed_root_kind": parsed.RootKind, "parsed_class": parsed.ClassName, "parsed_operation": parsed.OperationName, "raw_root": parsed.RawRoot, "expected_ack": "descriptorList", "actual_ack": actual})
 	return nil
 }
 
@@ -86,12 +88,14 @@ func (s *Server) runSetKeepAliveOnce(ctx context.Context, sessionID string) erro
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("setKeepAlive status %d", resp.StatusCode)
 	}
-	parsed, err := ParseG2SMessage(buf.Bytes())
+	parsed, err := ParseG2SEnvelope(buf.Bytes())
 	if err != nil {
 		return fmt.Errorf("parse setKeepAliveAck: %w", err)
 	}
-	if parsed.RootLocalName != "setKeepAliveAck" {
-		return fmt.Errorf("expected setKeepAliveAck, got %s", parsed.RootLocalName)
+	s.recordParsedResponseEvidence("setKeepAliveAck", parsed)
+	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	if actual != "setKeepAliveAck" {
+		return fmt.Errorf("expected setKeepAliveAck, got %s", actual)
 	}
 	s.mu.Lock()
 	s.state.LastMessageType = "setKeepAliveAck"
@@ -102,7 +106,7 @@ func (s *Server) runSetKeepAliveOnce(ctx context.Context, sessionID string) erro
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
 	s.state.LastError = ""
 	s.mu.Unlock()
-	s.logger.Log("info", "session", "setKeepAlive acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "setKeepAliveAck"})
+	s.logger.Log("info", "session", "setKeepAlive acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "setKeepAliveAck", "parsed_root_kind": parsed.RootKind, "parsed_class": parsed.ClassName, "parsed_operation": parsed.OperationName, "raw_root": parsed.RawRoot, "expected_ack": "setKeepAliveAck", "actual_ack": actual})
 	return nil
 }
 
