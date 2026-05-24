@@ -21,6 +21,7 @@ type addInstanceRequest struct {
 	BindHost       string             `json:"bind_host,omitempty"`
 	EGMEndpoint    fleet.Endpoint     `json:"egm_endpoint,omitempty"`
 	HostEndpoint   fleet.HostEndpoint `json:"host_endpoint,omitempty"`
+	G2SXML         fleet.G2SXML       `json:"g2s_xml,omitempty"`
 	AdvertisedHost string             `json:"advertised_host,omitempty"`
 	AdvertisedIP   string             `json:"advertised_ip,omitempty"`
 }
@@ -63,6 +64,7 @@ func (s *supervisorServer) handleFleetInstancesAdd(w http.ResponseWriter, r *htt
 		BindHost:       strings.TrimSpace(in.BindHost),
 		EGMEndpoint:    in.EGMEndpoint,
 		HostEndpoint:   in.HostEndpoint,
+		G2SXML:         defaultFleetG2SXML(in.G2SXML, in.EGMEndpoint),
 		AdvertisedHost: strings.TrimSpace(in.AdvertisedHost),
 		AdvertisedIP:   strings.TrimSpace(in.AdvertisedIP),
 	}
@@ -178,4 +180,17 @@ func writeManifest(path string, m *fleet.Manifest) error {
 		return err
 	}
 	return os.WriteFile(path, append(data, '\n'), 0o644)
+}
+
+func defaultFleetG2SXML(in fleet.G2SXML, ep fleet.Endpoint) fleet.G2SXML {
+	if in.Mode == "" {
+		in.Mode = "lab_legacy_xml"
+	}
+	if in.Namespace == "" {
+		in.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3"
+	}
+	if in.EGMLocation == "" && ep.Host != "" && ep.Port > 0 {
+		in.EGMLocation = fmt.Sprintf("%s:%d", ep.Host, ep.Port)
+	}
+	return in
 }
