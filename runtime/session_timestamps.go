@@ -54,6 +54,9 @@ func (r RuntimeState) MarshalJSON() ([]byte, error) {
 		LastCommsOnlineAt   time.Time `json:"last_comms_online_at,omitempty"`
 		LastKeepAliveAt     time.Time `json:"last_keep_alive_at,omitempty"`
 		LastAckAt           time.Time `json:"last_ack_at,omitempty"`
+		G2SXMLMode          string    `json:"g2s_xml_mode,omitempty"`
+		G2SXMLNamespace     string    `json:"g2s_xml_namespace,omitempty"`
+		G2SXMLEGMLocation   string    `json:"g2s_xml_egm_location,omitempty"`
 		LastParsedRootKind  string    `json:"last_parsed_root_kind,omitempty"`
 		LastParsedClass     string    `json:"last_parsed_class,omitempty"`
 		LastParsedOperation string    `json:"last_parsed_operation,omitempty"`
@@ -65,6 +68,9 @@ func (r RuntimeState) MarshalJSON() ([]byte, error) {
 		LastCommsOnlineAt:   set.LastCommsOnlineAt,
 		LastKeepAliveAt:     set.LastKeepAliveAt,
 		LastAckAt:           set.LastAckAt,
+		G2SXMLMode:          evidence.G2SXMLMode,
+		G2SXMLNamespace:     evidence.G2SXMLNamespace,
+		G2SXMLEGMLocation:   evidence.G2SXMLEGMLocation,
 		LastParsedRootKind:  evidence.LastParsedRootKind,
 		LastParsedClass:     evidence.LastParsedClass,
 		LastParsedOperation: evidence.LastParsedOperation,
