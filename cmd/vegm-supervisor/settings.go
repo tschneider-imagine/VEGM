@@ -12,14 +12,17 @@ import (
 )
 
 type childIndicators struct {
-	SessionState    string `json:"session_state,omitempty"`
-	HeartbeatState  string `json:"heartbeat_state,omitempty"`
-	ConnectionState string `json:"connection_state,omitempty"`
-	AudioState      string `json:"audio_state,omitempty"`
-	HoldState       string `json:"hold_state,omitempty"`
-	LockState       string `json:"lock_state,omitempty"`
-	MachineState    string `json:"machine_state,omitempty"`
-	LastCommandType string `json:"last_command_type,omitempty"`
+	SessionState      string `json:"session_state,omitempty"`
+	HeartbeatState    string `json:"heartbeat_state,omitempty"`
+	ConnectionState   string `json:"connection_state,omitempty"`
+	AudioState        string `json:"audio_state,omitempty"`
+	HoldState         string `json:"hold_state,omitempty"`
+	LockState         string `json:"lock_state,omitempty"`
+	MachineState      string `json:"machine_state,omitempty"`
+	LastCommandType   string `json:"last_command_type,omitempty"`
+	LastCommsOnlineAt string `json:"last_comms_online_at,omitempty"`
+	LastKeepAliveAt   string `json:"last_keep_alive_at,omitempty"`
+	LastAckAt         string `json:"last_ack_at,omitempty"`
 }
 
 type instanceSettings struct {
