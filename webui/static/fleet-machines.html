@@ -49,6 +49,9 @@
       <div class="field"><label>EGM Endpoint Port</label><input id="add_endpoint_port" type="number" value="18445"></div>
       <div class="field"><label>EGM Endpoint Path</label><input id="add_endpoint_path" value="/g2s"></div>
       <div class="field"><label>Host Endpoint URL</label><input id="add_host_endpoint_url" value="http://tspi4.local:8444/g2s"></div>
+      <div class="field"><label>G2S XML Mode</label><input id="add_g2s_xml_mode" value="lab_legacy_xml"></div>
+      <div class="field"><label>G2S Namespace</label><input id="add_g2s_xml_namespace" value="http://www.gamingstandards.com/g2s/schemas/v1.0.3"></div>
+      <div class="field"><label>G2S EGM Location</label><input id="add_g2s_xml_egm_location" value="192.168.10.162:18445"></div>
       <div class="field"><label>Advertised Host</label><input id="add_advertised_host" value="192.168.10.162"></div>
       <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" value="192.168.10.162"></div>
     </div>
@@ -83,6 +86,8 @@
 <script>
 const LAB_VEGM_HOST_IP = '192.168.10.162';
 const LAB_CONTROLLER_URL = 'http://tspi4.local:8444/g2s';
+const G2S_DEFAULT_XML_MODE = 'lab_legacy_xml';
+const G2S_DEFAULT_NAMESPACE = 'http://www.gamingstandards.com/g2s/schemas/v1.0.3';
 let currentInstances = [];
 async function fetchJson(url, opts) {
   const r = await fetch(url, opts);
@@ -114,6 +119,14 @@ function trailingNumber(value) {
 function replaceTrailingNumber(value, next, width) {
   return String(value || '').replace(/(\d+)(?!.*\d)/, pad(next, width));
 }
+function defaultEGMLocation(host, port) {
+  return host && Number(port) > 0 ? `${host}:${Number(port)}` : '';
+}
+function refreshAddEGMLocation() {
+  const host = v('add_endpoint_host') || LAB_VEGM_HOST_IP;
+  const port = n('add_endpoint_port') || n('add_wire_port');
+  setv('add_g2s_xml_egm_location', defaultEGMLocation(host, port));
+}
 function fillNextMachine(instances) {
   const list = instances || [];
   let last = null;
@@ -143,6 +156,9 @@ function fillNextMachine(instances) {
   setv('add_endpoint_port', nextWire);
   setv('add_endpoint_path', last?.egm_endpoint?.path || '/g2s');
   setv('add_host_endpoint_url', last?.host_endpoint?.url || LAB_CONTROLLER_URL);
+  setv('add_g2s_xml_mode', last?.g2s_xml?.mode || G2S_DEFAULT_XML_MODE);
+  setv('add_g2s_xml_namespace', last?.g2s_xml?.namespace || G2S_DEFAULT_NAMESPACE);
+  setv('add_g2s_xml_egm_location', defaultEGMLocation(LAB_VEGM_HOST_IP, nextWire));
   setv('add_advertised_host', LAB_VEGM_HOST_IP);
   setv('add_advertised_ip', LAB_VEGM_HOST_IP);
   setv('remove_instance_id', nextInstance);
@@ -185,6 +201,11 @@ async function addMachine() {
     host_endpoint: {
       url: v('add_host_endpoint_url') || LAB_CONTROLLER_URL
     },
+    g2s_xml: {
+      mode: v('add_g2s_xml_mode') || G2S_DEFAULT_XML_MODE,
+      namespace: v('add_g2s_xml_namespace') || G2S_DEFAULT_NAMESPACE,
+      egm_location: v('add_g2s_xml_egm_location') || defaultEGMLocation(endpointHost, endpointPort)
+    },
     advertised_host: v('add_advertised_host') || endpointHost,
     advertised_ip: v('add_advertised_ip') || LAB_VEGM_HOST_IP
   };
@@ -218,6 +239,9 @@ document.getElementById('refreshBtn').addEventListener('click', refresh);
 document.getElementById('nextBtn').addEventListener('click', () => fillNextMachine(currentInstances));
 document.getElementById('addBtn').addEventListener('click', addMachine);
 document.getElementById('removeBtn').addEventListener('click', removeMachine);
+document.getElementById('add_endpoint_host').addEventListener('input', refreshAddEGMLocation);
+document.getElementById('add_endpoint_port').addEventListener('input', refreshAddEGMLocation);
+document.getElementById('add_wire_port').addEventListener('input', refreshAddEGMLocation);
 refresh();
 </script>
 </body>
