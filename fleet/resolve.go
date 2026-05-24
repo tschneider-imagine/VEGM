@@ -94,6 +94,9 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 	}
 	hostEndpoint := mergeHostEndpoint(m.Defaults.HostEndpoint, profile.HostEndpoint)
 	hostEndpoint = mergeHostEndpoint(hostEndpoint, inst.HostEndpoint)
+	g2sXML := mergeG2SXML(m.Defaults.G2SXML, profile.G2SXML)
+	g2sXML = mergeG2SXML(g2sXML, inst.G2SXML)
+	g2sXML = defaultG2SXML(g2sXML, egmEndpoint)
 	overlays := append([]string(nil), m.Defaults.OverlayFiles...)
 	overlays = append(overlays, profile.OverlayFiles...)
 	logDir := firstNonEmpty(inst.LogDir)
@@ -153,6 +156,7 @@ func resolveInstance(m *Manifest, idx int, inst Instance) (EffectiveInstance, er
 		ControlPort:     controlPort,
 		EGMEndpoint:     egmEndpoint,
 		HostEndpoint:    hostEndpoint,
+		G2SXML:          g2sXML,
 		AdvertisedHost:  advertisedHost,
 		AdvertisedIP:    advertisedIP,
 		DNSServers:      dnsServers,
@@ -188,7 +192,7 @@ func firstNonZero(values ...int) int {
 	for _, v := range values {
 		if v != 0 {
 			return v
-		}
+	}
 	}
 	return 0
 }
@@ -218,6 +222,21 @@ func mergeHostEndpoint(base, overlay HostEndpoint) HostEndpoint {
 	out := base
 	if overlay.URL != "" { out.URL = overlay.URL }
 	return out
+}
+
+func mergeG2SXML(base, overlay G2SXML) G2SXML {
+	out := base
+	if overlay.Mode != "" { out.Mode = overlay.Mode }
+	if overlay.Namespace != "" { out.Namespace = overlay.Namespace }
+	if overlay.EGMLocation != "" { out.EGMLocation = overlay.EGMLocation }
+	return out
+}
+
+func defaultG2SXML(in G2SXML, ep Endpoint) G2SXML {
+	if in.Mode == "" { in.Mode = "lab_legacy_xml" }
+	if in.Namespace == "" { in.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3" }
+	if in.EGMLocation == "" && ep.Host != "" && ep.Port > 0 { in.EGMLocation = fmt.Sprintf("%s:%d", ep.Host, ep.Port) }
+	return in
 }
 
 func mergeMaps(base, overlay map[string]any) map[string]any {
