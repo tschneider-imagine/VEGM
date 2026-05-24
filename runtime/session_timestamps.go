@@ -48,15 +48,28 @@ func (r RuntimeState) MarshalJSON() ([]byte, error) {
 	if set.LastAckAt.IsZero() && r.LastAckStatus != "" {
 		set.LastAckAt = r.LastCommandAt
 	}
+	evidence := parseEvidenceForInstance(r.InstanceID)
 	return json.Marshal(struct {
 		runtimeStateAlias
-		LastCommsOnlineAt time.Time `json:"last_comms_online_at,omitempty"`
-		LastKeepAliveAt   time.Time `json:"last_keep_alive_at,omitempty"`
-		LastAckAt         time.Time `json:"last_ack_at,omitempty"`
+		LastCommsOnlineAt   time.Time `json:"last_comms_online_at,omitempty"`
+		LastKeepAliveAt     time.Time `json:"last_keep_alive_at,omitempty"`
+		LastAckAt           time.Time `json:"last_ack_at,omitempty"`
+		LastParsedRootKind  string    `json:"last_parsed_root_kind,omitempty"`
+		LastParsedClass     string    `json:"last_parsed_class,omitempty"`
+		LastParsedOperation string    `json:"last_parsed_operation,omitempty"`
+		LastRawRoot         string    `json:"last_raw_root,omitempty"`
+		LastExpectedAck     string    `json:"last_expected_ack,omitempty"`
+		LastActualAck       string    `json:"last_actual_ack,omitempty"`
 	}{
-		runtimeStateAlias: runtimeStateAlias(r),
-		LastCommsOnlineAt: set.LastCommsOnlineAt,
-		LastKeepAliveAt:   set.LastKeepAliveAt,
-		LastAckAt:         set.LastAckAt,
+		runtimeStateAlias:   runtimeStateAlias(r),
+		LastCommsOnlineAt:   set.LastCommsOnlineAt,
+		LastKeepAliveAt:     set.LastKeepAliveAt,
+		LastAckAt:           set.LastAckAt,
+		LastParsedRootKind:  evidence.LastParsedRootKind,
+		LastParsedClass:     evidence.LastParsedClass,
+		LastParsedOperation: evidence.LastParsedOperation,
+		LastRawRoot:         evidence.LastRawRoot,
+		LastExpectedAck:     evidence.LastExpectedAck,
+		LastActualAck:       evidence.LastActualAck,
 	})
 }
