@@ -53,16 +53,20 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 	if targetURL == "" {
 		return outboundResult{}, fmt.Errorf("target url is required")
 	}
-	op, ok := pk.Operations[req.MessageType]
-	if !ok || len(op.Responses) == 0 {
-		return outboundResult{}, fmt.Errorf("operation %q is not defined for outbound use", req.MessageType)
+	sessionID := firstNonEmpty(req.SessionID, fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano()))
+	body := s.renderConfiguredOutboundBody(req.MessageType, sessionID)
+	if body == "" {
+		op, ok := pk.Operations[req.MessageType]
+		if !ok || len(op.Responses) == 0 {
+			return outboundResult{}, fmt.Errorf("operation %q is not defined for outbound use", req.MessageType)
+		}
+		requestFields := map[string]string{
+			"hostId":    firstNonEmpty(req.HostID, s.cfg.HostID, s.cfg.InstanceID),
+			"sessionId": sessionID,
+			"egmId":     s.cfg.EGMID,
+		}
+		body = RenderTemplate(op.Responses[0].Template, pk.Wire.Namespaces, requestFields, state)
 	}
-	requestFields := map[string]string{
-		"hostId":    firstNonEmpty(req.HostID, s.cfg.HostID, s.cfg.InstanceID),
-		"sessionId": firstNonEmpty(req.SessionID, fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano())),
-		"egmId":     s.cfg.EGMID,
-	}
-	body := RenderTemplate(op.Responses[0].Template, pk.Wire.Namespaces, requestFields, state)
 	if s.cfg.Logging.CaptureRenderedXML {
 		_, _ = s.logger.WritePayload("outbound_request", req.MessageType, []byte(body))
 	}
@@ -84,20 +88,45 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 	}
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(resp.Body)
-	parsed := ParseMessage(respBody)
+	parsedRoot := rootLocalNameFromResponse(respBody)
 	if s.cfg.Logging.CaptureRawXML {
 		_, _ = s.logger.WritePayload("outbound_response", req.MessageType, respBody)
 	}
-	result := outboundResult{HTTPStatus: resp.StatusCode, ResponseRoot: parsed.RootLocalName}
+	result := outboundResult{HTTPStatus: resp.StatusCode, ResponseRoot: parsedRoot}
 	ackExpected := expectedAckRoot(req.MessageType)
-	strictAckOK := ackExpected == "" || strings.EqualFold(parsed.RootLocalName, ackExpected)
-	genericAckOK := req.AllowGenericAck && strings.EqualFold(parsed.RootLocalName, "g2sResponse")
+	strictAckOK := ackExpected == "" || strings.EqualFold(parsedRoot, ackExpected)
+	genericAckOK := req.AllowGenericAck && strings.EqualFold(parsedRoot, "g2sResponse")
 	result.OK = resp.StatusCode >= 200 && resp.StatusCode < 300 && (strictAckOK || genericAckOK)
 	if !result.OK && result.Error == "" {
-		result.Error = fmt.Sprintf("unexpected http_status=%d response_root=%s", resp.StatusCode, parsed.RootLocalName)
+		result.Error = fmt.Sprintf("unexpected http_status=%d response_root=%s", resp.StatusCode, parsedRoot)
 	}
-	s.logger.Log("info", "outbound", "outbound request complete", map[string]any{"message_type": req.MessageType, "target_url": targetURL, "http_status": resp.StatusCode, "response_root": parsed.RootLocalName, "ok": result.OK, "allow_generic_ack": req.AllowGenericAck})
+	s.logger.Log("info", "outbound", "outbound request complete", map[string]any{"message_type": req.MessageType, "target_url": targetURL, "http_status": resp.StatusCode, "response_root": parsedRoot, "ok": result.OK, "allow_generic_ack": req.AllowGenericAck, "xml_mode": s.cfg.G2SXML.Mode})
 	return result, nil
+}
+
+func (s *Server) renderConfiguredOutboundBody(messageType, sessionID string) string {
+	if !s.shouldRenderXSDG2SMessage() {
+		return ""
+	}
+	switch messageType {
+	case "commsOnLine":
+		return s.renderCommsOnline(sessionID)
+	case "getDescriptor":
+		return s.renderGetDescriptor(sessionID)
+	case "setKeepAlive":
+		return s.renderSetKeepAlive(sessionID)
+	case "keepAlive":
+		return s.renderKeepAlive(sessionID)
+	default:
+		return ""
+	}
+}
+
+func rootLocalNameFromResponse(data []byte) string {
+	if parsed, err := ParseG2SEnvelope(data); err == nil {
+		return firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	}
+	return ParseMessage(data).RootLocalName
 }
 
 func (s *Server) outboundTransport(trustMode string, cfg OutboundConfig) (*http.Transport, error) {
