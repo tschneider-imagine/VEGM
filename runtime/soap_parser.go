@@ -88,7 +88,7 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 				continue
 			}
 			if strings.EqualFold(local, "g2sBody") {
-				if parsed.RootKind == "" || parsed.RootKind == "g2sMessage" {
+				if parsed.RootKind == "" {
 					parsed.RootKind = "g2sBody"
 				}
 				copyAttrs(parsed.Fields, t.Attr)
