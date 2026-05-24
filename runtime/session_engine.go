@@ -151,6 +151,7 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
 	s.state.LastError = ""
 	s.mu.Unlock()
+	s.recordSessionTimestamp("commsOnLine", now)
 	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck"})
 	return sessionID, nil
 }
