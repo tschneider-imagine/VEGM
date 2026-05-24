@@ -117,7 +117,7 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 				parsed.SessionID = firstNonEmpty(parsed.SessionID, attrValue(t.Attr, "sessionId"))
 				continue
 			}
-			if parsed.OperationName == "" && isLegacyOperationCandidate(local, parent) {
+			if parsed.OperationName == "" && isLegacyOperationCandidate(local, parent, parsed.HasEnvelope) {
 				parsed.RootKind = "legacy"
 				parsed.OperationName = local
 				parsed.RootNamespace = t.Name.Space
@@ -163,11 +163,11 @@ func isG2SClassContainer(parent string) bool {
 	return strings.EqualFold(parent, "g2sBody")
 }
 
-func isLegacyOperationCandidate(local, parent string) bool {
+func isLegacyOperationCandidate(local, parent string, hasEnvelope bool) bool {
 	if strings.EqualFold(local, "Envelope") || strings.EqualFold(local, "Body") || strings.EqualFold(local, "g2sMessage") || strings.EqualFold(local, "g2sBody") {
 		return false
 	}
-	return strings.EqualFold(parent, "Body") || parent == ""
+	return hasEnvelope && strings.EqualFold(parent, "Body")
 }
 
 func copyAttrs(fields map[string]string, attrs []xml.Attr) {
