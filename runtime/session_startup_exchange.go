@@ -107,12 +107,25 @@ func (s *Server) runSetKeepAliveOnce(ctx context.Context, sessionID string) erro
 }
 
 func (s *Server) renderGetDescriptor(sessionID string) string {
+	if s.shouldRenderXSDG2SMessage() {
+		return s.renderXSDCommunicationsMessage("getDescriptor", map[string]string{
+			"includeOwners":  boolAttr(true),
+			"includeConfigs": boolAttr(true),
+			"includeGuests":  boolAttr(true),
+			"includeOthers":  boolAttr(true),
+		})
+	}
 	soapNS := firstNonEmpty(s.pack.Wire.Namespaces["soapenv"], SOAP11Namespace)
 	g2sNS := firstNonEmpty(s.pack.Wire.Namespaces["g2s"], "urn:g2s:lab")
 	return fmt.Sprintf(`<soapenv:Envelope xmlns:soapenv="%s" xmlns:g2s="%s"><soapenv:Body><g2s:getDescriptor><g2s:hostId>%s</g2s:hostId><g2s:egmId>%s</g2s:egmId><g2s:sessionId>%s</g2s:sessionId></g2s:getDescriptor></soapenv:Body></soapenv:Envelope>`, soapNS, g2sNS, s.cfg.HostID, s.cfg.EGMID, sessionID)
 }
 
 func (s *Server) renderSetKeepAlive(sessionID string) string {
+	if s.shouldRenderXSDG2SMessage() {
+		return s.renderXSDCommunicationsMessage("setKeepAlive", map[string]string{
+			"interval": intAttr(s.cfg.SessionEngine.KeepAliveIntervalMS),
+		})
+	}
 	soapNS := firstNonEmpty(s.pack.Wire.Namespaces["soapenv"], SOAP11Namespace)
 	g2sNS := firstNonEmpty(s.pack.Wire.Namespaces["g2s"], "urn:g2s:lab")
 	return fmt.Sprintf(`<soapenv:Envelope xmlns:soapenv="%s" xmlns:g2s="%s"><soapenv:Body><g2s:setKeepAlive><g2s:hostId>%s</g2s:hostId><g2s:egmId>%s</g2s:egmId><g2s:sessionId>%s</g2s:sessionId><g2s:keepAliveIntervalMS>%d</g2s:keepAliveIntervalMS></g2s:setKeepAlive></soapenv:Body></soapenv:Envelope>`, soapNS, g2sNS, s.cfg.HostID, s.cfg.EGMID, sessionID, s.cfg.SessionEngine.KeepAliveIntervalMS)
