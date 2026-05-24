@@ -7,7 +7,9 @@ param(
     [string]$SubnetMask = "255.255.255.0",
     [string]$Gateway = "192.168.10.1",
     [int]$WirePortBase = 18443,
-    [int]$ControlPortBase = 19001
+    [int]$ControlPortBase = 19001,
+    [string]$G2SXmlMode = "lab_legacy_xml",
+    [string]$G2SXmlNamespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3"
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +36,11 @@ $manifest.defaults.advertised_host = $VegmHostIp
 $manifest.defaults.advertised_ip = $VegmHostIp
 $manifest.defaults.subnet_mask = $SubnetMask
 $manifest.defaults.gateway = $Gateway
+$manifest.defaults | Add-Member -MemberType NoteProperty -Name g2s_xml -Value ([ordered]@{
+    mode = $G2SXmlMode
+    namespace = $G2SXmlNamespace
+    egm_location = ("{0}:{1}" -f $VegmHostIp, $WirePortBase)
+}) -Force
 
 if ($manifest.profiles.baseline) {
     $manifest.profiles.baseline.advertised_host = $VegmHostIp
@@ -65,6 +72,11 @@ for ($i = 1; $i -le $Count; $i++) {
         }
         host_endpoint = [ordered]@{
             url = $HostEndpointUrl
+        }
+        g2s_xml = [ordered]@{
+            mode = $G2SXmlMode
+            namespace = $G2SXmlNamespace
+            egm_location = ("{0}:{1}" -f $VegmHostIp, $wirePort)
         }
         advertised_host = $VegmHostIp
         advertised_ip = $VegmHostIp
@@ -99,3 +111,5 @@ Write-Host "Wire ports: $WirePortBase - $($WirePortBase + $Count - 1)"
 Write-Host "Control ports: $ControlPortBase - $($ControlPortBase + $Count - 1)"
 Write-Host "VEGM host IP: $VegmHostIp"
 Write-Host "Controller URL: $HostEndpointUrl"
+Write-Host "G2S XML mode: $G2SXmlMode"
+Write-Host "G2S XML namespace: $G2SXmlNamespace"
