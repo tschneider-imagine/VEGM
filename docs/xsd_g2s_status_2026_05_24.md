@@ -8,9 +8,9 @@ This pass continued the evidence/UI bridge recommended in `projectplan.md` after
 
 ### Runtime state exposure
 
-Parsed G2S response evidence is now exposed through the existing child VEGM `/control/state` JSON path by extending `RuntimeState.MarshalJSON` in `runtime/session_timestamps.go`.
+Parsed G2S response evidence is exposed through the existing child VEGM `/control/state` JSON path by extending `RuntimeState.MarshalJSON` in `runtime/session_timestamps.go`.
 
-New JSON fields:
+JSON fields:
 
 - `last_parsed_root_kind`
 - `last_parsed_class`
@@ -19,15 +19,38 @@ New JSON fields:
 - `last_expected_ack`
 - `last_actual_ack`
 
-A focused runtime test was added:
+A focused runtime test exists:
 
 - `runtime/session_parse_evidence_state_test.go`
 
 The test verifies that parsed response evidence recorded through `recordParsedResponseEvidence(...)` appears in runtime state JSON.
 
+## Latest pass — XML metadata in runtime state
+
+Status: runtime side landed; supervisor namespace/location display still pending.
+
+Landed:
+
+- `runtime/session_parse_evidence.go`
+  - evidence recorder now captures:
+    - `G2SXMLMode`
+    - `G2SXMLNamespace`
+    - `G2SXMLEGMLocation`
+- `runtime/session_timestamps.go`
+  - `/control/state` JSON now exposes:
+    - `g2s_xml_mode`
+    - `g2s_xml_namespace`
+    - `g2s_xml_egm_location`
+- `runtime/session_parse_evidence_state_test.go`
+  - test now asserts XML mode, namespace, and EGM location are included in runtime state JSON.
+
+Important caveat:
+
+- These XML metadata fields are currently populated through the parsed-response evidence path. They appear after `recordParsedResponseEvidence(...)` runs. A future pass should expose configured `g2s_xml` directly from runtime config/state so the UI can show the configured mode before the first successful/parsed response.
+
 ### Supervisor UI exposure
 
-The supervisor page now displays parsed evidence from each child VEGM's `/control/state` fetch.
+Current supervisor page displays parsed evidence from each child VEGM's `/control/state` fetch.
 
 Displayed fields in the Live State cell:
 
@@ -39,11 +62,17 @@ Displayed fields in the Live State cell:
 - expected ACK
 - actual ACK
 
-Changed file:
+Changed file already in earlier pass:
 
 - `webui/static/supervisor.html`
 
-Note: supervisor currently falls back to displaying `lab_legacy_xml` for XML mode if the runtime state does not expose an explicit XML mode field. A future pass should expose the actual configured `g2s_xml.mode` from runtime state or supervisor instance metadata.
+Attempted but not landed in this latest pass:
+
+- add `g2s_xml_namespace` and `g2s_xml_egm_location` to the supervisor Live State evidence block.
+
+Reason:
+
+- The full `webui/static/supervisor.html` rewrite was blocked by the GitHub write safety layer. This needs a smaller/safe patch approach in the next UI pass.
 
 ## Important context
 
@@ -77,16 +106,23 @@ go test ./...
 
 ## Next recommended pass after green
 
-1. Expose actual `g2s_xml.mode`, namespace, and EGM location in child `/control/state` or supervisor instance metadata.
-2. Add supervisor editor fields for:
+1. Patch supervisor evidence block only, preferably by making the smallest possible change to `evidenceText(state)`, so it displays:
+   - `g2s_xml_namespace`
+   - `g2s_xml_egm_location`
+2. Expose configured `g2s_xml.mode`, namespace, and EGM location before first parsed response.
+   - Safe options:
+     - add a small dedicated `/control/g2s-xml` endpoint, or
+     - add first-class runtime state fields in a small controlled patch, or
+     - seed parse-evidence XML metadata during server creation/startup.
+3. Add supervisor editor fields for:
    - XML mode
    - G2S namespace
    - EGM location
-3. Allow switching per VEGM between:
+4. Allow switching per VEGM between:
    - `lab_legacy_xml`
    - `xsd_g2s_message`
-4. Regenerate configs cleanly with explicit `g2s_xml` blocks.
-5. Update `projectplan.md` section 12 after validation.
+5. Regenerate configs cleanly with explicit `g2s_xml` blocks.
+6. Update `projectplan.md` section 12 after validation.
 
 ## Known safe-patch guidance
 
