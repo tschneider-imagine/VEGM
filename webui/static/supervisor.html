@@ -25,6 +25,7 @@
     .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #0f172a; border: 1px solid #475569; font-size: 12px; margin: 2px 4px 2px 0; }
     .field { display: grid; gap: 4px; }
     .small { font-size: 12px; }
+    .session-times { margin-top: 6px; border-top: 1px solid #374151; padding-top: 6px; }
   </style>
 </head>
 <body>
@@ -107,14 +108,48 @@ function endpointText(ep) {
   return `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}`;
 }
 function clsBool(ok) { return ok ? 'ok' : 'bad'; }
+function domId(v) { return String(v || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+function fmtTime(v) {
+  if (!v || String(v).startsWith('0001-')) return 'n/a';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleTimeString();
+}
+function timestampCell(id, key, label) {
+  return `<div><span class="badge"><strong>${esc(label)}:</strong> <span id="${key}-${domId(id)}">n/a</span></span></div>`;
+}
+
+async function refreshSessionTimestamps(instances) {
+  for (const inst of instances || []) {
+    const id = domId(inst.instance_id);
+    const setText = (key, value) => {
+      const el = document.getElementById(`${key}-${id}`);
+      if (el) el.textContent = fmtTime(value);
+    };
+    setText('ts-comms', inst.last_comms_online_at);
+    setText('ts-keep', inst.last_keep_alive_at);
+    setText('ts-ack', inst.last_ack_at);
+    if (!inst.control_url) continue;
+    try {
+      const state = await fetchJson(`${inst.control_url}/control/state`);
+      setText('ts-comms', state.last_comms_online_at);
+      setText('ts-keep', state.last_keep_alive_at);
+      setText('ts-ack', state.last_ack_at);
+    } catch (_) {
+      // Child may be stopped or not healthy; leave as n/a.
+    }
+  }
+}
 
 async function refresh() {
   const body = document.getElementById('rows');
   body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
   try {
     const data = await fetchJson('/api/instances');
-    body.innerHTML = (data.instances || []).map(inst => {
+    const instances = data.instances || [];
+    body.innerHTML = instances.map(inst => {
       const cert = inst.certificate_status || {};
+      const safeID = jsq(inst.instance_id);
       return `
       <tr>
         <td>
@@ -122,7 +157,7 @@ async function refresh() {
           <div class="mono">egmId: ${esc(inst.egm_id)}</div>
           <div class="mono">hostId: ${esc(inst.host_id)}</div>
           <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
-          <div style="margin-top:6px;"><button onclick="selectInstance('${jsq(inst.instance_id)}')">Edit</button></div>
+          <div style="margin-top:6px;"><button onclick="selectInstance('${safeID}')">Edit</button></div>
         </td>
         <td>
           <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
@@ -139,6 +174,11 @@ async function refresh() {
             <div>${stateBadge('Heartbeat', inst.heartbeat_state)}</div>
             <div>${stateBadge('Connected', inst.connection_state)}</div>
             <div>${stateBadge('Last cmd', inst.last_command_type)}</div>
+          </div>
+          <div class="session-times mono">
+            ${timestampCell(inst.instance_id, 'ts-comms', 'commsOnLine')}
+            ${timestampCell(inst.instance_id, 'ts-keep', 'keepAlive')}
+            ${timestampCell(inst.instance_id, 'ts-ack', 'last ACK')}
           </div>
         </td>
         <td class="details mono">
@@ -158,19 +198,21 @@ async function refresh() {
         </td>
         <td>
           <div><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a></div>
+          <div><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a></div>
           <div><a target="_blank" href="${esc(inst.control_url)}/control/state/history">state history</a></div>
           <div><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a></div>
           <div><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a></div>
           <div><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></div>
         </td>
         <td>
-          <button onclick="act('${jsq(inst.instance_id)}','start')">Start</button>
+          <button onclick="act('${safeID}','start')">Start</button>
           <button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button>
-          <button onclick="act('${jsq(inst.instance_id)}','stop')">Stop</button>
-          <button onclick="act('${jsq(inst.instance_id)}','restart')">Restart</button>
+          <button onclick="act('${safeID}','stop')">Stop</button>
+          <button onclick="act('${safeID}','restart')">Restart</button>
         </td>
       </tr>`;
     }).join('');
+    await refreshSessionTimestamps(instances);
   } catch (err) {
     body.innerHTML = `<tr><td colspan="7" class="bad">${esc(err.message)}</td></tr>`;
   }
