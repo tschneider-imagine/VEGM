@@ -6,7 +6,14 @@ import (
 )
 
 func TestRuntimeStateJSONIncludesParsedResponseEvidence(t *testing.T) {
-	s := &Server{cfg: &Config{InstanceID: "vegm-evidence-json-test"}}
+	s := &Server{cfg: &Config{
+		InstanceID: "vegm-evidence-json-test",
+		G2SXML: G2SXMLConfig{
+			Mode:        G2SXMLModeXSDMessage,
+			Namespace:   G2SDefaultNamespace,
+			EGMLocation: "192.168.10.162:18443",
+		},
+	}}
 	s.recordParsedResponseEvidence("keepAliveAck", ParsedG2SEnvelope{
 		RootKind:      "g2sMessage",
 		ClassName:     "communications",
@@ -24,6 +31,9 @@ func TestRuntimeStateJSONIncludesParsedResponseEvidence(t *testing.T) {
 		t.Fatalf("unmarshal state: %v", err)
 	}
 	checks := map[string]string{
+		"g2s_xml_mode":           G2SXMLModeXSDMessage,
+		"g2s_xml_namespace":      G2SDefaultNamespace,
+		"g2s_xml_egm_location":   "192.168.10.162:18443",
 		"last_parsed_root_kind":  "g2sMessage",
 		"last_parsed_class":      "communications",
 		"last_parsed_operation":  "keepAliveAck",
