@@ -3,6 +3,9 @@ package runtime
 import "sync"
 
 type sessionParseEvidenceSet struct {
+	G2SXMLMode          string
+	G2SXMLNamespace     string
+	G2SXMLEGMLocation   string
 	LastParsedRootKind  string
 	LastParsedClass     string
 	LastParsedOperation string
@@ -18,6 +21,9 @@ func (s *Server) recordParsedResponseEvidence(expectedAck string, parsed ParsedG
 		return
 	}
 	set := sessionParseEvidenceSet{
+		G2SXMLMode:          s.cfg.G2SXML.Mode,
+		G2SXMLNamespace:     s.cfg.G2SXML.Namespace,
+		G2SXMLEGMLocation:   s.cfg.G2SXML.EGMLocation,
 		LastParsedRootKind:  parsed.RootKind,
 		LastParsedClass:     parsed.ClassName,
 		LastParsedOperation: parsed.OperationName,
