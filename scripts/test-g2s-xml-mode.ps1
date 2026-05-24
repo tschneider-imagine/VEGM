@@ -25,15 +25,20 @@ $mode = $config.g2s_xml.mode
 $namespace = $config.g2s_xml.namespace
 $egmLocation = $config.g2s_xml.egm_location
 
-if ([string]::IsNullOrWhiteSpace($mode)) { $mode = "<missing>" }
-if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "<missing>" }
-if ([string]::IsNullOrWhiteSpace($egmLocation)) { $egmLocation = "<missing>" }
+$missing = @()
+if ([string]::IsNullOrWhiteSpace($mode)) { $mode = "<missing>"; $missing += "mode" }
+if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "<missing>"; $missing += "namespace" }
+if ([string]::IsNullOrWhiteSpace($egmLocation)) { $egmLocation = "<missing>"; $missing += "egm_location" }
 
 Write-Host "Configured g2s_xml:"
 Write-Host "  mode:        $mode"
 Write-Host "  namespace:   $namespace"
 Write-Host "  egm_location:$egmLocation"
 Write-Host ""
+
+if ($missing.Count -gt 0) {
+    Write-Warning "Missing g2s_xml field(s): $($missing -join ', '). Open supervisor editor, save the VEGM settings, or regenerate the manifest/configs with the updated generator."
+}
 
 if (!(Test-Path $payloadDir)) {
     Write-Warning "Payload directory not found yet. Start the VEGM and Initiate or Force Heartbeat, then rerun this script."
@@ -85,7 +90,9 @@ if ($ShowPayloadMatches) {
 }
 
 Write-Host "Recommendation:"
-if ($mode -eq "xsd_g2s_message") {
+if ($missing.Count -gt 0) {
+    Write-Warning "Config metadata is incomplete. Save from supervisor editor or regenerate configs before judging payload mode."
+} elseif ($mode -eq "xsd_g2s_message") {
     if ($xsdMatches.Count -gt 0) {
         Write-Host "  PASS: mode is xsd_g2s_message and XSD-shaped payload evidence was found."
     } else {
