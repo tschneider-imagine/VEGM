@@ -586,3 +586,206 @@ The project is ready for controller qualification when:
 6. Only targeted VEGM state changes.
 7. Supervisor shows state and evidence clearly.
 8. Run export contains raw XML, parsed fields, state transitions, and pass/fail summary.
+
+## 12. Implementation status update — XSD/G2S envelope work
+
+Date: 2026-05-24
+
+This status section is the current handoff point for the XSD-aware G2S envelope work and must be referenced in the next coding pass.
+
+### Reference folder confirmed
+
+The checked-in XSD example folder is named:
+
+```text
+xsd_Examples1
+```
+
+Not `xsd_example1`.
+
+It contains the public/example G2S schemas used for this implementation pass, including:
+
+- `g2sMessage.xsd`
+- `g2sCommunications.xsd`
+- `g2sCabinet.xsd`
+- `g2sProgressive.xsd`
+- multiple IGT extension schemas
+
+Important schema findings already applied:
+
+- Root message shape is `g2sMessage`.
+- Point-to-point body is `g2sBody`.
+- Message-level identity is carried as attributes, including `hostId`, `egmId`, and `dateTimeSent`.
+- Communications commands sit under `communications`.
+- `setKeepAlive` uses an `interval` attribute, not a `keepAliveIntervalMS` child element.
+
+### XSD Pass 1 status — renderer foundation
+
+Status: complete and tested green before Pass 2 began.
+
+Implemented:
+
+- `runtime.G2SXMLConfig`
+- `g2s_xml.mode`
+- `g2s_xml.namespace`
+- `g2s_xml.egm_location`
+- default XML mode remains `lab_legacy_xml`
+- opt-in XML mode is `xsd_g2s_message`
+- default namespace is `http://www.gamingstandards.com/g2s/schemas/v1.0.3`
+- XSD renderer helper in `runtime/g2s_xsd_renderer.go`
+- XSD rendering for:
+  - `commsOnLine`
+  - `getDescriptor`
+  - `setKeepAlive`
+  - `keepAlive`
+
+Important behavior:
+
+- Existing runtime defaults still render legacy lab SOAP/XML unless `g2s_xml.mode` is explicitly set to `xsd_g2s_message`.
+- This was intentional to avoid breaking current lab testing against the G2S Mute Controller.
+
+Tests added:
+
+- `runtime/g2s_xsd_renderer_test.go`
+- verifies default legacy mode
+- verifies XSD `g2sMessage/g2sBody/communications` structure
+- verifies `hostId`, `egmId`, `dateTimeSent`
+- verifies `setKeepAlive interval="..."`
+
+### XSD Pass 2 status — parser / ACK normalization
+
+Status: partially complete and currently green as of the last confirmed user run before this update.
+
+Implemented:
+
+- `ParsedG2SEnvelope`
+- normalized parse fields:
+  - `RootKind`
+  - `ClassName`
+  - `OperationName`
+  - `HostID`
+  - `EGMID`
+  - `DateTimeSent`
+  - `SessionID`
+  - `RawRoot`
+- `ParseG2SEnvelope`
+- `ParseG2SMessage` now delegates to `ParseG2SEnvelope` and returns operation name as `RootLocalName`
+
+Parser now supports:
+
+- legacy SOAP body operations
+- XSD-root `g2sMessage`
+- `g2sBody`
+- communications class container
+- operations under `communications`
+- `g2sAck`
+
+Tests added:
+
+- `runtime/g2s_envelope_parser_test.go`
+- legacy SOAP `keepAliveAck`
+- XSD `keepAliveAck`
+- XSD `descriptorList`
+- `g2sAck`
+- strict expected ACK mapping stays unchanged
+
+Also updated:
+
+- `runtime/soap_parser_test.go`
+- valid XSD-root `g2sMessage` without SOAP is now allowed
+- random non-G2S/non-SOAP roots are rejected
+- bare `<Body><.../></Body>` no longer counts as SOAP unless an actual SOAP `Envelope` exists
+
+### Current pass status — parsed startup exchange evidence
+
+This pass referenced this plan and continued Pass 2.
+
+Landed:
+
+- `runtime/session_parse_evidence.go`
+  - sidecar recorder for parsed response evidence
+  - stores:
+    - `LastParsedRootKind`
+    - `LastParsedClass`
+    - `LastParsedOperation`
+    - `LastRawRoot`
+    - `LastExpectedAck`
+    - `LastActualAck`
+- `runtime/session_startup_exchange.go` now records parsed response evidence for:
+  - `getDescriptor -> descriptorList`
+  - `setKeepAlive -> setKeepAliveAck`
+- startup exchange logs now include parsed evidence fields for descriptor and setKeepAlive ACKs:
+  - `parsed_root_kind`
+  - `parsed_class`
+  - `parsed_operation`
+  - `raw_root`
+  - `expected_ack`
+  - `actual_ack`
+
+Needs validation:
+
+```powershell
+git pull
+go test ./...
+```
+
+### Known blockers / continuation notes
+
+The next pass should be careful and small because some large full-file replacements were blocked by the GitHub write safety layer.
+
+Blocked attempts:
+
+- large rewrite of `runtime/session_engine.go`
+- large rewrite of `runtime/session_keepalive.go`
+- large rewrite of `runtime/outbound.go`
+- large rewrite of `runtime/session_timestamps.go`
+
+Required next small commits:
+
+1. Wire parsed response evidence into `runtime/session_engine.go` for:
+   - `commsOnLine -> commsOnLineAck`
+2. Wire parsed response evidence into `runtime/session_keepalive.go` for:
+   - `keepAlive -> keepAliveAck`
+3. Extend runtime JSON state exposure without rewriting the whole timestamp sidecar if possible.
+   - Preferred safe approach: create a separate endpoint or compact helper rather than rewriting `RuntimeState.MarshalJSON` in one large patch.
+4. Add tests proving session-engine strict ACK validation accepts XSD-shaped ACKs.
+5. Keep Force Heartbeat generic `g2sResponse` acceptance limited to lab/debug forced-heartbeat path only.
+   - Do not relax normal session engine strict ACK requirements.
+
+### Current lab endpoint context
+
+Current controller endpoint for VEGMs:
+
+```text
+http://192.168.10.25:8444/g2s
+```
+
+Current VEGM host/listen IP:
+
+```text
+192.168.10.162
+```
+
+Current generated child control ports observed:
+
+```text
+vegm-001 -> 19001
+vegm-002 -> 19002
+vegm-011 -> 19011
+```
+
+Current lab issue observed:
+
+- VEGMs reach the controller endpoint.
+- Controller/Postman returns `g2sResponse` for some requests.
+- Normal session engine correctly rejects `g2sResponse` when it expects specific ACKs like `commsOnLineAck` or `keepAliveAck`.
+- Force Heartbeat debug path can be allowed to accept generic `g2sResponse`, but this must not become normal protocol behavior.
+
+### Next recommended pass
+
+Run tests first. If green, continue Pass 2 with the smallest possible patches:
+
+1. Patch `session_engine.go` only around the `ParseG2SMessage` block in `runCommsOnlineOnce`.
+2. Patch `session_keepalive.go` only around the `ParseG2SMessage` block in `runKeepAliveOnce`.
+3. Add tests for XSD-shaped `commsOnLineAck` and `keepAliveAck` in the existing session loop mock.
+4. Update this status section again after test results.
