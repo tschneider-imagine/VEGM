@@ -61,12 +61,8 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 		switch t := tok.(type) {
 		case xml.StartElement:
 			parent := ""
-			grandparent := ""
 			if len(stack) > 0 {
 				parent = stack[len(stack)-1].Name.Local
-			}
-			if len(stack) > 1 {
-				grandparent = stack[len(stack)-2].Name.Local
 			}
 			stack = append(stack, t)
 			local := t.Name.Local
@@ -110,7 +106,7 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 				parsed.DateTimeSent = firstNonEmpty(parsed.DateTimeSent, attrValue(t.Attr, "dateTimeSent"))
 				continue
 			}
-			if isG2SMessageContainer(parent, grandparent) && parsed.ClassName == "" {
+			if isG2SClassContainer(parent) && parsed.ClassName == "" {
 				parsed.ClassName = local
 				copyAttrs(parsed.Fields, t.Attr)
 				continue
@@ -163,8 +159,8 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 	return parsed, nil
 }
 
-func isG2SMessageContainer(parent, grandparent string) bool {
-	return strings.EqualFold(parent, "g2sBody") || (strings.EqualFold(parent, "Body") && strings.EqualFold(grandparent, "Envelope"))
+func isG2SClassContainer(parent string) bool {
+	return strings.EqualFold(parent, "g2sBody")
 }
 
 func isLegacyOperationCandidate(local, parent string) bool {
