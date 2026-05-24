@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Confidential � not to be distributed without prior written authorization from IGT. Under no circumstances can this document be used except by the recipient.
+IGT, the IGT logo and sb are trademarks or registered trademarks of International Game Technology in the United States and/or other countries. Other marks are the properties of their respective owners.
+NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.
+
+-->
+<xs:schema xmlns:mdAw="http://g2s.igt.com/mediaDisplay/awExt/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtMediaDisplay="http://g2s.igt.com/mediaDisplay/v1.0.0" targetNamespace="http://g2s.igt.com/mediaDisplay/awExt/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.1">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:import namespace="http://g2s.igt.com/mediaDisplay/v1.0.0" schemaLocation="igtMediaDisplayGlobal.xsd"/>
+	<!--Simple Data Types-->
+	<!--Complex Data Types-->
+	<xs:complexType name="c_getLinkedDisplays">
+		<xs:annotation>
+			<xs:documentation>Request to obtain linked displays data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_linkedDisplay">
+		<xs:annotation>
+			<xs:documentation>Linked Display Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="linkedDisplayType" type="igtMediaDisplay:t_mediaDisplayTypes" use="optional" default="IGT_linkedScale"/>
+		<xs:attribute name="mdDeviceId" type="g2s:t_deviceId" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="c_linkedDisplayList">
+		<xs:annotation>
+			<xs:documentation>Linked Display List Response Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="mdAw:linkedDisplay" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--Supporting Elements-->
+	<xs:element name="linkedDisplay">
+		<xs:annotation>
+			<xs:documentation>Linked Display Data Element</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="mdAw:c_linkedDisplay">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Request-Response pairs-->
+	<xs:element name="getLinkedDisplays">
+		<xs:annotation>
+			<xs:documentation>Request to obtain the list of associated linked mediaDisplays</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="mdAw:c_getLinkedDisplays">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="linkedDisplayList">
+		<xs:annotation>
+			<xs:documentation>Response containing a list of mediaDisplays that can be associated</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="mdAw:c_linkedDisplayList">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

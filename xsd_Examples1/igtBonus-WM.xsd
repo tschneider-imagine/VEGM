@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) -->
+<xs:schema xmlns:igtWM="http://g2s.igt.com/bonus/wm/v1.0.0" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://g2s.igt.com/bonus/wm/v1.0.0" version="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="g2sIncludeGlobal.xsd" namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" />
+  <xs:simpleType name="t_bonusModesBase">
+    <xs:annotation>
+      <xs:documentation>Bonus Modes Identifier - Base Enumerations.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="IGT_wagerMatchMode" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:attributeGroup name="p_bonusProfileExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus profile extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="true" name="wmCardRequired" type="xs:boolean" use="optional" />
+    <xs:attribute default="0" name="wmLimit" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="" name="wmLimitText" type="g2s:t_textMessage" use="optional" />
+    <xs:attribute default="30000" name="wmLimitDuration" type="g2s:t_milliseconds" use="optional" />
+    <xs:attribute default="" name="wmExitText" type="g2s:t_textMessage" use="optional" />
+    <xs:attribute default="5000" name="wmExitDuration" type="g2s:t_milliseconds" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusStatusExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus Status extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="0" name="wmEgmEscrow" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="0" name="wmPlayerEscrow" type="g2s:t_meterValue" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusWinExtensions">
+    <xs:attribute default="0" name="wmAwardAmt" type="g2s:t_meterValue" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusLogExtensions">
+    <xs:attribute default="0" name="wmAwardAmt" type="g2s:t_meterValue" use="optional" />
+  </xs:attributeGroup>
+</xs:schema>

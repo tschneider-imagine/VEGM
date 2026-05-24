@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- edited with XMLSpy v2010 rel. 3 (http://www.altova.com) by Ethan Tower (Tower Consuilting) -->
+
+<xs:schema xmlns:g2sHW="http://www.gamingstandards.com/g2s/schemas/v1.0.3/ExtHW" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/ExtHW" elementFormDefault="qualified" attributeFormDefault="qualified" version="2011-11-25 v2.1.0">
+
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+
+	<!--Simple Data Types.-->
+
+	<xs:simpleType name="t_hardwareTypesBase">
+
+		<xs:annotation>
+
+			<xs:documentation>Hardware Types - Base Enumerations.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:restriction base="g2s:t_uniqueIdentifier64">
+
+			<xs:enumeration value="G2S_coinAcceptor"/>
+
+			<xs:enumeration value="G2S_noteAcceptor"/>
+
+			<xs:enumeration value="G2S_hopper"/>
+
+			<xs:enumeration value="G2S_noteDispenser"/>
+
+			<xs:enumeration value="G2S_printer"/>
+
+			<xs:enumeration value="G2S_idReader"/>
+
+			<xs:enumeration value="G2S_monitor"/>
+
+			<xs:enumeration value="G2S_touchScreen"/>
+
+			<xs:enumeration value="G2S_buttonPanel"/>
+
+			<xs:enumeration value="G2S_topLight"/>
+
+			<xs:enumeration value="G2S_reelMechanism"/>
+
+			<xs:enumeration value="G2S_camera"/>
+
+			<xs:enumeration value="G2S_processor"/>
+
+			<xs:enumeration value="G2S_accentLight"/>
+
+			<xs:enumeration value="G2S_pointingDevice"/>
+
+			<xs:enumeration value="G2S_videoAdapter"/>
+
+		</xs:restriction>
+
+	</xs:simpleType>
+
+	<xs:simpleType name="t_hardwareTypes">
+
+		<xs:annotation>
+
+			<xs:documentation>Hardware Types - Extensible List.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:union memberTypes="g2s:t_extensibleList g2sHW:t_hardwareTypesBase"/>
+
+	</xs:simpleType>
+
+	<xs:simpleType name="t_propNamesMonitor">
+
+		<xs:annotation>
+
+			<xs:documentation>Property Names - Monitors.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:restriction base="g2s:t_uniqueIdentifier64">
+
+			<xs:enumeration value="G2S_screenType"/>
+
+			<xs:enumeration value="G2S_screenDescription"/>
+
+			<xs:enumeration value="G2S_touchScreenCapable"/>
+
+			<xs:enumeration value="G2S_orientation"/>
+
+			<xs:enumeration value="G2S_physicalHeight"/>
+
+			<xs:enumeration value="G2S_physicalWidth"/>
+
+			<xs:enumeration value="G2S_monitorResolution"/>
+
+			<xs:enumeration value="G2S_3dCapability"/>
+
+		</xs:restriction>
+
+	</xs:simpleType>
+
+	<xs:simpleType name="t_propNamesVideoAdapter">
+
+		<xs:annotation>
+
+			<xs:documentation>Property Names - Video Adapters.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:restriction base="g2s:t_extensibleList">
+
+			<xs:enumeration value="G2S_sharedVideoMemory"/>
+
+			<xs:enumeration value="G2S_minVideoMemory"/>
+
+			<xs:enumeration value="G2S_maxVideoMemory"/>
+
+		</xs:restriction>
+
+	</xs:simpleType>
+
+	<xs:simpleType name="t_propNames">
+
+		<xs:annotation>
+
+			<xs:documentation>Property names - Extensible List.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:union memberTypes="g2s:t_extensibleList g2sHW:t_propNamesMonitor g2sHW:t_propNamesVideoAdapter"/>
+
+	</xs:simpleType>
+
+	<!--Attribute Groups.-->
+
+	<xs:attributeGroup name="p_hardwareStatus">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareStatus Attributes.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:attribute name="lastHardwareChange" type="g2s:t_g2sDateTime" use="required"/>
+
+	</xs:attributeGroup>
+
+	<xs:attributeGroup name="p_hardwareDeviceList">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareDeviceList Attributes.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:attribute name="lastHardwareChange" type="g2s:t_g2sDateTime" use="required"/>
+
+	</xs:attributeGroup>
+
+	<xs:attributeGroup name="p_hardwareGroup">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareGroup Attributes.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:attribute name="hardwareType" type="g2sHW:t_hardwareTypes" use="required"/>
+
+	</xs:attributeGroup>
+
+	<xs:attributeGroup name="p_hardwareDevice">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareDevice Attributes.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:attribute name="vendorId" type="g2s:t_descriptorText" use="required"/>
+
+		<xs:attribute name="productId" type="g2s:t_descriptorText" use="required"/>
+
+		<xs:attribute name="releaseNum" type="g2s:t_descriptorText" use="required"/>
+
+		<xs:attribute name="vendorName" type="g2s:t_descriptorText" use="optional" default=""/>
+
+		<xs:attribute name="productName" type="g2s:t_descriptorText" use="optional" default=""/>
+
+		<xs:attribute name="serialNum" type="g2s:t_descriptorText" use="required"/>
+
+		<xs:attribute name="hardwareDesc" type="g2s:t_egmMessage" use="optional" default=""/>
+
+		<xs:attribute name="deviceClass" type="g2s:t_deviceClass" use="optional" default="G2S_none"/>
+
+		<xs:attribute name="deviceId" type="g2s:t_deviceId" use="optional" default="0"/>
+
+	</xs:attributeGroup>
+
+	<xs:attributeGroup name="p_hardwareProp">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareProp Attributes.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:attribute name="propName" type="g2sHW:t_propNames" use="required"/>
+
+	</xs:attributeGroup>
+
+	<!--Complex Data Types.-->
+
+	<xs:complexType name="c_getHardwareStatus">
+
+		<xs:annotation>
+
+			<xs:documentation>getHardwareStatus Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand"/>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_hardwareStatus">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareStatus Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand">
+
+				<xs:attributeGroup ref="g2sHW:p_hardwareStatus"/>
+
+			</xs:extension>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_getHardwareDevices">
+
+		<xs:annotation>
+
+			<xs:documentation>getHardwareDevices Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand"/>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_hardwareDeviceList">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareDeviceList Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand">
+
+				<xs:sequence>
+
+					<xs:element ref="g2sHW:hardwareGroup" minOccurs="0" maxOccurs="unbounded"/>
+
+				</xs:sequence>
+
+				<xs:attributeGroup ref="g2sHW:p_hardwareDeviceList"/>
+
+			</xs:extension>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_hardwareGroup">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareGroup Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand">
+
+				<xs:sequence>
+
+					<xs:element ref="g2sHW:hardwareDevice" maxOccurs="unbounded"/>
+
+				</xs:sequence>
+
+				<xs:attributeGroup ref="g2sHW:p_hardwareGroup"/>
+
+			</xs:extension>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_hardwareDevice">
+
+		<xs:annotation>
+
+			<xs:documentation>hardWareDevice Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand">
+
+				<xs:sequence>
+
+					<xs:element ref="g2sHW:hardwareProp" minOccurs="0" maxOccurs="unbounded"/>
+
+				</xs:sequence>
+
+				<xs:attributeGroup ref="g2sHW:p_hardwareDevice"/>
+
+			</xs:extension>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<xs:complexType name="c_hardwareProp">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareProp Data Type.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexContent>
+
+			<xs:extension base="g2s:c_baseCommand">
+
+				<xs:choice>
+
+					<xs:element ref="g2sHW:booleanValue"/>
+
+					<xs:element ref="g2sHW:stringValue"/>
+
+					<xs:element ref="g2sHW:integerValue"/>
+
+					<xs:element ref="g2sHW:decimalValue"/>
+
+					<xs:any namespace="##other" processContents="lax"/>
+
+				</xs:choice>
+
+				<xs:attributeGroup ref="g2sHW:p_hardwareProp"/>
+
+			</xs:extension>
+
+		</xs:complexContent>
+
+	</xs:complexType>
+
+	<!--Commands.-->
+
+	<xs:element name="getHardwareStatus">
+
+		<xs:annotation>
+
+			<xs:documentation>getHardwareStatus Command.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_getHardwareStatus">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="hardwareStatus">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareStatus Command.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_hardwareStatus">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="getHardwareDevices">
+
+		<xs:annotation>
+
+			<xs:documentation>getHardwareDevices Command.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_getHardwareDevices">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="hardwareDeviceList">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareDeviceList Command.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_hardwareDeviceList">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="hardwareGroup">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareGroup Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_hardwareGroup">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="hardwareDevice">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareDevice Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_hardwareDevice">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="hardwareProp">
+
+		<xs:annotation>
+
+			<xs:documentation>hardwareProp Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2sHW:c_hardwareProp">
+
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<xs:element name="booleanValue" type="xs:boolean">
+
+		<xs:annotation>
+
+			<xs:documentation>booleanValue Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+	</xs:element>
+
+	<xs:element name="stringValue">
+
+		<xs:annotation>
+
+			<xs:documentation>stringValue Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:simpleType>
+
+			<xs:restriction base="xs:string">
+
+				<xs:maxLength value="256"/>
+
+			</xs:restriction>
+
+		</xs:simpleType>
+
+	</xs:element>
+
+	<xs:element name="integerValue" type="xs:long">
+
+		<xs:annotation>
+
+			<xs:documentation>integerValue Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+	</xs:element>
+
+	<xs:element name="decimalValue" type="xs:decimal">
+
+		<xs:annotation>
+
+			<xs:documentation>decimalvalue Sub-Element.</xs:documentation>
+
+		</xs:annotation>
+
+	</xs:element>
+
+	<!--Class Wrapper.-->
+
+	<xs:element name="hardware">
+
+		<xs:annotation>
+
+			<xs:documentation>Hardware Class.</xs:documentation>
+
+		</xs:annotation>
+
+		<xs:complexType>
+
+			<xs:complexContent>
+
+				<xs:extension base="g2s:c_baseClass">
+
+					<xs:choice minOccurs="0">
+
+						<xs:element ref="g2sHW:getHardwareStatus"/>
+
+						<xs:element ref="g2sHW:hardwareStatus"/>
+
+						<xs:element ref="g2sHW:getHardwareDevices"/>
+
+						<xs:element ref="g2sHW:hardwareDeviceList"/>
+
+						<xs:any namespace="##other" processContents="lax"/>
+
+					</xs:choice>
+
+				</xs:extension>
+
+			</xs:complexContent>
+
+		</xs:complexType>
+
+	</xs:element>
+
+	<!--End of Class.-->
+
+</xs:schema>
+

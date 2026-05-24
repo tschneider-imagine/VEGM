@@ -1,0 +1,758 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Confidential � not to be distributed without prior written authorization from IGT. Under no circumstances can this document be used except by the recipient.
+IGT, the IGT logo and sb are trademarks or registered trademarks of International Game Technology in the United States and/or other countries. Other marks are the properties of their respective owners.
+NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.
+
+-->
+<!-- Copyright 2007 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtMediaDisplay="http://g2s.igt.com/mediaDisplay/v1.0.0" xmlns:mdAw="http://g2s.igt.com/mediaDisplay/awExt/v1.0.0" targetNamespace="http://g2s.igt.com/mediaDisplay/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="1.8">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:include schemaLocation="igtMediaDisplayGlobal.xsd"/>
+	<xs:import namespace="http://g2s.igt.com/mediaDisplay/awExt/v1.0.0" schemaLocation="igtMediaDisplay-AwExt.xsd"/>
+	<!--Class-specific Simple Data Types.-->
+	<xs:simpleType name="t_contentId">
+		<xs:annotation>
+			<xs:documentation>Content identifier set by host.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_contentExceptions">
+		<xs:annotation>
+			<xs:documentation>Content Exception Codes</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_exceptionCode"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_contentStates">
+		<xs:annotation>
+			<xs:documentation>The state of the content</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_contentPending"/>
+			<xs:enumeration value="IGT_contentLoaded"/>
+			<xs:enumeration value="IGT_contentExecuting"/>
+			<xs:enumeration value="IGT_contentReleased"/>
+			<xs:enumeration value="IGT_contentError"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_deviceVisibleStates">
+		<xs:annotation>
+			<xs:documentation>The state of the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_shown"/>
+			<xs:enumeration value="IGT_hidden"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_eventCode">
+		<xs:annotation>
+			<xs:documentation>Event Code Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_uniqueIdentifier10"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_mediaDisplayPositions">
+		<xs:annotation>
+			<xs:documentation>Location of the mediaDisplay on the screen.</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="g2s:t_extensibleList igtMediaDisplay:t_mediaDisplayPositionsBase"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_mediaDisplayPositionsBase">
+		<xs:annotation>
+			<xs:documentation>Location of the mediaDisplay on the screen - base enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_left"/>
+			<xs:enumeration value="IGT_right"/>
+			<xs:enumeration value="IGT_top"/>
+			<xs:enumeration value="IGT_bottom"/>
+			<xs:enumeration value="IGT_fullScreen"/>
+			<xs:enumeration value="IGT_centerScreen"/>
+			<xs:enumeration value="IGT_floating"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_screenTypes">
+		<xs:annotation>
+			<xs:documentation>Screen on which the mediaDisplay resides.</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="igtMediaDisplay:t_screenTypesBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_screenTypesBase">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Screen types - base enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0"/>
+			<xs:maxLength value="64"/>
+			<xs:enumeration value="IGT_primary"/>
+			<xs:enumeration value="IGT_secondary"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_softwareTypes">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Software Types Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="igtMediaDisplay:t_softwareTypesBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_softwareTypesBase">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Software types - base enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0"/>
+			<xs:maxLength value="64"/>
+			<xs:enumeration value="IGT_flash"/>
+			<xs:enumeration value="IGT_HTML"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_mediaDisplayProfile">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay profile parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="mediaDisplayPriority" use="optional" default="1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="screenType" type="igtMediaDisplay:t_screenTypes" use="optional" default="IGT_primary"/>
+		<xs:attribute name="screenDescription" use="optional" default="Game Screen">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:minLength value="0"/>
+					<xs:maxLength value="64"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="mediaDisplayPosition" type="igtMediaDisplay:t_mediaDisplayPositions" use="optional" default="IGT_left"/>
+		<xs:attribute name="mediaDisplayType" type="igtMediaDisplay:t_mediaDisplayTypes" use="optional" default="IGT_scale"/>
+		<xs:attribute name="mediaDisplayDescription" use="optional" default="Media Display">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:minLength value="0"/>
+					<xs:maxLength value="64"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="maxContentLoaded" use="optional" default="1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="xPosition" use="optional" default="-1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="-1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="yPosition" use="optional" default="-1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="-1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="contentHeight" use="optional" default="1024">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="contentWidth" use="optional" default="256">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="mediaDisplayHeight" use="optional" default="-1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="-1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="mediaDisplayWidth" use="optional" default="-1">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="-1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="touchscreenCapable" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="localConnectionPort" use="optional" default="15151">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1023"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="audioCapable" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="minLogEntries" use="optional" default="35">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="timeToLive" type="g2s:t_timeToLive" use="optional" default="30000"/>
+		<xs:attribute name="configDateTime" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="configComplete" type="xs:boolean" use="optional" default="true"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_mediaDisplayStatus">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Status Parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="configDateTime" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="configComplete" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="hostLocked" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="transactionId" type="g2s:t_transactionId" use="optional" default="0"/>
+		<xs:attribute name="contentId" type="igtMediaDisplay:t_contentId" use="optional" default="0"/>
+	</xs:attributeGroup>
+	<!--Class-specific Complex Data Types.-->
+	<xs:complexType name="c_contentLog">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Log Record Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_logClassRecord">
+				<xs:attribute name="contentId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="igtMediaDisplay:t_contentId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="mediaURI" use="required">
+					<xs:simpleType>
+						<xs:restriction base="xs:anyURI">
+							<xs:minLength value="0"/>
+							<xs:maxLength value="256"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="contentState" type="igtMediaDisplay:t_contentStates" use="required"/>
+				<xs:attribute name="contentLoadedDateTime" type="xs:dateTime" use="optional"/>
+				<xs:attribute name="contentReleasedDateTime" type="xs:dateTime" use="optional"/>
+				<xs:attribute name="contentException" type="igtMediaDisplay:t_contentExceptions" use="optional" default="0"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_contentLogList">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Log List Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="igtMediaDisplay:contentLog" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_mediaDisplayProfile">
+		<xs:annotation>
+			<xs:documentation>Profile for the MediaDisplay Device</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="capabilitiesList">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="capabilityItem" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="softwareType" type="igtMediaDisplay:t_softwareTypes" use="optional" default="IGT_flash"/>
+										<xs:attribute name="softwareVersion" use="optional" default="7">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="16"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="fileExtension" use="optional" default="swf">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="8"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:anyAttribute namespace="##other" processContents="lax"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+							<xs:anyAttribute namespace="##other" processContents="lax"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="localEventList" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="localEventItem" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="eventCode" type="igtMediaDisplay:t_eventCode" use="required"/>
+										<xs:attribute name="eventText" type="g2s:t_egmMessage" use="optional" default=""/>
+										<xs:anyAttribute namespace="##other" processContents="lax"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+							<xs:anyAttribute namespace="##other" processContents="lax"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="localCommandList" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="localCommandItem" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="funtionalGroup" use="required">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="64"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="commandElement" use="required">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="64"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:anyAttribute namespace="##other" processContents="lax"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+							<xs:anyAttribute namespace="##other" processContents="lax"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="screenList" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="screenItem" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="screenType" type="igtMediaDisplay:t_screenTypes" use="optional" default="IGT_primary"/>
+										<xs:attribute name="screenDescription" use="optional" default="Game Screen">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:minLength value="0"/>
+													<xs:maxLength value="64"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="screenWidth" use="optional" default="1920">
+											<xs:simpleType>
+												<xs:restriction base="xs:int">
+													<xs:minInclusive value="0"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="screenHeight" use="optional" default="1080">
+											<xs:simpleType>
+												<xs:restriction base="xs:int">
+													<xs:minInclusive value="0"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:anyAttribute namespace="##other" processContents="lax"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+							<xs:anyAttribute namespace="##other" processContents="lax"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="igtMediaDisplay:p_mediaDisplayProfile"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_mediaDisplayStatus">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Status Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceStatus">
+				<xs:attributeGroup ref="igtMediaDisplay:p_mediaDisplayStatus"/>
+				<xs:attribute name="deviceVisibleState" type="igtMediaDisplay:t_deviceVisibleStates" use="optional" default="IGT_hidden"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_mediaDisplayAck">
+		<xs:annotation>
+			<xs:documentation>Acknowledge a show or hide request</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attribute name="contentId" type="igtMediaDisplay:t_contentId" use="optional" default="0"/>
+				<xs:attribute name="deviceVisibleState" type="igtMediaDisplay:t_deviceVisibleStates" use="optional" default="IGT_hidden"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--Device State Commands.-->
+	<xs:element name="getMediaDisplayProfile">
+		<xs:annotation>
+			<xs:documentation>Get the mediaDisplay profile</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="mediaDisplayProfile">
+		<xs:annotation>
+			<xs:documentation>Return the mediaDisplay profile</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtMediaDisplay:c_mediaDisplayProfile">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setMediaDisplayState">
+		<xs:annotation>
+			<xs:documentation>Set the state of the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getMediaDisplayStatus">
+		<xs:annotation>
+			<xs:documentation>Request the status of the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="mediaDisplayStatus">
+		<xs:annotation>
+			<xs:documentation>Return the status of the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtMediaDisplay:c_mediaDisplayStatus">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setMediaDisplayLockOut">
+		<xs:annotation>
+			<xs:documentation>Set MediaDisplay Lock Out Request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setLockOut">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Supported device visible state commands-->
+	<xs:element name="showMediaDisplay">
+		<xs:annotation>
+			<xs:documentation>Make the mediaDisplay visible</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="hideMediaDisplay">
+		<xs:annotation>
+			<xs:documentation>HIde the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="mediaDisplayAck">
+		<xs:annotation>
+			<xs:documentation>Acknowledge a host mediaDisplay request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtMediaDisplay:c_mediaDisplayAck">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Supported Content Related Commands.-->
+	<xs:element name="loadContent">
+		<xs:annotation>
+			<xs:documentation>Load content into the mediaDisplay</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:sequence>
+						<xs:element name="authorizedEventList" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="eventItem" maxOccurs="unbounded">
+										<xs:complexType>
+											<xs:attribute name="eventCode" type="igtMediaDisplay:t_eventCode" use="optional" default="IGT_all"/>
+											<xs:anyAttribute namespace="##other" processContents="lax"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+								<xs:anyAttribute namespace="##other" processContents="lax"/>
+							</xs:complexType>
+						</xs:element>
+						<xs:element name="authorizedCommandList" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="commandItem" maxOccurs="unbounded">
+										<xs:complexType>
+											<xs:attribute name="functionalGroup" use="optional" default="IGT_all">
+												<xs:simpleType>
+													<xs:restriction base="xs:string">
+														<xs:minLength value="0"/>
+														<xs:maxLength value="64"/>
+													</xs:restriction>
+												</xs:simpleType>
+											</xs:attribute>
+											<xs:attribute name="commandElement" use="optional" default="IGT_all">
+												<xs:simpleType>
+													<xs:restriction base="xs:string">
+														<xs:minLength value="0"/>
+														<xs:maxLength value="64"/>
+													</xs:restriction>
+												</xs:simpleType>
+											</xs:attribute>
+											<xs:anyAttribute namespace="##other" processContents="lax"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+								<xs:anyAttribute namespace="##other" processContents="lax"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+					<xs:attribute name="contentId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="igtMediaDisplay:t_contentId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="mediaURI" use="optional" default="http://www.example.com/example.swf">
+						<xs:simpleType>
+							<xs:restriction base="xs:anyURI">
+								<xs:minLength value="0"/>
+								<xs:maxLength value="256"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="mdAccessToken" type="xs:long" use="optional" default="0"/>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="releaseContent">
+		<xs:annotation>
+			<xs:documentation>Release the content</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseTransaction">
+					<xs:attribute name="contentId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="igtMediaDisplay:t_contentId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setActiveContent">
+		<xs:annotation>
+			<xs:documentation>Set content to be active</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseTransaction">
+					<xs:attribute name="contentId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="igtMediaDisplay:t_contentId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getContentStatus">
+		<xs:annotation>
+			<xs:documentation>Get the status of the content</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseTransaction">
+					<xs:attribute name="contentId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="igtMediaDisplay:t_contentId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="contentStatus">
+		<xs:annotation>
+			<xs:documentation>Acknowledge a host content request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseTransaction">
+					<xs:attribute name="contentId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="igtMediaDisplay:t_contentId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="contentState" type="igtMediaDisplay:t_contentStates" use="optional" default="IGT_contentReleased"/>
+					<xs:attribute name="contentException" type="igtMediaDisplay:t_contentExceptions" use="optional" default="0"/>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Configuration Log Inquiry Commands.-->
+	<xs:element name="getContentLogStatus">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay log status request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="contentLogStatus">
+		<xs:annotation>
+			<xs:documentation>Current mediaDisplay log status</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getContentLog">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay log request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="contentLog">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Log Record.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtMediaDisplay:c_contentLog">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="contentLogList">
+		<xs:annotation>
+			<xs:documentation>Current mediaDisplay log list</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtMediaDisplay:c_contentLogList">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="mediaDisplay">
+		<xs:annotation>
+			<xs:documentation>MediaDisplay Class.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="igtMediaDisplay:getMediaDisplayProfile"/>
+						<xs:element ref="igtMediaDisplay:mediaDisplayProfile"/>
+						<xs:element ref="igtMediaDisplay:setMediaDisplayState"/>
+						<xs:element ref="igtMediaDisplay:mediaDisplayStatus"/>
+						<xs:element ref="igtMediaDisplay:getMediaDisplayStatus"/>
+						<xs:element ref="igtMediaDisplay:setMediaDisplayLockOut"/>
+						<xs:element ref="igtMediaDisplay:mediaDisplayAck"/>
+						<xs:element ref="igtMediaDisplay:loadContent"/>
+						<xs:element ref="igtMediaDisplay:releaseContent"/>
+						<xs:element ref="igtMediaDisplay:getContentStatus"/>
+						<xs:element ref="igtMediaDisplay:setActiveContent"/>
+						<xs:element ref="igtMediaDisplay:contentStatus"/>
+						<xs:element ref="igtMediaDisplay:showMediaDisplay"/>
+						<xs:element ref="igtMediaDisplay:hideMediaDisplay"/>
+						<xs:element ref="igtMediaDisplay:getContentLogStatus"/>
+						<xs:element ref="igtMediaDisplay:contentLogStatus"/>
+						<xs:element ref="igtMediaDisplay:getContentLog"/>
+						<xs:element ref="igtMediaDisplay:contentLogList"/>
+						<xs:any namespace="##other" processContents="lax"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

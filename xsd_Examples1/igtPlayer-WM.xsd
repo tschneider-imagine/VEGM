@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2007 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtWMP="http://g2s.igt.com/player/wm/v1.0.0" targetNamespace="http://g2s.igt.com/player/wm/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="1.1">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_playerProfileExtensions">
+		<xs:annotation>
+			<xs:documentation>IGT Player profile extensions.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="wmEarnPoints" type="xs:boolean" use="optional" default="false"/>
+	</xs:attributeGroup>
+</xs:schema>

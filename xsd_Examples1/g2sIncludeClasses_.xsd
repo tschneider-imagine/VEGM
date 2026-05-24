@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) -->
+<xs:schema xmlns:igtCBG="http://g2s.igt.com/CBG/v1.0.0" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtMediaDisplay="http://g2s.igt.com/mediaDisplay/v1.0.0" xmlns:igtTourn="http://g2s.igt.com/tournament/v1.0.0" xmlns:igtPlayerContext="http://g2s.igt.com/playerContext/v1.0.0" xmlns:igtLicensing="http://g2s.igt.com/licensing/v1.0.0" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" version="2007-04-26 v1.0.3" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="g2sCommunications.xsd" />
+  <xs:include schemaLocation="g2sCabinet.xsd" />
+  <xs:include schemaLocation="g2sMeters.xsd" />
+  <xs:include schemaLocation="g2sGamePlay.xsd" />
+  <xs:include schemaLocation="g2sCommConfig.xsd" />
+  <xs:include schemaLocation="g2sOptionConfig.xsd" />
+  <xs:include schemaLocation="g2sDownload.xsd" />
+  <xs:include schemaLocation="g2sHandpay.xsd" />
+  <xs:include schemaLocation="g2sCoinAcceptor.xsd" />
+  <xs:include schemaLocation="g2sNoteAcceptor.xsd" />
+  <xs:include schemaLocation="g2sHopper.xsd" />
+  <xs:include schemaLocation="g2sNoteDispenser.xsd" />
+  <xs:include schemaLocation="g2sPrinter.xsd" />
+  <xs:include schemaLocation="g2sProgressive.xsd" />
+  <xs:include schemaLocation="g2sIdReader.xsd" />
+  <xs:include schemaLocation="g2sBonus.xsd" />
+  <xs:include schemaLocation="g2sPlayer.xsd" />
+  <xs:include schemaLocation="g2sVoucher.xsd" />
+  <xs:include schemaLocation="g2sWAT.xsd" />
+  <xs:include schemaLocation="g2sGAT.xsd" />
+  <xs:include schemaLocation="g2sCentral.xsd" />
+  <xs:import schemaLocation="igtMediaDisplay.xsd" namespace="http://g2s.igt.com/mediaDisplay/v1.0.3" />
+  <xs:import schemaLocation="igtLicensing.xsd" namespace="http://g2s.igt.com/licensing/v1.0.3" />
+  <xs:import schemaLocation="igtTournament.xsd" namespace="http://g2s.igt.com/tournament/v1.0.3" />
+  <xs:import schemaLocation="igtCBG.xsd" namespace="http://g2s.igt.com/CBG/v1.0.3" />
+  <xs:import schemaLocation="igtPlayerContext.xsd" namespace="http://g2s.igt.com/playerContext/v1.0.3" />
+  <xs:import schemaLocation="igtBonus-EBG.xsd" namespace="http://g2s.igt.com/bonus-EBG/v1.0.3" />
+  <xs:import schemaLocation="igtBonus-WM.xsd" namespace="http://g2s.igt.com/bonus-WM/v1.0.3" />
+  <xs:import schemaLocation="igtBonus-limits.xsd" namespace="http://g2s.igt.com/bonus-limits/v1.0.3" />
+  <xs:import schemaLocation="igtBonus-ext2.xsd" namespace="http://g2s.igt.com/bonus-limits/v1.0.3" />
+  <xs:import schemaLocation="igtBonus-MJT-FreeSpin.xsd" namespace="http://g2s.igt.com/bonus-limits/v1.0.3" />
+</xs:schema>

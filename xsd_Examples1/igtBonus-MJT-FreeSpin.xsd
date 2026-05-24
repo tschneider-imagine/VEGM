@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) -->
+<xs:schema xmlns:igtMJT="http://g2s.igt.com/bonus/mjt/v1.0.0" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://g2s.igt.com/bonus/mjt/v1.0.0" version="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="g2sIncludeGlobal.xsd" namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" />
+  <xs:simpleType name="t_timeoutRules">
+    <xs:annotation>
+      <xs:documentation>Bonus payment method timeout rules</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="IGT_autoStart" />
+      <xs:enumeration value="IGT_exitMode" />
+      <xs:enumeration value="IGT_ignoreTimeout" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_wagerRestrictions">
+    <xs:annotation>
+      <xs:documentation>Bonus payment wager restriction rules</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="IGT_useMaxBet" />
+      <xs:enumeration value="IGT_useCurrentBet" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:attributeGroup name="p_bonusWinExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus award extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="startTime" type="xs:dateTime" use="optional" />
+    <xs:attribute name="stopTime" type="xs:dateTime" use="optional" />
+    <xs:attribute default="0" name="numberOfGames" type="xs:int" use="optional" />
+    <xs:attribute default="0" name="timeout" type="g2s:t_milliseconds" use="optional" />
+    <xs:attribute default="IGT_ignoreTimeout" name="timeoutRule" type="igtMJT:t_timeoutRules" use="optional" />
+    <xs:attribute default="1" name="winMultiplier" type="xs:int" use="optional" />
+    <xs:attribute default="0" name="minMultWin" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="0" name="maxMultWin" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="IGT_useCurrentBet" name="wagerRestriction" type="igtMJT:t_wagerRestrictions" use="optional" />
+    <xs:attribute default="false" name="lowCreditReject" type="xs:boolean" use="optional" />
+    <xs:attribute default="false" name="cardOutEnd" type="xs:boolean" use="optional" />
+    <xs:attribute default="false" name="cashOutEnd" type="xs:boolean" use="optional" />
+    <xs:attribute default="false" name="autoPlay" type="xs:boolean" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_commitBonusExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus commit extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="0" name="amountWagered" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="0" name="bonusGamesPlayed" type="xs:int" use="optional" />
+    <xs:attribute default="0" name="bonusGamesPaid" type="xs:int" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusLogExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus log extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="0" name="numberOfGames" type="xs:int" use="optional" />
+    <xs:attribute default="1" name="winMultiplier" type="xs:int" use="optional" />
+    <xs:attribute default="0" name="minMultWin" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="0" name="maxMultWin" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="IGT_useCurrentBet" name="wagerRestriction" type="igtMJT:t_wagerRestrictions" use="optional" />
+    <xs:attribute default="0" name="amountWagered" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="0" name="bonusGamesPlayed" type="xs:int" use="optional" />
+    <xs:attribute default="0" name="bonusGamesPaid" type="xs:int" use="optional" />
+  </xs:attributeGroup>
+</xs:schema>

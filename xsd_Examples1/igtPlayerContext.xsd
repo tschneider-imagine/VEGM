@@ -1,0 +1,1123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2008 rel. 2 sp1 (http://www.altova.com) by Richard Glasser (IGT) -->
+<xs:schema xmlns:igtPlayerContext="http://g2s.igt.com/playerContext/v1.0.0" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://g2s.igt.com/playerContext/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.4">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sVoucher.xsd"/>
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIdReader.xsd"/>
+	<!--Configuration Log Inquiry Commands.-->
+	<!--Device State Commands.-->
+	<!--Class-specific Simple Data Types.-->
+	<xs:simpleType name="t_applicationId">
+		<xs:annotation>
+			<xs:documentation>Application ID</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="36"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_player">
+		<xs:annotation>
+			<xs:documentation>player ID</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:unsignedLong">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerIdStatus">
+		<xs:annotation>
+			<xs:documentation>Player ID status</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_none"/>
+			<xs:enumeration value="IGT_unknown"/>
+			<xs:enumeration value="IGT_expired"/>
+			<xs:enumeration value="IGT_abandoned"/>
+			<xs:enumeration value="IGT_valid"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerIdStatusBase">
+		<xs:restriction base="g2s:t_uniqueIdentifier32"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerIdStatus2">
+		<xs:restriction>
+			<xs:simpleType>
+				<xs:restriction base="igtPlayerContext:t_playerIdStatusBase"/>
+			</xs:simpleType>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_updateCount">
+		<xs:restriction base="xs:unsignedLong"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_eventCode">
+		<xs:restriction base="g2s:t_uniqueIdentifier10"/>
+	</xs:simpleType>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_getApplicationData">
+		<xs:annotation>
+			<xs:documentation>getApplicationData Parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_applicationData">
+		<xs:annotation>
+			<xs:documentation>applicationData Parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required" form="qualified"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_playerContextProfile">
+		<xs:annotation>
+			<xs:documentation>Profile parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="noMessageTimer" type="g2s:t_milliseconds" use="optional" default="30000"/>
+		<xs:attribute name="minLogEntries" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_updateParams">
+		<xs:annotation>
+			<xs:documentation>Common update parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="updateId" type="igtPlayerContext:t_updateId" use="required"/>
+		<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+		<xs:attribute name="playerContextId" type="g2s:t_transactionId" use="required"/>
+		<xs:attribute name="checkin" type="xs:boolean" use="required" form="qualified"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_contextParams">
+		<xs:annotation>
+			<xs:documentation>Common parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="optional"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_checkoutParams">
+		<xs:annotation>
+			<xs:documentation>Common parameters to checkout a context</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_playerContextData">
+		<xs:annotation>
+			<xs:documentation>Parameters for player context</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+		<xs:attribute name="lockEgmId" type="g2s:t_egmId" use="optional"/>
+		<xs:attribute name="updateCount" type="igtPlayerContext:t_updateCount" use="required"/>
+		<xs:attribute name="lastUpdateEgmId" type="g2s:t_egmId" use="optional"/>
+		<xs:attribute name="expired" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="monetaryValue" type="g2s:t_meterValue" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_checkoutParamsLog">
+		<xs:annotation>
+			<xs:documentation>Common parameters to checkout a context</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="playerId" type="g2s:t_playerId" use="optional" default=""/>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="optional"/>
+		<xs:attribute name="playerIdCreationStatus" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="igtPlayerContext:t_playerIdCreationStatus">
+					<xs:enumeration value="IGT_pending"/>
+					<xs:enumeration value="IGT_created"/>
+					<xs:enumeration value="IGT_error"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="lockEgmId" type="g2s:t_egmId" use="optional"/>
+		<xs:attribute name="lockDateTime" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="unlockDateTime" type="xs:dateTime" use="optional"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_createPlayerContextParams">
+		<xs:annotation>
+			<xs:documentation>Common parameters to create a playerContext</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="printerDeviceId" type="g2s:t_deviceId" use="optional" default="-1"/>
+		<xs:attribute name="idReaderType" type="g2s:t_idReaderTypes" use="optional" default="G2S_barCode"/>
+		<xs:attribute name="idReaderId" type="g2s:t_deviceId" use="required"/>
+		<xs:attribute name="idNumber" type="g2s:t_idNumber" use="required"/>
+		<xs:attribute name="idType" type="g2s:t_idTypes" use="optional" default="G2S_anonymous"/>
+		<xs:attribute name="playerId" type="g2s:t_playerId" use="optional" default=""/>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_forceUnlockParams">
+		<xs:annotation>
+			<xs:documentation>Parameters for the foce unlock command</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_forceUnlockAllParams">
+		<xs:annotation>
+			<xs:documentation>Parameters for the force unlock all command</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="egmId" type="g2s:t_egmId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_playerIdUpdate">
+		<xs:annotation>
+			<xs:documentation>Parameters for the player id update command</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="optional"/>
+		<xs:attribute name="playerIdStatus" type="igtPlayerContext:t_playerIdStatus" use="required"/>
+		<xs:attribute name="playerIdExpirationTime" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="resetExpirationTime" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="reissuedPlayerId" type="xs:boolean" use="optional" default="false"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_requestPlayerContextUpdates">
+		<xs:annotation>
+			<xs:documentation>Parameters for request all player updates</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+		<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="optional"/>
+	</xs:attributeGroup>
+	<!--Class-specific Simple Data Types.-->
+	<xs:simpleType name="t_updateId">
+		<xs:annotation>
+			<xs:documentation>Update ID</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_transactionId"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerContextExceptions">
+		<xs:annotation>
+			<xs:documentation>Player Context exception codes data types</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_exceptionCode"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerContextStatusBase">
+		<xs:annotation>
+			<xs:documentation>Enumeration of known status values</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_pending"/>
+			<xs:enumeration value="IGT_pendingAck"/>
+			<xs:enumeration value="IGT_createdPending"/>
+			<xs:enumeration value="IGT_created"/>
+			<xs:enumeration value="IGT_checkoutPending"/>
+			<xs:enumeration value="IGT_checkedOut"/>
+			<xs:enumeration value="IGT_checkintPending"/>
+			<xs:enumeration value="IGT_checkedIn"/>
+			<xs:enumeration value="IGT_error"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerContextStatuses">
+		<xs:annotation>
+			<xs:documentation>Base with extensible list</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="igtPlayerContext:t_playerContextStatusBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_playerIdCreationStatus">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_pending"/>
+			<xs:enumeration value="IGT_created"/>
+			<xs:enumeration value="IGT_error"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Class-specific Complex Data Types.-->
+	<xs:complexType name="c_getApplicationdata">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="igtPlayerContext:p_getApplicationData"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_applicationData">
+		<xs:annotation>
+			<xs:documentation>applicationData command</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="applicationData" type="xs:base64Binary"/>
+				</xs:sequence>
+				<xs:attributeGroup ref="igtPlayerContext:p_applicationData"/>
+				<xs:anyAttribute namespace="##other"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_createPlayerId">
+		<xs:annotation>
+			<xs:documentation>Initiate creation of a player context/player id</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_createPlayerIdStatus">
+		<xs:annotation>
+			<xs:documentation>Response to creation/ Notification of creation result</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attributeGroup ref="igtPlayerContext:p_contextParams"/>
+				<xs:attribute name="playerIdCreationStatus" type="igtPlayerContext:t_playerIdCreationStatus" use="required"/>
+				<xs:attribute name="textMessage" type="g2s:t_textMessage" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_createPlayerIdStatusAck">
+		<xs:annotation>
+			<xs:documentation>Acknowledge receipt of creation result</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--New complex types above-->
+	<xs:complexType name="c_checkoutPlayerContext">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="igtPlayerContext:p_checkoutParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_playerContextData">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence minOccurs="0">
+					<xs:element name="playerContextData" type="xs:base64Binary"/>
+				</xs:sequence>
+				<xs:attributeGroup ref="igtPlayerContext:p_playerContextData"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_updatePlayerContext">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="playerContextData" type="xs:base64Binary"/>
+				</xs:sequence>
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+				<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+				<xs:attribute name="monetaryValue" type="g2s:t_meterValue" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_updatePlayerContextAck">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_checkinPlayerContext">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_playerContextProfile">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="igtPlayerContext:relatedDeviceList"/>
+				</xs:sequence>
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="igtPlayerContext:p_playerContextProfile"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_playerContextLogItem">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_logClassRecord">
+				<xs:attribute name="eventCode" type="igtPlayerContext:t_eventCode" use="required"/>
+				<xs:attribute name="dateTime" type="xs:dateTime" use="required"/>
+				<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="optional"/>
+				<xs:attribute name="playerIdCreationStatus" type="igtPlayerContext:t_playerIdCreationStatus" use="optional"/>
+				<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="optional"/>
+				<xs:attribute name="updateCount" type="igtPlayerContext:t_updateCount" use="optional"/>
+				<xs:attribute name="validationId" type="g2s:t_validationId" use="optional"/>
+				<xs:attribute name="egmId" type="g2s:t_egmId" use="optional"/>
+				<xs:attribute name="playerContextException" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_playerContextLogList">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="igtPlayerContext:playerContextLog" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_relatedDevice">
+		<xs:attribute name="deviceClass" type="g2s:t_deviceClassBase" use="required"/>
+		<xs:attribute name="deviceId" type="g2s:t_deviceId" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="c_relatedDeviceList">
+		<xs:sequence>
+			<xs:element ref="igtPlayerContext:relatedDevice" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="c_playerContextHeartbeat">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_lockPlayerContext">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+				<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_lockPlayerContextAck">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_unlockPlayerContext">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_unlockPlayerContextAck">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_forceUnlock">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attributeGroup ref="igtPlayerContext:p_forceUnlockParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_forceUnlockAll">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" use="required">
+					<xs:simpleType>
+						<xs:restriction base="g2s:t_transactionId">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attributeGroup ref="igtPlayerContext:p_forceUnlockAllParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_playerIdUpdate">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="igtPlayerContext:p_playerIdUpdate"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_secondPlayerIdPresented">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="textMessage" type="g2s:t_textMessage"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_secondPlayerPresentedAck"/>
+	<!--Inner elements-->
+	<xs:element name="playerContextLog">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerContextLogItem">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextState" type="xs:base64Binary"/>
+	<xs:element name="relatedDevice" type="igtPlayerContext:c_relatedDevice"/>
+	<xs:element name="relatedDeviceList" type="igtPlayerContext:c_relatedDeviceList"/>
+	<!--Command elements-->
+	<xs:element name="requestApplicationData">
+		<xs:annotation>
+			<xs:documentation>request for application Data</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_getApplicationdata">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="applicationData">
+		<xs:annotation>
+			<xs:documentation>Command allowing host to update application data</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_applicationData">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="applicationDataAck">
+		<xs:annotation>
+			<xs:documentation>ack for application data</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="createPlayerId">
+		<xs:annotation>
+			<xs:documentation>Initiates creation of a playerContext for anonymous player</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_createPlayerId">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="createPlayerIdStatus">
+		<xs:annotation>
+			<xs:documentation>Response to create and Request for notification</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_createPlayerIdStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="createPlayerIdStatusAck">
+		<xs:annotation>
+			<xs:documentation>Response to create..Status</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_createPlayerIdStatusAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="unlockPlayerContext">
+		<xs:annotation>
+			<xs:documentation>Command for the EGM to checkin a playerContext</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_checkinPlayerContext">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="applicationId" type="igtPlayerContext:t_applicationId" use="required"/>
+					<xs:attribute name="playerId" type="igtPlayerContext:t_player" use="required"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="checkoutPlayerContext">
+		<xs:annotation>
+			<xs:documentation>Checkout Player Context command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_checkoutPlayerContext">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextData">
+		<xs:annotation>
+			<xs:documentation/>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerContextData">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextDataAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="updatePlayerContext">
+		<xs:annotation>
+			<xs:documentation>Command for the EGM to update the playerContext stored on the host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_updatePlayerContext">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="updatePlayerContextAck">
+		<xs:annotation>
+			<xs:documentation>Host response after updating the playerContext in the persistent store</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_updatePlayerContextAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="lockPlayerContext">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_lockPlayerContext">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="lockPlayerContextAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_lockPlayerContextAck">
+					<xs:sequence>
+						<xs:element name="playerContextData" type="xs:base64Binary"/>
+					</xs:sequence>
+					<xs:attributeGroup ref="igtPlayerContext:p_playerContextData"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="unlockPlayerContextAck">
+		<xs:annotation>
+			<xs:documentation/>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_unlockPlayerContextAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getPlayerContext">
+		<xs:annotation>
+			<xs:documentation>No lock get player context data</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:attributeGroup ref="igtPlayerContext:p_contextParams"/>
+			<xs:anyAttribute namespace="##other"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="reprintPlayerTicket">
+		<xs:annotation>
+			<xs:documentation>Command to have host reprint an anonymous player ticket</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="validationId" type="g2s:t_validationId" use="required"/>
+					<xs:attribute name="expirationTime" type="xs:dateTime" use="optional"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="reprintTicketStatus">
+		<xs:annotation>
+			<xs:documentation>Host response. If validationId is valid, host should initiate new 'printTicket' command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="ticketReprintStatus" type="igtPlayerContext:t_playerIdCreationStatus" use="required"/>
+					<xs:attribute name="textMessage" type="g2s:t_textMessage" use="optional"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="reprintTicketStatusAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="forceUnlock">
+		<xs:annotation>
+			<xs:documentation>EGM initiated force unlock</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_forceUnlock">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="forceUnlockAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="forceUnlockAll">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_forceUnlockAll">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="forceUnlockAllAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cancelPlayerContextUpdateAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cancelPlayerContextUpdate">
+		<xs:annotation>
+			<xs:documentation>Command to cancel UCC initiated player context updates</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attributeGroup ref="igtPlayerContext:p_contextParams"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="requestPlayerContextUpdate">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attributeGroup ref="igtPlayerContext:p_contextParams"/>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="requestPlayerContextUpdateAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionid" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerIdUpdate">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerIdUpdate">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerIdUpdateAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="secondPlayerIdPresented">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_secondPlayerIdPresented">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="secondPlayerIdPresentedAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Status Commands-->
+	<xs:element name="getPlayerContextStatus">
+		<xs:annotation>
+			<xs:documentation>Command to request the status of the playerContext device</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextStatus">
+		<xs:annotation>
+			<xs:documentation>playerContext device status command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_deviceStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setPlayerContextState">
+		<xs:annotation>
+			<xs:documentation>Command for the host to set the state of the playerContext device</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextHeartbeat">
+		<xs:annotation>
+			<xs:documentation>Application level heartbeat sent by the host to the EGM.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerContextHeartbeat">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextHeartbeatAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Profile-->
+	<xs:element name="getPlayerContextProfile">
+		<xs:annotation>
+			<xs:documentation>Command to request the playerContext profile</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextProfile">
+		<xs:annotation>
+			<xs:documentation>playerContext profile command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerContextProfile">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Logs-->
+	<xs:element name="getPlayerContextLogStatus">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextLogStatus">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getPlayerContextLog">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="playerContextLogList">
+		<xs:annotation>
+			<xs:documentation>playerContext Log</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtPlayerContext:c_playerContextLogList">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="gameExit">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="gameExitAck">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="transactionId" use="required">
+						<xs:simpleType>
+							<xs:restriction base="g2s:t_transactionId">
+								<xs:minInclusive value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="playerContext">
+		<xs:annotation>
+			<xs:documentation>Single device class</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="igtPlayerContext:requestApplicationData"/>
+						<xs:element ref="igtPlayerContext:applicationData"/>
+						<xs:element ref="igtPlayerContext:applicationDataAck"/>
+						<xs:element ref="igtPlayerContext:createPlayerId"/>
+						<xs:element ref="igtPlayerContext:createPlayerIdStatus"/>
+						<xs:element ref="igtPlayerContext:createPlayerIdStatusAck"/>
+						<xs:element ref="igtPlayerContext:playerIdUpdate"/>
+						<xs:element ref="igtPlayerContext:playerIdUpdateAck"/>
+						<xs:element ref="igtPlayerContext:secondPlayerIdPresented"/>
+						<xs:element ref="igtPlayerContext:secondPlayerIdPresentedAck"/>
+						<xs:element ref="igtPlayerContext:checkoutPlayerContext"/>
+						<xs:element ref="igtPlayerContext:playerContextData"/>
+						<xs:element ref="igtPlayerContext:playerContextDataAck"/>
+						<xs:element ref="igtPlayerContext:updatePlayerContext"/>
+						<xs:element ref="igtPlayerContext:updatePlayerContextAck"/>
+						<xs:element ref="igtPlayerContext:cancelPlayerContextUpdate"/>
+						<xs:element ref="igtPlayerContext:cancelPlayerContextUpdateAck"/>
+						<xs:element ref="igtPlayerContext:requestPlayerContextUpdate"/>
+						<xs:element ref="igtPlayerContext:requestPlayerContextUpdateAck"/>
+						<xs:element ref="igtPlayerContext:unlockPlayerContext"/>
+						<xs:element ref="igtPlayerContext:unlockPlayerContextAck"/>
+						<xs:element ref="igtPlayerContext:lockPlayerContext"/>
+						<xs:element ref="igtPlayerContext:lockPlayerContextAck"/>
+						<xs:element ref="igtPlayerContext:forceUnlock"/>
+						<xs:element ref="igtPlayerContext:forceUnlockAck"/>
+						<xs:element ref="igtPlayerContext:forceUnlockAll"/>
+						<xs:element ref="igtPlayerContext:forceUnlockAllAck"/>
+						<xs:element ref="igtPlayerContext:reprintPlayerTicket"/>
+						<xs:element ref="igtPlayerContext:reprintTicketStatus"/>
+						<xs:element ref="igtPlayerContext:reprintTicketStatusAck"/>
+						<xs:element ref="igtPlayerContext:getPlayerContextStatus"/>
+						<xs:element ref="igtPlayerContext:setPlayerContextState"/>
+						<xs:element ref="igtPlayerContext:playerContextStatus"/>
+						<xs:element ref="igtPlayerContext:playerContextHeartbeat"/>
+						<xs:element ref="igtPlayerContext:playerContextHeartbeatAck"/>
+						<xs:element ref="igtPlayerContext:getPlayerContextProfile"/>
+						<xs:element ref="igtPlayerContext:playerContextProfile"/>
+						<xs:element ref="igtPlayerContext:getPlayerContextLogStatus"/>
+						<xs:element ref="igtPlayerContext:playerContextLogStatus"/>
+						<xs:element ref="igtPlayerContext:getPlayerContextLog"/>
+						<xs:element ref="igtPlayerContext:playerContextLogList"/>
+						<xs:element ref="igtPlayerContext:gameExit"/>
+						<xs:element ref="igtPlayerContext:gameExitAck"/>
+						<xs:any namespace="##other"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

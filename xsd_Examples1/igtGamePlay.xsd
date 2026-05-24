@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2010 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtGP="http://g2s.igt.com/gp/v1.0.0" targetNamespace="http://g2s.igt.com/gp/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="1.0">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_winLevelItemExtensions">
+		<xs:annotation>
+			<xs:documentation>IGT Game Play Win Level Item extensions.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="winLevelCredits" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="numberOfCredits" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="winLevelOdds" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:long">
+					<xs:minInclusive value="0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+</xs:schema>

@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:igtLicensing="http://g2s.igt.com/licensing/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://g2s.igt.com/licensing/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.5">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Class-specific Simple Data Types.-->
+	<xs:simpleType name="t_licenseExceptions">
+		<xs:annotation>
+			<xs:documentation>License Exception Codes</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_exceptionCode"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_licenseFeatureId">
+		<xs:annotation>
+			<xs:documentation>Feature identifier type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0"/>
+			<xs:maxLength value="1024"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_licenseVersion">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="64"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_licenseStatus">
+		<xs:annotation>
+			<xs:documentation>license status data type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="64"/>
+			<xs:enumeration value="IGT_pendingResponse"/>
+			<xs:enumeration value="IGT_pendingVerification"/>
+			<xs:enumeration value="IGT_verified"/>
+			<xs:enumeration value="IGT_failedVerification"/>
+			<xs:enumeration value="IGT_active"/>
+			<xs:enumeration value="IGT_denied"/>
+			<xs:enumeration value="IGT_expired"/>
+			<xs:enumeration value="IGT_pendingRelease"/>
+			<xs:enumeration value="IGT_released"/>
+			<xs:enumeration value="IGT_revoked"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_licenseSource">
+		<xs:annotation>
+			<xs:documentation>license source data type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="32"/>
+			<xs:enumeration value="IGT_local"/>
+			<xs:enumeration value="IGT_served"/>
+			<xs:enumeration value="IGT_other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_licenseId">
+		<xs:annotation>
+			<xs:documentation>License Release ID</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_payload">
+		<xs:annotation>
+			<xs:documentation>Base64 Payload</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:base64Binary"/>
+	</xs:simpleType>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_licensingProfile">
+		<xs:annotation>
+			<xs:documentation>Licensing Profile Parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="minLogEntries" use="optional" default="35">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="noMessageTimer" type="g2s:t_milliseconds" use="optional" default="30000"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_licenseSpecifier">
+		<xs:annotation>
+			<xs:documentation>Feature Name and Optional Version</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="featureId" type="igtLicensing:t_licenseFeatureId" use="required"/>
+		<xs:attribute name="version" type="igtLicensing:t_licenseVersion" use="optional"/>
+	</xs:attributeGroup>
+	<!--Class-specific Complex Data Types.-->
+	<xs:complexType name="c_currentLicenseList">
+		<xs:annotation>
+			<xs:documentation>Current License List Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="licenseItem" type="igtLicensing:c_licenseItem" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_getCurrentLicenseList">
+		<xs:annotation>
+			<xs:documentation>Get Current License List Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId"/>
+				<xs:attribute name="featureId" type="igtLicensing:t_licenseFeatureId"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_getLicense">
+		<xs:annotation>
+			<xs:documentation>License Request Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attributeGroup ref="igtLicensing:p_licenseSpecifier"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_getLicensingConfig">
+		<xs:annotation>
+			<xs:documentation>Licensing Config request datatype.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_getSecurityData">
+		<xs:annotation>
+			<xs:documentation>Security Data request datatype</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseAvailability">
+		<xs:annotation>
+			<xs:documentation>License Availability Response Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="featureAvailability" maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:attributeGroup ref="igtLicensing:p_licenseSpecifier"/>
+							<xs:attribute name="featureAvailable" type="xs:boolean" use="required"/>
+							<xs:attribute name="licenseExceptions" type="igtLicensing:t_licenseExceptions"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingConfig">
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseHeartbeat">
+		<xs:annotation>
+			<xs:documentation>license heartbeat data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer">
+				<xs:sequence>
+					<xs:element name="licenseItem" type="igtLicensing:c_licenseItem" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseHeartbeatAck">
+		<xs:annotation>
+			<xs:documentation>license heartbeat data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseFeatureItem">
+		<xs:annotation>
+			<xs:documentation>Licensing Feature Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="igtLicensing:p_licenseSpecifier"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseItem">
+		<xs:annotation>
+			<xs:documentation>Licensing Item Description Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+				<xs:attribute name="featureId" type="igtLicensing:t_licenseFeatureId" use="required"/>
+				<xs:attribute name="version" type="igtLicensing:t_licenseVersion" use="required"/>
+				<xs:attribute name="licenseSource" type="igtLicensing:t_licenseSource" use="required"/>
+				<xs:attribute name="licenseStatus" type="igtLicensing:t_licenseStatus" use="optional" default="IGT_active"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingLogItem">
+		<xs:annotation>
+			<xs:documentation>Log Entry Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_logClassRecord">
+				<xs:attribute name="featureId" type="igtLicensing:t_licenseFeatureId" use="required"/>
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+				<xs:attribute name="licenseStatus" type="igtLicensing:t_licenseStatus" use="required"/>
+				<xs:attribute name="version" type="igtLicensing:t_licenseVersion" use="required"/>
+				<xs:attribute name="licenseSource" type="igtLicensing:t_licenseSource" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingLogList">
+		<xs:annotation>
+			<xs:documentation>Log List Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="licensingLog" type="igtLicensing:c_licensingLogItem" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:any namespace="##other"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseResponse">
+		<xs:annotation>
+			<xs:documentation>License Response Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer">
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+				<xs:attributeGroup ref="igtLicensing:p_licenseSpecifier"/>
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attribute name="licenseExceptions" type="igtLicensing:t_licenseExceptions" use="optional" default="0"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingProfile">
+		<xs:annotation>
+			<xs:documentation>Licensing Profile Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="igtLicensing:p_licensingProfile"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingStatus">
+		<xs:annotation>
+			<xs:documentation>Licensing Status Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceStatus"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_queryLicenseAvailability">
+		<xs:annotation>
+			<xs:documentation>Query License Availability Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="featureItem" type="igtLicensing:c_licenseFeatureItem" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_payloadItem">
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="value" type="igtLicensing:t_payload"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_payloadContainer">
+		<xs:annotation>
+			<xs:documentation>Complex type containing a payload.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element name="payload" type="igtLicensing:c_payloadItem"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_revokeLicense">
+		<xs:annotation>
+			<xs:documentation>Revoke License Request Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_revokeLicenseAck">
+		<xs:annotation>
+			<xs:documentation>Revoke License Response Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_releaseLicense">
+		<xs:annotation>
+			<xs:documentation>Release License Request Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_releaseLicenseAck">
+		<xs:annotation>
+			<xs:documentation>Release License Response Complex Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+				<xs:attribute name="licenseId" type="igtLicensing:t_licenseId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_securityData">
+		<xs:annotation>
+			<xs:documentation>secure data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensing:c_payloadContainer"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--Licensing Device Status Commands.-->
+	<xs:element name="setLicensingState">
+		<xs:annotation>
+			<xs:documentation>Set Licensing State Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getLicensingStatus">
+		<xs:annotation>
+			<xs:documentation>Get Licensing Status Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingStatus">
+		<xs:annotation>
+			<xs:documentation>Current Licensing Status.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licensingStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Licensing Device Profile Commands-->
+	<xs:element name="getLicensingProfile">
+		<xs:annotation>
+			<xs:documentation>Get Licensing Profile Request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingProfile">
+		<xs:annotation>
+			<xs:documentation>Licensing Profile Response</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licensingProfile">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Transaction Elements.-->
+	<xs:element name="getLicense">
+		<xs:annotation>
+			<xs:documentation>Request a set of licenses from the host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_getLicense">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseResponse">
+		<xs:annotation>
+			<xs:documentation>Licenses from host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licenseResponse">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="revokeLicense">
+		<xs:annotation>
+			<xs:documentation>Host revokation of a given license</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_revokeLicense">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="revokeLicenseAck">
+		<xs:annotation>
+			<xs:documentation>EGM response to a host revoking a license.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_revokeLicenseAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="releaseLicense">
+		<xs:annotation>
+			<xs:documentation>Release a given license</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_releaseLicense">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="releaseLicenseAck">
+		<xs:annotation>
+			<xs:documentation>Host response to EGM releasing a license.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_releaseLicenseAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="queryLicenseAvailability">
+		<xs:annotation>
+			<xs:documentation>EGM queries host about license availability</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_queryLicenseAvailability"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseAvailability">
+		<xs:annotation>
+			<xs:documentation>Host response to license availability request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licenseAvailability"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseHeartbeat">
+		<xs:annotation>
+			<xs:documentation>EGM license heartbeat request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licenseHeartbeat">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseHeartbeatAck">
+		<xs:annotation>
+			<xs:documentation>License heartbeat ack</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licenseHeartbeatAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getCurrentLicenseList">
+		<xs:annotation>
+			<xs:documentation>Host query to obtain the list of current licenses on the EGM with optional search parameters</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_getCurrentLicenseList"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="currentLicenseList">
+		<xs:annotation>
+			<xs:documentation>The list of licenses currently present on the EGM (active or other)</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_currentLicenseList"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Secure Settings Commands-->
+	<xs:element name="updateLicensingConfig">
+		<xs:annotation>
+			<xs:documentation>Command sent by the host to Initiate updating the EGM's secure settings</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="updateLicensingConfigAck">
+		<xs:annotation>
+			<xs:documentation>EGM ack that it needs to update its secure settings</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getLicensingConfig">
+		<xs:annotation>
+			<xs:documentation>EGM request for updated secure settings</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_getLicensingConfig">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingConfig">
+		<xs:annotation>
+			<xs:documentation>Host response containing secure settings</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licensingConfig">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Security Data Commands-->
+	<xs:element name="getSecurityData">
+		<xs:annotation>
+			<xs:documentation>EGM request for security data from the server</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_getSecurityData">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="securityData">
+		<xs:annotation>
+			<xs:documentation>Host response containing security data</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_securityData">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Log Elements.-->
+	<xs:element name="getLicensingLogStatus">
+		<xs:annotation>
+			<xs:documentation>Get Licensing Log Status Request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingLogStatus">
+		<xs:annotation>
+			<xs:documentation>Licensing Log Status</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getLicensingLog">
+		<xs:annotation>
+			<xs:documentation>Get Licensing Log Request</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingLog">
+		<xs:annotation>
+			<xs:documentation>Licensing Log Entry Record</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licensingLogItem"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingLogList">
+		<xs:annotation>
+			<xs:documentation>Licensing Log List</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensing:c_licensingLogList"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="licensing">
+		<xs:annotation>
+			<xs:documentation>licensing class</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="igtLicensing:setLicensingState"/>
+						<xs:element ref="igtLicensing:getLicensingStatus"/>
+						<xs:element ref="igtLicensing:licensingStatus"/>
+						<xs:element ref="igtLicensing:getLicensingProfile"/>
+						<xs:element ref="igtLicensing:licensingProfile"/>
+						<xs:element ref="igtLicensing:getLicense"/>
+						<xs:element ref="igtLicensing:licenseResponse"/>
+						<xs:element ref="igtLicensing:releaseLicense"/>
+						<xs:element ref="igtLicensing:releaseLicenseAck"/>
+						<xs:element ref="igtLicensing:revokeLicense"/>
+						<xs:element ref="igtLicensing:revokeLicenseAck"/>
+						<xs:element ref="igtLicensing:queryLicenseAvailability"/>
+						<xs:element ref="igtLicensing:licenseAvailability"/>
+						<xs:element ref="igtLicensing:getCurrentLicenseList"/>
+						<xs:element ref="igtLicensing:currentLicenseList"/>
+						<xs:element ref="igtLicensing:updateLicensingConfig"/>
+						<xs:element ref="igtLicensing:updateLicensingConfigAck"/>
+						<xs:element ref="igtLicensing:getLicensingConfig"/>
+						<xs:element ref="igtLicensing:licensingConfig"/>
+						<xs:element ref="igtLicensing:getSecurityData"/>
+						<xs:element ref="igtLicensing:securityData"/>
+						<xs:element ref="igtLicensing:getLicensingLogStatus"/>
+						<xs:element ref="igtLicensing:licensingLogStatus"/>
+						<xs:element ref="igtLicensing:getLicensingLog"/>
+						<xs:element ref="igtLicensing:licensingLogList"/>
+						<xs:element ref="igtLicensing:licenseHeartbeat"/>
+						<xs:element ref="igtLicensing:licenseHeartbeatAck"/>
+						<xs:any namespace="##other"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

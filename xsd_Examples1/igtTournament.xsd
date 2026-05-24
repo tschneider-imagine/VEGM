@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2007 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be copied, distributed, or used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.
+ -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:igtTourn="http://g2s.igt.com/tournament/v1.0.0" targetNamespace="http://g2s.igt.com/tournament/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="1.1.23">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Class-specific Simple Data Types.-->
+	<xs:simpleType name="t_tourSessionStatuses">
+		<xs:annotation>
+			<xs:documentation>Tournament statues - Not Extensible.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IGT_sessionStarted"/>
+			<xs:enumeration value="IGT_sessionCompleted"/>
+			<xs:enumeration value="IGT_sessionCanceled"/>
+			<xs:enumeration value="IGT_error"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_tourExceptions">
+		<xs:restriction base="g2s:t_exceptionCode"/>
+	</xs:simpleType>
+	<!--Class-specific Attribute Groups.-->
+	<xs:attributeGroup name="p_tourStatus">
+		<xs:annotation>
+			<xs:documentation>Tournament Status Parameters.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="hostLocked" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="egmLocked" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="generalTilt" type="xs:boolean" use="optional" default="false"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_tournamentProfile">
+		<xs:annotation>
+			<xs:documentation>Tournament Profile Parameters.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="minLogEntries" use="optional" default="10">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="timeToLive" type="g2s:t_timeToLive" use="required"/>
+		<xs:attribute name="themeId" type="g2s:t_paytableId" use="required"/>
+		<xs:attribute name="paytableId" type="g2s:t_paytableId" use="required"/>
+		<xs:attribute name="startingCredits" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="duration" type="g2s:t_milliseconds" use="required"/>
+	</xs:attributeGroup>
+	<!--Class-specific Complex Data Types.-->
+	<xs:complexType name="c_tournamentStatus">
+		<xs:annotation>
+			<xs:documentation>Tournament Status Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceStatus">
+				<xs:attributeGroup ref="igtTourn:p_tourStatus"/>
+				<xs:anyAttribute namespace="##other" processContents="lax"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentProfile">
+		<xs:annotation>
+			<xs:documentation>Tournament  Profile Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="igtTourn:p_tournamentProfile"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentLogItem">
+		<xs:annotation>
+			<xs:documentation>Tournament log items</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="logSequence" type="g2s:t_logSequence" use="required"/>
+				<xs:attribute name="deviceId" type="g2s:t_deviceId" use="required"/>
+				<xs:attribute name="startingCredits" type="xs:int" use="required"/>
+				<xs:attribute name="duration" type="g2s:t_milliseconds" use="required"/>
+				<xs:attribute name="startedDateTime" type="xs:dateTime" use="required"/>
+				<xs:attribute name="endedDateTime" type="xs:dateTime" use="optional"/>
+				<xs:attribute name="tournamentId" type="xs:long" use="required"/>
+				<xs:attribute name="tourSessionStatus" type="igtTourn:t_tourExceptions" use="required"/>
+				<xs:attribute name="tourExcept" type="igtTourn:t_tourExceptions" use="optional" default="0"/>
+				<xs:attribute name="creditsWagered" type="g2s:t_meterValue" use="required"/>
+				<xs:attribute name="creditsWon" type="g2s:t_meterValue" use="required"/>
+				<xs:attribute name="gamesWon" type="g2s:t_meterValue" use="required"/>
+				<xs:attribute name="gamesLost" type="g2s:t_meterValue" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentLogList">
+		<xs:annotation>
+			<xs:documentation>Tournament  Log List Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="igtTourn:tournamentLog" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentId">
+		<xs:annotation>
+			<xs:documentation>Tournament  id for tracking</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attribute name="tournamentId" type="xs:long" use="required"/>
+				<xs:anyAttribute namespace="##other" processContents="lax"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentPaytableItem">
+		<xs:annotation>
+			<xs:documentation>Tournament List of Paytables</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="igtTourn:tournamentPaytable" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+				<xs:anyAttribute namespace="##other" processContents="lax"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentPaytable">
+		<xs:annotation>
+			<xs:documentation>Tournament  games</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="deviceId" type="g2s:t_deviceId" use="required"/>
+		<xs:attribute name="themeId" type="g2s:t_themeId" use="required"/>
+		<xs:attribute name="paytableId" type="g2s:t_paytableId" use="required"/>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="c_startTournamentSession">
+		<xs:annotation>
+			<xs:documentation>Start a Tournament Session</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="tournamentId" type="xs:unsignedLong" use="required"/>
+		<xs:attribute name="autoStart" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="idRestrict" type="g2s:t_idRestricts" use="optional" default="G2S_none"/>
+		<xs:attribute name="idReaderType" type="g2s:t_idReaderTypes" use="optional" default="G2S_none"/>
+		<xs:attribute name="idNumber" type="g2s:t_idNumber" use="optional" default=""/>
+		<xs:attribute name="playerId" type="g2s:t_playerId" use="optional" default=""/>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="c_cancelTournamentSession">
+		<xs:annotation>
+			<xs:documentation>cancel a Tournament Session</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="tournamentId" type="xs:unsignedLong" use="required"/>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="c_tournamentExcept">
+		<xs:annotation>
+			<xs:documentation>Tournament Exception Codes</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="tourExcept" type="igtTourn:t_tourExceptions" use="optional" default="0"/>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+	<!--Tournament Configuration Profile Commands-->
+	<xs:element name="getTournamentProfile">
+		<xs:annotation>
+			<xs:documentation>Tournament Profile Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentProfile">
+		<xs:annotation>
+			<xs:documentation>Read only tournament profile</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentProfile"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Tournament Status Commands.-->
+	<xs:element name="setTournamentState">
+		<xs:annotation>
+			<xs:documentation>Set Tournament Play State Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getTournamentStatus">
+		<xs:annotation>
+			<xs:documentation>Request Tournament Status.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentStatus">
+		<xs:annotation>
+			<xs:documentation>Current Tournament Status.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentStatus"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Active Tournament Session Commands.-->
+	<xs:element name="getTournamentPaytables">
+		<xs:annotation>
+			<xs:documentation>Request the Tournament Paytable List.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentPaytableList">
+		<xs:annotation>
+			<xs:documentation>List of Tournament Paytables.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentPaytableItem"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentPaytable">
+		<xs:annotation>
+			<xs:documentation>Tournament  Game</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentPaytable"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setTournamentLockOut">
+		<xs:annotation>
+			<xs:documentation>Set Tournament Lock Out Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setLockOut"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="startTournamentSession">
+		<xs:annotation>
+			<xs:documentation>Starts the Tournament Session</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_startTournamentSession"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cancelTournamentSession">
+		<xs:annotation>
+			<xs:documentation>Cancels the Tournament Session</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentId"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentAck">
+		<xs:annotation>
+			<xs:documentation>Response Ack</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentExcept"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setTournamentMessage">
+		<xs:annotation>
+			<xs:documentation>Set Tournament  Message Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setPlayerMessage">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentMessageAck">
+		<xs:annotation>
+			<xs:documentation>Tournament Message Response</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Tournament  Recall Log Commands.-->
+	<xs:element name="getTournamentLogStatus">
+		<xs:annotation>
+			<xs:documentation>Tournament  Log Status Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentLogStatus">
+		<xs:annotation>
+			<xs:documentation>Current Tournament  Log Status.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getTournamentLog">
+		<xs:annotation>
+			<xs:documentation>Tournament  Log Request.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentLog">
+		<xs:annotation>
+			<xs:documentation>Tournament  Log Record.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentLogItem"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="tournamentLogList">
+		<xs:annotation>
+			<xs:documentation>Current Tournament  Log List.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtTourn:c_tournamentLogList"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="tournament">
+		<xs:annotation>
+			<xs:documentation>Tournament  Class.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="igtTourn:setTournamentState"/>
+						<xs:element ref="igtTourn:getTournamentStatus"/>
+						<xs:element ref="igtTourn:tournamentStatus"/>
+						<xs:element ref="igtTourn:getTournamentProfile"/>
+						<xs:element ref="igtTourn:tournamentProfile"/>
+						<xs:element ref="igtTourn:getTournamentPaytables"/>
+						<xs:element ref="igtTourn:tournamentPaytableList"/>
+						<xs:element ref="igtTourn:setTournamentLockOut"/>
+						<xs:element ref="igtTourn:startTournamentSession"/>
+						<xs:element ref="igtTourn:cancelTournamentSession"/>
+						<xs:element ref="igtTourn:tournamentAck"/>
+						<xs:element ref="igtTourn:setTournamentMessage"/>
+						<xs:element ref="igtTourn:tournamentMessageAck"/>
+						<xs:element ref="igtTourn:getTournamentLogStatus"/>
+						<xs:element ref="igtTourn:tournamentLogStatus"/>
+						<xs:element ref="igtTourn:getTournamentLog"/>
+						<xs:element ref="igtTourn:tournamentLogList"/>
+						<xs:any namespace="##other" processContents="lax"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

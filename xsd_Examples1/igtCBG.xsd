@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2008 rel. 2 (http://www.altova.com) by NSA (IGT) -->
+<xs:schema xmlns:cg="http://g2s.igt.com/CBG/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://g2s.igt.com/CBG/v1.0.0" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIdReader.xsd"/>
+	<!--Simple types-->
+	<xs:simpleType name="t_cbgModeId">
+		<xs:annotation>
+			<xs:documentation>cbgModeId simple type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_transactionId"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_cbgModeStatus">
+		<xs:annotation>
+			<xs:documentation>cbgMode status simple type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_uniqueIdentifier32">
+			<xs:enumeration value="IGT_pending"/>
+			<xs:enumeration value="IGT_inCbgMode"/>
+			<xs:enumeration value="IGT_error"/>
+			<xs:enumeration value="IGT_cancelled"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_cbgModeExceptions">
+		<xs:annotation>
+			<xs:documentation>cbg exceptions simple type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Parameters-->
+	<xs:attributeGroup name="p_cbgModeStatusParams">
+		<xs:annotation>
+			<xs:documentation>common cbg mode status params</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="transactionId" type="g2s:t_transactionId" use="required"/>
+		<xs:attribute name="cbgModeId" type="cg:t_cbgModeId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_cbgProfile">
+		<xs:annotation>
+			<xs:documentation>Profile parameters</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="noMessageTimer" type="g2s:t_milliseconds" use="optional" default="30000"/>
+		<xs:attribute name="minLogEntries" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_modeStatus">
+		<xs:annotation>
+			<xs:documentation>common cbg mode status attributes</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="idRestrict" type="g2s:t_idRestricts" use="optional" default="G2S_none"/>
+		<xs:attribute name="idReaderType" type="g2s:t_idReaderTypes" use="optional" default="G2S_none"/>
+		<xs:attribute name="idNumber" type="g2s:t_idNumber" use="optional" default=""/>
+		<xs:attribute name="playerId" type="g2s:t_playerId" use="optional" default=""/>
+		<xs:attribute name="maxPendingTime" type="g2s:t_milliseconds" use="optional" default="30000"/>
+		<xs:attribute name="cbgModeState" type="cg:t_cbgModeStatus" use="optional" default="IGT_pending"/>
+		<xs:attribute name="cbgModeException" type="cg:t_cbgModeExceptions" use="optional" default="0"/>
+	</xs:attributeGroup>
+	<!--Complex Types-->
+	<xs:complexType name="c_cbgProfile">
+		<xs:annotation>
+			<xs:documentation> cbg profile data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="cg:idReaderDeviceList"/>
+				</xs:sequence>
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="cg:p_cbgProfile"/>
+				<xs:attribute name="idReaderId" type="g2s:t_deviceId" use="optional" default="0"/>
+				<xs:attribute name="multiThemeSupport" type="xs:boolean" use="optional" default="false"/>
+				<xs:attribute name="maxGameplayDevices" type="xs:int" use="optional" default="1"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cbgLogList">
+		<xs:annotation>
+			<xs:documentation>cbg log list data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="cg:cbgLog" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cbgLogItem">
+		<xs:annotation>
+			<xs:documentation>cbg log item data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_logClassRecord">
+				<xs:sequence>
+					<xs:element ref="cg:gamePlayDeviceList"/>
+				</xs:sequence>
+				<xs:attribute name="cbgModeId" type="cg:t_cbgModeId" use="required"/>
+				<xs:attributeGroup ref="cg:p_modeStatus"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cbgStatus">
+		<xs:annotation>
+			<xs:documentation>cbg log status data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceStatus">
+				<xs:attribute name="inCbgMode" type="xs:boolean" use="optional" default="false"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_enterCbgMode">
+		<xs:annotation>
+			<xs:documentation>enter cbg mode data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="cg:gamePlayDeviceList"/>
+				</xs:sequence>
+				<xs:attribute name="cbgModeId" type="cg:t_cbgModeId" use="required"/>
+				<xs:attributeGroup ref="cg:p_modeStatus"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_gamePlayDevice">
+		<xs:annotation>
+			<xs:documentation>gamePlay device data type</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="cbgGamePlayDevice" type="g2s:t_deviceId" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="c_gamePlayDeviceList">
+		<xs:annotation>
+			<xs:documentation>gamePlay device list data type</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="cg:gamePlayDevice" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="c_cbgModeStatus">
+		<xs:annotation>
+			<xs:documentation>cbg mode status</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="cg:gamePlayDeviceList"/>
+				</xs:sequence>
+				<xs:attributeGroup ref="cg:p_cbgModeStatusParams"/>
+				<xs:attributeGroup ref="cg:p_modeStatus"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_getCbgModeStatus">
+		<xs:annotation>
+			<xs:documentation>get cbg mode status data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="cg:p_cbgModeStatusParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_exitCbgMode">
+		<xs:annotation>
+			<xs:documentation>exit cbg mode data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="cg:p_cbgModeStatusParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cbgModeStatusAck">
+		<xs:annotation>
+			<xs:documentation>cbg mode status ack data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="cg:p_cbgModeStatusParams"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cbgPaytable">
+		<xs:annotation>
+			<xs:documentation>cbg paytable data type</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="deviceId" type="g2s:t_deviceId" use="required"/>
+		<xs:attribute name="themeId" type="g2s:t_themeId" use="required"/>
+		<xs:attribute name="paytableId" type="g2s:t_paytableId" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="c_cbgPaytableList">
+		<xs:annotation>
+			<xs:documentation>cbg paytable list data type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="cg:cbgPaytable" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_idReaderDevice">
+		<xs:attribute name="idReaderDevice" type="g2s:t_deviceId" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="c_idReaderDeviceList">
+		<xs:sequence>
+			<xs:element ref="cg:idReaderDevice" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!--Command elements-->
+	<xs:element name="getCbgStatus">
+		<xs:annotation>
+			<xs:documentation>getCbgStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgStatus">
+		<xs:annotation>
+			<xs:documentation>cbgStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="setCbgState">
+		<xs:annotation>
+			<xs:documentation>setCbgState command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgHeartbeat">
+		<xs:annotation>
+			<xs:documentation>cbgHeartbeat command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--profile commands-->
+	<xs:element name="getCbgProfile">
+		<xs:annotation>
+			<xs:documentation>getCbgProfile command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgProfile">
+		<xs:annotation>
+			<xs:documentation>cbgProfile command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgProfile">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Log Commands-->
+	<xs:element name="getCbgLogStatus">
+		<xs:annotation>
+			<xs:documentation>getCbgLogStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgLogStatus">
+		<xs:annotation>
+			<xs:documentation>cbgLogStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getCbgLog">
+		<xs:annotation>
+			<xs:documentation>getCbgLog command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgLogList">
+		<xs:annotation>
+			<xs:documentation>cbgLogList command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgLogList">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--cgb mode commands-->
+	<xs:element name="enterCbgMode">
+		<xs:annotation>
+			<xs:documentation>enterCbgMode command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_enterCbgMode">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgModeStatus">
+		<xs:annotation>
+			<xs:documentation>cbgModeStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgModeStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getCbgModeStatus">
+		<xs:annotation>
+			<xs:documentation>getCbgModeStatus command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_getCbgModeStatus">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="exitCbgMode">
+		<xs:annotation>
+			<xs:documentation>exitCbgMode command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_exitCbgMode">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgModeStatusAck">
+		<xs:annotation>
+			<xs:documentation>cbgModeStatusAck command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgModeStatusAck">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--paytable query commands-->
+	<xs:element name="getCbgPaytables">
+		<xs:annotation>
+			<xs:documentation>getCbgPaytables command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cbgPaytableList">
+		<xs:annotation>
+			<xs:documentation>cbgPaytableList command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_cbgPaytableList">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Inner elements-->
+	<xs:element name="cbgLog" type="cg:c_cbgLogItem">
+		<xs:annotation>
+			<xs:documentation>cbgLog inner element</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="cbgPaytable" type="cg:c_cbgPaytable">
+		<xs:annotation>
+			<xs:documentation>cbgPaytable inner element</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="gamePlayDeviceList" type="cg:c_gamePlayDeviceList">
+		<xs:annotation>
+			<xs:documentation>gamePlayDeviceList inner element</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="gamePlayDevice">
+		<xs:annotation>
+			<xs:documentation>gamePlayDevice inner element</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cg:c_gamePlayDevice">
+					<xs:anyAttribute namespace="##other"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="idReaderDevice" type="cg:c_idReaderDevice"/>
+	<xs:element name="idReaderDeviceList" type="cg:c_idReaderDeviceList"/>
+	<!--Command wrapper-->
+	<xs:element name="cbg">
+		<xs:annotation>
+			<xs:documentation>Single-instance device class to support CBG</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="cg:getCbgStatus"/>
+						<xs:element ref="cg:setCbgState"/>
+						<xs:element ref="cg:cbgStatus"/>
+						<xs:element ref="cg:getCbgPaytables"/>
+						<xs:element ref="cg:cbgModeStatusAck"/>
+						<xs:element ref="cg:cbgPaytableList"/>
+						<xs:element ref="cg:enterCbgMode"/>
+						<xs:element ref="cg:exitCbgMode"/>
+						<xs:element ref="cg:cbgModeStatus"/>
+						<xs:element ref="cg:getCbgProfile"/>
+						<xs:element ref="cg:cbgProfile"/>
+						<xs:element ref="cg:cbgHeartbeat"/>
+						<xs:element ref="cg:getCbgLogStatus"/>
+						<xs:element ref="cg:cbgLogStatus"/>
+						<xs:element ref="cg:getCbgLog"/>
+						<xs:element ref="cg:cbgLogList"/>
+						<xs:any namespace="##other"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

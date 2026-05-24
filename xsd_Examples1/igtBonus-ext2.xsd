@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) -->
+<xs:schema xmlns:igtBonus2="http://g2s.igt.com/bonus/limits/v1.0.1" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://g2s.igt.com/bonus/limits/v1.0.1" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="g2sIncludeGlobal.xsd" namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" />
+  <xs:attributeGroup name="p_bonusProfileExtensions">
+    <xs:attribute default="false" name="payAsGameWinAvailable" type="xs:boolean" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusAwardExtensions">
+    <xs:attribute default="false" name="payAsGameWin" type="xs:boolean" use="optional" />
+    <xs:attribute default="-1" name="gamePlayDeviceId" type="g2s:t_deviceId" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_commitBonusExtensions">
+    <xs:attribute default="false" name="payAsGameWin" type="xs:boolean" use="optional" />
+    <xs:attribute default="0" name="gamePlayPaidAmt" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="-1" name="gamePlayDeviceId" type="g2s:t_deviceId" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusLogExtensions">
+    <xs:attribute default="false" name="payAsGameWin" type="xs:boolean" use="optional" />
+    <xs:attribute default="0" name="gamePlayPaidAmt" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="-1" name="gamePlayDeviceId" type="g2s:t_deviceId" use="optional" />
+  </xs:attributeGroup>
+</xs:schema>

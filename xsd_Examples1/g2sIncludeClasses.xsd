@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:igtMediaDisplay="http://g2s.igt.com/mediaDisplay/v1.0.0" xmlns:igtTourn="http://g2s.igt.com/tournament/v1.0.0" xmlns:igtLicensing="http://g2s.igt.com/licensing/v1.0.0" xmlns:igtPlayerContext="http://g2s.igt.com/playerContext/v1.0.0" xmlns:igtCBG="http://g2s.igt.com/CBG/v1.0.0" xmlns:gtkSt="http://www.gtech.com/g2s/schemas/storage" xmlns:gtk="http://www.gtech.com/g2s/schemas/cabinet/operatingHours" xmlns:GtkCO="http://www.gamingstandards.com/g2s/schemas/v1.0.3/GtkCO" xmlns:g2s1="http://www.gamingstandards.com/g2s/schemas/v1.0.3/Ext1" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" elementFormDefault="qualified" attributeFormDefault="qualified" version="2009-10-26 v1.0.3">
+    <xs:include schemaLocation="g2sCommunications.xsd"/>
+    <xs:include schemaLocation="g2sCabinet.xsd"/>
+    <xs:include schemaLocation="g2sMeters.xsd"/>
+    <xs:include schemaLocation="g2sGamePlay.xsd"/>
+    <xs:include schemaLocation="g2sCommConfig.xsd"/>
+    <xs:include schemaLocation="g2sOptionConfig.xsd"/>
+    <xs:include schemaLocation="g2sDownload.xsd"/>
+    <xs:include schemaLocation="g2sHandpay.xsd"/>
+    <xs:include schemaLocation="g2sCoinAcceptor.xsd"/>
+    <xs:include schemaLocation="g2sNoteAcceptor.xsd"/>
+    <xs:include schemaLocation="g2sHopper.xsd"/>
+    <xs:include schemaLocation="g2sNoteDispenser.xsd"/>
+    <xs:include schemaLocation="g2sPrinter.xsd"/>
+    <xs:include schemaLocation="g2sProgressive.xsd"/>
+    <xs:include schemaLocation="g2sIdReader.xsd"/>
+    <xs:include schemaLocation="g2sBonus.xsd"/>
+    <xs:include schemaLocation="g2sPlayer.xsd"/>
+    <xs:include schemaLocation="g2sVoucher.xsd"/>
+    <xs:include schemaLocation="g2sWAT.xsd"/>
+    <xs:include schemaLocation="g2sGAT.xsd"/>
+    <xs:include schemaLocation="g2sCentral.xsd"/>
+    <xs:import namespace="http://g2s.igt.com/mediaDisplay/v1.0.0" schemaLocation="igtMediaDisplay.xsd"/>
+    <xs:import namespace="http://g2s.igt.com/licensing/v1.0.0" schemaLocation="igtLicensing.xsd"/>
+    <xs:import namespace="http://g2s.igt.com/tournament/v1.0.0" schemaLocation="igtTournament.xsd"/>
+    <xs:import namespace="http://g2s.igt.com/CBG/v1.0.0" schemaLocation="igtCBG.xsd"/>
+    <xs:import namespace="http://g2s.igt.com/playerContext/v1.0.0" schemaLocation="igtPlayerContext.xsd"/>
+    <xs:import namespace="http://www.gtech.com/g2s/schemas/storage" schemaLocation="gtkStorage.xsd"/>
+    <xs:import schemaLocation="gtkCabinet-oper hours.xsd" namespace="http://www.gtech.com/g2s/schemas/cabinet/operatingHours" />
+    <xs:import schemaLocation="gtkCashout.xsd" namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/GtkCO" />
+</xs:schema>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2009 GTECH Corporation. All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from GTECH -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:gtk="http://www.gtech.com/g2s/schemas/cabinet/operatingHours" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://www.gtech.com/g2s/schemas/cabinet/operatingHours" elementFormDefault="qualified" attributeFormDefault="qualified">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Cabinet Simple Data Types-->
+	<xs:simpleType name="t_weekday">
+		<xs:annotation>
+			<xs:documentation>Week day Enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GTK_sunday"/>
+			<xs:enumeration value="GTK_monday"/>
+			<xs:enumeration value="GTK_tuesday"/>
+			<xs:enumeration value="GTK_wednesday"/>
+			<xs:enumeration value="GTK_thursday"/>
+			<xs:enumeration value="GTK_friday"/>
+			<xs:enumeration value="GTK_saturday"/>
+			<xs:enumeration value="GTK_all"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_operatingHoursState">
+		<xs:annotation>
+			<xs:documentation>operating Hours state codes</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GTK_enable"/>
+			<xs:enumeration value="GTK_disable"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Cabinet Attribute Group-->
+	<!--Cabinet operating Hours Attribute Group-->
+	<xs:attributeGroup name="p_operatingHours">
+		<xs:annotation>
+			<xs:documentation>operatingHours attribute Group </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="weekday" type="gtk:t_weekday" use="required"/>
+		<xs:attribute name="time" type="g2s:t_milliseconds" use="required"/>
+		<xs:attribute name="state" type="gtk:t_operatingHoursState" use="required"/>
+	</xs:attributeGroup>
+	<!--Cabinet get Operating Hours Attribute Group-->
+	<xs:attributeGroup name="p_getOperatingHours">
+		<xs:annotation>
+			<xs:documentation>getOperatingHours attribute Group </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="weekday" type="gtk:t_weekday" use="optional" default="GTK_all"/>
+	</xs:attributeGroup>
+	<!--cabinet Complex data types-->
+	<!--cabinet operatingHours complex type-->
+	<xs:complexType name="c_operatingHours">
+		<xs:annotation>
+			<xs:documentation>operating Hours Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="gtk:p_operatingHours"/>
+	</xs:complexType>
+	<!--cabinet getOperatingHours complex type-->
+	<xs:complexType name="c_getOperatingHours">
+		<xs:annotation>
+			<xs:documentation>get operating Hours Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="gtk:p_getOperatingHours"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--Cabinet Commands-->
+	<!--cabinet setOperatingHours Command-->
+	<xs:element name="setOperatingHours">
+		<xs:annotation>
+			<xs:documentation>Set Operating Hours request from Host.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:sequence>
+						<xs:element ref="gtk:operatingHours" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--cabinet OperatingHoursList Command-->
+	<xs:element name="operatingHoursList">
+		<xs:annotation>
+			<xs:documentation>operating hours Status from EGM for a particular day</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:sequence>
+						<xs:element ref="gtk:operatingHours" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--cabinet OperatingHours Command-->
+	<xs:element name="operatingHours">
+		<xs:annotation>
+			<xs:documentation>operating hours of an EGM for a particular day</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="gtk:c_operatingHours">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--cabinet getOperatingHours Command-->
+	<xs:element name="getOperatingHours">
+		<xs:annotation>
+			<xs:documentation>get operating hours request from Host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="gtk:c_getOperatingHours">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

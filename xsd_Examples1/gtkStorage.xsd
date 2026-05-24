@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2009 GTECH Corporation. All Rights Reserved -->
+<!-- Justin White (GTECH) - updated the t_storageType to be an extensible list (June 15th)-->
+<!-- Justin White (GTECH) - added GTK_nvram to the t_storageTypeBase list (June 15th)-->
+<!-- Confidential - not to be distributed without prior written authorization from GTECH -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:gtk="http://www.gtech.com/g2s/schemas/storage" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://www.gtech.com/g2s/schemas/storage" elementFormDefault="qualified" attributeFormDefault="qualified">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sDownload.xsd"/>
+	<!-- storage Simple Data Type-->
+	<xs:simpleType name="t_storageId">
+		<xs:annotation>
+			<xs:documentation>storage Id Identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int">
+			<xs:minInclusive value="-1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_storageTypeBase">
+		<xs:annotation>
+			<xs:documentation>Storage Type - Base Enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GTK_ram"/>
+			<xs:enumeration value="GTK_flash"/>
+			<xs:enumeration value="GTK_hdd"/>
+			<xs:enumeration value="GTK_cdrw"/>
+			<xs:enumeration value="GTK_dvdrw"/>
+			<xs:enumeration value="GTK_nvram"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_storageType">
+		<xs:annotation>
+			<xs:documentation>Storage Type - Extensible Union.</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="gtk:t_storageTypeBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<!--storage Attribute Group-->
+	<xs:attributeGroup name="p_storageInfo">
+		<xs:annotation>
+			<xs:documentation>Storage Information attribute Group </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="storageId" type="gtk:t_storageId" use="required"/>
+		<xs:attribute name="storageType" type="gtk:t_storageType" use="required"/>
+		<xs:attribute name="persistence" type="xs:boolean" use="required"/>
+		<xs:attribute name="description" type="xs:string" use="optional" default=""/>
+		<xs:attribute name="maxFileSize" type="xs:long" use="required"/>
+		<xs:attribute name="used" type="xs:long" use="required"/>
+		<xs:attribute name="free" type="xs:long" use="required"/>
+	</xs:attributeGroup>
+	<!--storage Complex Data Types.-->
+	<xs:complexType name="c_getStorageInfoType">
+		<xs:annotation>
+			<xs:documentation>Storage Info Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceSelect">
+				<xs:attribute name="storageId" type="gtk:t_storageId" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_storageInfoItem">
+		<xs:annotation>
+			<xs:documentation> Storage Info Item Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceSelect">
+				<xs:attributeGroup ref="gtk:p_storageInfo"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--storage  Commands.-->
+	<!--getStorageInfo  Command-->
+	<xs:element name="getStorageInfo">
+		<xs:annotation>
+			<xs:documentation>Request Storage Information.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="gtk:c_getStorageInfoType">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--StorageInfoList  Command-->
+	<xs:element name="storageInfoList">
+		<xs:annotation>
+			<xs:documentation>Storage Information List from EGM.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:sequence>
+						<xs:element ref="gtk:storageItem" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="storageItem">
+		<xs:annotation>
+			<xs:documentation> storage Items List</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="gtk:c_storageInfoItem">
+					<xs:sequence>
+						<xs:element ref="gtk:storagePurpose" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="storagePurpose">
+		<xs:annotation>
+			<xs:documentation>Contains reference to the purpose of storage</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:attribute name="application" type="g2s:t_storageApplication" use="required"/>
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="storage">
+		<xs:annotation>
+			<xs:documentation>storage Class.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="gtk:getStorageInfo"/>
+						<xs:element ref="gtk:storageInfoList"/>
+						<xs:any namespace="##other" processContents="lax"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:igtPrn="http://g2s.igt.com/printer/v1.0.0" targetNamespace="http://g2s.igt.com/printer/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.1">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Simple types-->
+	<xs:simpleType name="t_requestId">
+		<xs:annotation>
+			<xs:documentation>Printer Host Request Identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Class-specific attribute groups.-->
+	<xs:attributeGroup name="p_printerProfileExtensions">
+		<xs:annotation>
+			<xs:documentation>IGT Printer profile extensions.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="idReaderId" type="g2s:t_deviceId" use="optional" default="-1"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_printTicketExtensions">
+		<xs:attribute name="requestId" type="igtPrn:t_requestId" use="optional" default="0"/>
+		<xs:attribute name="idRestrict" type="g2s:t_idRestricts" use="optional" default="G2S_none"/>
+		<xs:attribute name="idReaderType" type="g2s:t_idReaderTypes" use="optional" default="G2S_none"/>
+		<xs:attribute name="idNumber" type="g2s:t_idNumber" use="optional" default=""/>
+		<xs:attribute name="playerId" type="g2s:t_playerId" use="optional" default=""/>
+	</xs:attributeGroup>
+</xs:schema>

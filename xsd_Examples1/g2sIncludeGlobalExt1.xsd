@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2008 rel. 2 sp1 (http://www.altova.com) by Ethan Tower (private) -->
+<xs:schema xmlns:g2s1="http://www.gamingstandards.com/g2s/schemas/v1.0.3/Ext1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/Ext1" elementFormDefault="qualified" attributeFormDefault="qualified" version="2008-07-21 v1.0.4.7">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeClasses.xsd"/>
+	<xs:simpleType name="t_deviceClassExt1">
+		<xs:annotation>
+			<xs:documentation>Device Class Identifier - Extension.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="G2S_none"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_idEncodingsBase">
+		<xs:annotation>
+			<xs:documentation>ID Encoding Methods - Base Enumerations.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="G2S_ansiX4.16Track1"/>
+			<xs:enumeration value="G2S_ansiX4.16Track2"/>
+			<xs:enumeration value="G2S_iso7813Track1"/>
+			<xs:enumeration value="G2S_iso7813Track2"/>
+			<xs:enumeration value="G2S_unknown"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_idEncodings">
+		<xs:annotation>
+			<xs:documentation>ID Encoding Methods.</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="g2s1:t_idEncodingsBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<xs:attributeGroup name="p_configurationExt1">
+		<xs:annotation>
+			<xs:documentation>Standard Configuration Parameters - Extension.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="configDateTime" type="g2s:t_g2sDateTime" use="optional"/>
+		<xs:attribute name="configComplete" type="xs:boolean" use="optional" default="true"/>
+	</xs:attributeGroup>
+</xs:schema>

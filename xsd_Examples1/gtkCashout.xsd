@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2010 (http://www.altova.com) by Ethan Tower (private) -->
+<!--Copyright 2009 GTECH Corporation. All Rights Reserved-->
+<!--Confidential - not to be distributed without prior written authorization from GTECH-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:GtkCO="http://www.gamingstandards.com/g2s/schemas/v1.0.3/GtkCO" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:g2s1="http://www.gamingstandards.com/g2s/schemas/v1.0.3/Ext1" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/GtkCO" elementFormDefault="qualified" attributeFormDefault="qualified" version="2010-02-26">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/Ext1" schemaLocation="g2sIncludeGlobalExt1.xsd"/>
+	<!--Simple Data Types-->
+	<xs:simpleType name="t_cashoutMethodsBase">
+		<xs:annotation>
+			<xs:documentation>Cashout Methods - Base Enumerations</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GTK_payVoucher"/>
+			<xs:enumeration value="GTK_payHopper"/>
+			<xs:enumeration value="GTK_payNoteDispenser"/>
+			<xs:enumeration value="GTK_payHandpay"/>
+			<xs:enumeration value="GTK_payWAT"/>
+			<xs:enumeration value="GTK_payAny"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_cashoutMethods">
+		<xs:annotation>
+			<xs:documentation>Cashout Methods - Extensible Union</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="GtkCO:t_cashoutMethodsBase g2s:t_extensibleList"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_egmCashoutExceptions">
+		<xs:annotation>
+			<xs:documentation>EGM Exception Codes.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_exceptionCode"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_cashoutRequestStates">
+		<xs:annotation>
+			<xs:documentation>Cashout request state codes</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GTK_requestReceived"/>
+			<xs:enumeration value="GTK_commitSent"/>
+			<xs:enumeration value="GTK_commitAcked"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_cashoutRequestId">
+		<xs:annotation>
+			<xs:documentation>Cashout Request Identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minExclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Attribute Groups-->
+	<xs:attributeGroup name="p_cashoutProfile">
+		<xs:annotation>
+			<xs:documentation>cashoutProfile Attribute Group.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="minLogEntries" use="optional" default="35">
+			<xs:simpleType>
+				<xs:restriction base="xs:int">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="timeToLive" type="g2s:t_timeToLive" use="optional" default="30000"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_initiateCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>initiateCashoutRequest Attribute Group. </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+		<xs:attribute name="reqCashableAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reqPromoAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reqNonCashAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reduceAmts" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="cashoutMethod" type="GtkCO:t_cashoutMethods" use="optional" default="GTK_payAny"/>
+		<xs:attribute name="textMessage" type="g2s:t_textMessage" use="optional" default=""/>
+		<xs:attribute name="msgDuration" type="g2s:t_milliseconds" use="optional" default="0"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_cashoutRequestPending">
+		<xs:annotation>
+			<xs:documentation>cashoutRequestPending Attribute Group. </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_cancelCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequest Attribute Group. </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_cancelCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequestAck Attribute Group. </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_commitCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequest attribute Group </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+		<xs:attribute name="expireCredits" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="expireDateTime" type="g2s:t_g2sDateTime" use="optional" default="2000-01-01T00:00:00.000-00:00"/>
+		<xs:attribute name="cashableAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="promoAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="nonCashAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="cashoutDateTime" type="g2s:t_g2sDateTime" use="required"/>
+		<xs:attribute name="egmCashoutException" type="GtkCO:t_egmCashoutExceptions" use="optional" default="0"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_commitCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequestAck Attribute Group. </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="p_hostCashoutLog">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLog Attribute Group.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="requestId" type="GtkCO:t_cashoutRequestId" use="required"/>
+		<xs:attribute name="cashoutRequestState" type="GtkCO:t_cashoutRequestStates" use="required"/>
+		<xs:attribute name="reqCashableAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reqPromoAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reqNonCashAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="reduceAmts" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="cashoutMethod" type="GtkCO:t_cashoutMethods" use="optional" default="GTK_payAny"/>
+		<xs:attribute name="expireCredits" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="expireDateTime" type="g2s:t_g2sDateTime" use="optional" default="2000-01-01T00:00:00.000-00:00"/>
+		<xs:attribute name="cashableAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="promoAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="nonCashAmt" type="g2s:t_meterValue" use="optional" default="0"/>
+		<xs:attribute name="cashoutDateTime" type="g2s:t_g2sDateTime" use="required"/>
+		<xs:attribute name="egmCashoutException" type="GtkCO:t_egmCashoutExceptions" use="optional" default="0"/>
+	</xs:attributeGroup>
+	<!--Complex Data Types-->
+	<xs:complexType name="c_cashoutStatus">
+		<xs:annotation>
+			<xs:documentation>cashoutStatus Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_deviceStatus">
+				<xs:attributeGroup ref="g2s1:p_configurationExt1"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cashoutProfile">
+		<xs:annotation>
+			<xs:documentation>cashoutProfile Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="g2s:p_deviceProfile"/>
+				<xs:attributeGroup ref="g2s1:p_configurationExt1"/>
+				<xs:attributeGroup ref="GtkCO:p_cashoutProfile"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_initiateCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>InitiatecashoutRequest Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:attributeGroup ref="GtkCO:p_initiateCashoutRequest"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cashoutRequestPending">
+		<xs:annotation>
+			<xs:documentation>cashoutRequestPending Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseTransaction">
+				<xs:attributeGroup ref="GtkCO:p_cashoutRequestPending"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cancelCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequest Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseTransaction">
+				<xs:attributeGroup ref="GtkCO:p_cancelCashoutRequest"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_cancelCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequestAck Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseTransaction">
+				<xs:attributeGroup ref="GtkCO:p_cancelCashoutRequestAck"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_commitCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequest Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseTransaction">
+				<xs:attributeGroup ref="GtkCO:p_commitCashoutRequest"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_commitCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequestAck Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseTransaction">
+				<xs:attributeGroup ref="GtkCO:p_commitCashoutRequestAck"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_hostCashoutLogList">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLogList Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_baseCommand">
+				<xs:sequence>
+					<xs:element ref="GtkCO:hostCashoutLog" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_hostCashoutLog">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLog Data Type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="g2s:c_logClassRecord">
+				<xs:attributeGroup ref="GtkCO:p_hostCashoutLog"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--Commands-->
+	<xs:element name="setCashoutState">
+		<xs:annotation>
+			<xs:documentation>setCashoutState Command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_setDeviceState">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cashoutStatus">
+		<xs:annotation>
+			<xs:documentation>cashoutStatus Command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_cashoutStatus">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getCashoutStatus">
+		<xs:annotation>
+			<xs:documentation>getCashoutStatus Command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getCashoutProfile">
+		<xs:annotation>
+			<xs:documentation>getCashoutProfile Command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cashoutProfile">
+		<xs:annotation>
+			<xs:documentation>cashoutProfile Command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_cashoutProfile">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="initiateCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>InitiatecashoutRequest from Host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_initiateCashoutRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cashoutRequestPending">
+		<xs:annotation>
+			<xs:documentation>cashoutRequestPending from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_cashoutRequestPending">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cancelCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequest from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_cancelCashoutRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="cancelCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>cancelCashoutRequestAck from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_cancelCashoutRequestAck">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="commitCashoutRequest">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequest from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_commitCashoutRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="commitCashoutRequestAck">
+		<xs:annotation>
+			<xs:documentation>commitCashoutRequestAck from Host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_commitCashoutRequestAck">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getHostCashoutLogStatus">
+		<xs:annotation>
+			<xs:documentation>getHostCashoutLogStatus from Host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseCommand">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="hostCashoutLogStatus">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLogStatus from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logStatus">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getHostCashoutLog">
+		<xs:annotation>
+			<xs:documentation>getHostCashoutLog from Host</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_logRequest">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="hostCashoutLogList">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLogList from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_hostCashoutLogList">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="hostCashoutLog">
+		<xs:annotation>
+			<xs:documentation>hostCashoutLog from EGM</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="GtkCO:c_hostCashoutLog">
+					<xs:anyAttribute namespace="##other" processContents="lax"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--Class Wrapper.-->
+	<xs:element name="cashout">
+		<xs:annotation>
+			<xs:documentation>cashout Class.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="g2s:c_baseClass">
+					<xs:choice minOccurs="0">
+						<xs:element ref="GtkCO:setCashoutState"/>
+						<xs:element ref="GtkCO:cashoutStatus"/>
+						<xs:element ref="GtkCO:getCashoutStatus"/>
+						<xs:element ref="GtkCO:getCashoutProfile"/>
+						<xs:element ref="GtkCO:cashoutProfile"/>
+						<xs:element ref="GtkCO:initiateCashoutRequest"/>
+						<xs:element ref="GtkCO:cashoutRequestPending"/>
+						<xs:element ref="GtkCO:cancelCashoutRequest"/>
+						<xs:element ref="GtkCO:cancelCashoutRequestAck"/>
+						<xs:element ref="GtkCO:commitCashoutRequest"/>
+						<xs:element ref="GtkCO:commitCashoutRequestAck"/>
+						<xs:element ref="GtkCO:getHostCashoutLogStatus"/>
+						<xs:element ref="GtkCO:hostCashoutLogStatus"/>
+						<xs:element ref="GtkCO:getHostCashoutLog"/>
+						<xs:element ref="GtkCO:hostCashoutLogList"/>
+						<xs:any namespace="##other" processContents="lax"/>
+					</xs:choice>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!--End of Class.-->
+</xs:schema>

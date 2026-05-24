@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:idFltr="http://g2s.igt.com/idReader/idNumberFilter/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://g2s.igt.com/idReader/idNumberFilter/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.1">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<xs:attributeGroup name="p_idNumberFilters">
+		<xs:annotation>
+			<xs:documentation>Ticket Filter attribute group</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="idNumberFilter" type="g2s:t_idNumber" use="optional" default=""/>
+	</xs:attributeGroup>
+</xs:schema>

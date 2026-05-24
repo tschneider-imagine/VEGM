@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 IGT.  All Rights Reserved -->
+<!-- Confidential - not to be distributed without prior written authorization from IGT.  Under no circumstances can this document be used except by the recipient -->
+<!-- NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.-->
+<xs:schema xmlns:igtLicensingSecurityData="http://g2s.igt.com/licensing/securityData/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" xmlns:digsig="http://www.w3.org/2000/09/xmldsig#" xmlns:igtLicensing="http://g2s.igt.com/licensing/v1.0.0" targetNamespace="http://g2s.igt.com/licensing/securityData/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified" version="0.8">
+	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd" id="schema"/>
+	<xs:import namespace="http://g2s.igt.com/licensing/v1.0.0" schemaLocation="igtLicensing.xsd" id="igtLicensing"/>
+	<!--Class-specific Simple Data Types-->
+	<xs:simpleType name="t_igtcertificate">
+		<xs:annotation>
+			<xs:documentation>IGT's certificate Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_heartbeatInterval">
+		<xs:annotation>
+			<xs:documentation>IGT's heartbeat interval</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="30000"/>
+			<xs:maxInclusive value="86400000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_heartbeatRetryCount">
+		<xs:annotation>
+			<xs:documentation>IGT's heartbeat retry count</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="10"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_gracePeriod">
+		<xs:annotation>
+			<xs:documentation>IGT's offline grace period</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="2592000000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="t_vendorString">
+		<xs:annotation>
+			<xs:documentation>A value containing license-specific vendor information.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="t_nonce">
+		<xs:annotation>
+			<xs:documentation>IGT's pseudo random Nonce value</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:long">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Class-specific Complex Data Types-->
+	<xs:complexType name="c_genericPayload">
+		<xs:sequence>
+			<xs:element name="nonce" type="igtLicensingSecurityData:t_nonce"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="c_genericResponsePayload">
+		<xs:complexContent>
+			<xs:extension base="igtLicensingSecurityData:c_genericPayload">
+				<xs:sequence>
+					<xs:element ref="digsig:Signature"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- Payload Data-->
+	<xs:complexType name="c_licenseData">
+		<xs:annotation>
+			<xs:documentation>IGT's license data</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="licenseId" type="igtLicensing:t_licenseId"/>
+			<xs:element name="featureId" type="igtLicensing:t_licenseFeatureId"/>
+			<xs:element name="version" type="igtLicensing:t_licenseVersion"/>
+			<xs:element name="vendorString" type="igtLicensingSecurityData:t_vendorString"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="c_licensingConfigData">
+		<xs:annotation>
+			<xs:documentation>IGT's license behaviors</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="heartbeatRetry" type="igtLicensingSecurityData:t_heartbeatRetryCount" default="5"/>
+			<xs:element name="heartbeatInterval" type="igtLicensingSecurityData:t_heartbeatInterval" default="3600000"/>
+			<xs:element name="gracePeriod" type="igtLicensingSecurityData:t_gracePeriod" default="1209600000"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="c_securityData">
+		<xs:annotation>
+			<xs:documentation>IGT's public certificates.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="certificate" type="igtLicensingSecurityData:t_igtcertificate" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Payloads-->
+	<xs:complexType name="c_licenseResponsePayload">
+		<xs:annotation>
+			<xs:documentation>IGT license details, used with licenseResponse command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensingSecurityData:c_genericResponsePayload">
+				<xs:sequence>
+					<xs:element name="licenseData" type="igtLicensingSecurityData:c_licenseData"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licensingConfigPayload">
+		<xs:annotation>
+			<xs:documentation>IGT's licensing behavior settings and nonce, used with licensingConfig command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensingSecurityData:c_genericResponsePayload">
+				<xs:sequence>
+					<xs:element name="licensingConfigData" type="igtLicensingSecurityData:c_licensingConfigData"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_licenseHeartbeatAckPayload">
+		<xs:annotation>
+			<xs:documentation>IGT's licensing heartbeat ack's base64 payload.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensingSecurityData:c_genericResponsePayload"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="c_securityDataPayload">
+		<xs:annotation>
+			<xs:documentation>IGT public certificates and nonce, used with securityData command.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="igtLicensingSecurityData:c_genericResponsePayload">
+				<xs:sequence>
+					<xs:element name="securityData" type="igtLicensingSecurityData:c_securityData"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--class transaction elements-->
+	<!--EGM requests-->
+	<xs:element name="getLicensePayload">
+		<xs:annotation>
+			<xs:documentation>The base64 payload within getLicense command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_genericPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getLicensingConfigPayload">
+		<xs:annotation>
+			<xs:documentation>The base64 payload within getLicensingConfig command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_genericPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getSecurityDataPayload">
+		<xs:annotation>
+			<xs:documentation>The base64 payload within getSecureSettings command</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_genericPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseHeartbeatPayload">
+		<xs:annotation>
+			<xs:documentation>The base64 payload within licenseHeartbeat.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_genericPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<!-- Host responses-->
+	<xs:element name="licenseResponsePayload">
+		<xs:annotation>
+			<xs:documentation>licenseResponse base64 contents</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_licenseResponsePayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licensingConfigPayload">
+		<xs:annotation>
+			<xs:documentation>License behavior settings for base64 contents</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_licensingConfigPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="licenseHeartbeatAckPayload">
+		<xs:annotation>
+			<xs:documentation>The base64 payload within licenseHeartbeatAck.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_licenseHeartbeatAckPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="securityDataPayload">
+		<xs:annotation>
+			<xs:documentation>Secure Settings base64 contents</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="igtLicensingSecurityData:c_securityDataPayload"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

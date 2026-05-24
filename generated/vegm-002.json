@@ -1,0 +1,67 @@
+{
+  "instance_id": "vegm-002",
+  "host_id": "HOST-001",
+  "egm_id": "EGM-002",
+  "egm_endpoint": {
+    "scheme": "http",
+    "bind_ip": "192.168.10.162",
+    "host": "192.168.10.162",
+    "port": 18444,
+    "path": "/g2s"
+  },
+  "host_endpoint": {
+    "url": "http://192.168.10.25:8444/g2s"
+  },
+  "session_engine": {
+    "enabled": true,
+    "auto_start": true,
+    "comms_online_timeout_ms": 3000,
+    "keep_alive_interval_ms": 5000,
+    "reconnect_interval_ms": 5000
+  },
+  "listen": {
+    "host": "192.168.10.162",
+    "port": 18444
+  },
+  "security": {
+    "trust_mode": "plaintext_lab"
+  },
+  "logging": {
+    "dir": "logs\\fleet-a\\vegm-002",
+    "capture_raw_xml": true,
+    "capture_rendered_xml": true
+  },
+  "storage": {
+    "backend": "sqlite",
+    "sqlite_path": "logs\\fleet-a\\vegm-002-index.db"
+  },
+  "control": {
+    "bind": "192.168.10.162:19002"
+  },
+  "outbound": {
+    "scheduler": {}
+  },
+  "pack_file": "./example.pack.json",
+  "notes": {
+    "advertised_host": "192.168.10.162",
+    "advertised_ip": "192.168.10.162",
+    "ca_file": "",
+    "cert_file": "",
+    "dns_servers": "8.8.8.8,1.1.1.1",
+    "egm_endpoint_bind_ip": "192.168.10.162",
+    "egm_endpoint_host": "192.168.10.162",
+    "egm_endpoint_path": "/g2s",
+    "egm_endpoint_scheme": "http",
+    "gateway": "192.168.10.1",
+    "group": "bank_a",
+    "host_endpoint_url": "http://192.168.10.25:8444/g2s",
+    "host_id": "HOST-001",
+    "key_file": "",
+    "manufacturer": "generic",
+    "profile": "baseline",
+    "server_name": "",
+    "sqlite_path": "logs\\fleet-a\\vegm-002-index.db",
+    "storage_backend": "sqlite",
+    "subnet_mask": "255.255.255.0"
+  }
+}

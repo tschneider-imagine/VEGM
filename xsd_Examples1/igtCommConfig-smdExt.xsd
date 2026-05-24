@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Confidential � not to be distributed without prior written authorization from IGT. Under no circumstances can this document be used except by the recipient.
+IGT, the IGT logo and sb are trademarks or registered trademarks of International Game Technology in the United States and/or other countries. Other marks are the properties of their respective owners.
+NOTE: Implementing this specification may require the use of one or more patents owned by IGT.  RELIANCE ON OR IMPLEMENTATION OF THIS SPECIFICATION SHALL NOT CREATE ANY LICENSE, IMPLIED OR OTHERWISE, TO ANY SUCH PATENTS AND/OR OTHER INTELLECTUAL PROPERTY.  Please contact IGT and/or any other appropriate owner in the event that a license to any patents and/or other intellectual property might be needed.
+
+-->
+<xs:schema xmlns:ccSmd="http://g2s.igt.com/commConfig/smdExt/v1.0.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" targetNamespace="http://g2s.igt.com/commConfig/smdExt/v1.0.0" elementFormDefault="qualified" attributeFormDefault="qualified">
+	<xs:import namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" schemaLocation="g2sIncludeGlobal.xsd"/>
+	<!--Simple Data Types-->
+	<xs:simpleType name="t_deviceStateTag">
+		<xs:annotation>
+			<xs:documentation>Device State Tag Data Type</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="g2s:t_uniqueIdentifier64"/>
+	</xs:simpleType>
+	<!--Attribute Groups-->
+	<xs:attributeGroup name="p_deviceStateTags">
+		<xs:annotation>
+			<xs:documentation>Device State Tag Attribute Group</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="stateTag" type="ccSmd:t_deviceStateTag" use="optional" default="IGT_none"/>
+	</xs:attributeGroup>
+</xs:schema>

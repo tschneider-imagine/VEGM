@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) -->
+<xs:schema xmlns:igtBonus="http://g2s.igt.com/bonus/limits/v1.0.0" xmlns:g2s="http://www.gamingstandards.com/g2s/schemas/v1.0.3" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://g2s.igt.com/bonus/limits/v1.0.0" version="1.2" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="g2sIncludeGlobal.xsd" namespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3" />
+  <xs:simpleType name="t_bonusModesBase">
+    <xs:annotation>
+      <xs:documentation>Bonus Modes Identifier - Base Enumerations.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="IGT_standardMode" />
+      <xs:enumeration value="IGT_wagerMatchMode" />
+      <xs:enumeration value="IGT_mjtMode" />
+      <xs:enumeration value="IGT_freeSpinMode" />
+      <xs:enumeration value="IGT_externalBonusGameMode" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="t_bonusModes">
+    <xs:annotation>
+      <xs:documentation>Bonus Modes -  Extensible Union.</xs:documentation>
+    </xs:annotation>
+    <xs:union memberTypes="igtBonus:t_bonusModesBase g2s:t_extensibleList" />
+  </xs:simpleType>
+  <xs:simpleType name="t_igtBonusExceptions">
+    <xs:restriction base="g2s:t_exceptionCode" />
+  </xs:simpleType>
+  <xs:attributeGroup name="p_bonusProfileExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus profile extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="30000" name="eligibleTimer" type="g2s:t_milliseconds" use="optional" />
+    <xs:attribute default="0" name="displayLimit" type="g2s:t_meterValue" use="optional" />
+    <xs:attribute default="" name="displayLimitText" type="g2s:t_textMessage" use="optional" />
+    <xs:attribute default="30000" name="displayLimitDuration" type="g2s:t_milliseconds" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusWinExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus Award extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="true" name="overrideEligibleTimer" type="xs:boolean" use="optional" />
+    <xs:attribute default="IGT_standardMode" name="bonusMode" type="igtBonus:t_bonusModes" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusAckExtensions">
+    <xs:annotation>
+      <xs:documentation>IGT Bonus Ack extensions.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute default="" name="idNumber" type="g2s:t_idNumber" use="optional" />
+    <xs:attribute default="G2S_none" name="idReaderType" type="g2s:t_idReaderTypes" use="optional" />
+    <xs:attribute default="" name="playerId" type="g2s:t_playerId" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_bonusLogExtensions">
+    <xs:attribute default="IGT_standardMode" name="bonusMode" type="igtBonus:t_bonusModes" use="optional" />
+    <xs:attribute default="0" name="igtBonusException" type="igtBonus:t_igtBonusExceptions" use="optional" />
+  </xs:attributeGroup>
+  <xs:attributeGroup name="p_commitBonusExtensions">
+    <xs:attribute default="IGT_standardMode" name="bonusMode" type="igtBonus:t_bonusModes" use="optional" />
+    <xs:attribute default="0" name="igtBonusException" type="igtBonus:t_igtBonusExceptions" use="optional" />
+  </xs:attributeGroup>
+</xs:schema>

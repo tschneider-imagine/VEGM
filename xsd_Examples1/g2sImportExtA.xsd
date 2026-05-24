@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2010 rel. 3 (http://www.altova.com) by Ethan Tower (private) -->
+<xs:schema xmlns:g2sA="http://www.gamingstandards.com/g2s/schemas/v1.0.3/ExtA" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.gamingstandards.com/g2s/schemas/v1.0.3/ExtA" elementFormDefault="qualified" attributeFormDefault="qualified" version="2010-09-13 v1.0.4">
+	<xs:include schemaLocation="g2sCabinetExtA.xsd"/>
+	<xs:include schemaLocation="g2sGamePlayExtA.xsd"/>
+	<xs:include schemaLocation="g2sCommConfigExtA.xsd"/>
+	<xs:include schemaLocation="g2sOptionConfigExtA.xsd"/>
+	<!--End of Extension.-->
+</xs:schema>
