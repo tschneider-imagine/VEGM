@@ -15,10 +15,11 @@ import (
 )
 
 type outboundRequest struct {
-	MessageType string `json:"message_type"`
-	HostID      string `json:"host_id,omitempty"`
-	SessionID   string `json:"session_id,omitempty"`
-	TargetURL   string `json:"target_url,omitempty"`
+	MessageType     string `json:"message_type"`
+	HostID          string `json:"host_id,omitempty"`
+	SessionID       string `json:"session_id,omitempty"`
+	TargetURL       string `json:"target_url,omitempty"`
+	AllowGenericAck bool   `json:"allow_generic_ack,omitempty"`
 }
 
 type outboundResult struct {
@@ -34,6 +35,7 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 	state := s.templateStateLocked()
 	trustMode := s.cfg.Security.TrustMode
 	cfg := s.cfg.Outbound
+	hostEndpointURL := s.cfg.HostEndpoint.URL
 	s.mu.RUnlock()
 	if pk == nil {
 		return outboundResult{}, fmt.Errorf("pack is nil")
@@ -46,6 +48,9 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 		targetURL = cfg.DefaultTargetURL
 	}
 	if targetURL == "" {
+		targetURL = hostEndpointURL
+	}
+	if targetURL == "" {
 		return outboundResult{}, fmt.Errorf("target url is required")
 	}
 	op, ok := pk.Operations[req.MessageType]
@@ -53,7 +58,7 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 		return outboundResult{}, fmt.Errorf("operation %q is not defined for outbound use", req.MessageType)
 	}
 	requestFields := map[string]string{
-		"hostId":    firstNonEmpty(req.HostID, s.cfg.InstanceID),
+		"hostId":    firstNonEmpty(req.HostID, s.cfg.HostID, s.cfg.InstanceID),
 		"sessionId": firstNonEmpty(req.SessionID, fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano())),
 		"egmId":     s.cfg.EGMID,
 	}
@@ -85,11 +90,13 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 	}
 	result := outboundResult{HTTPStatus: resp.StatusCode, ResponseRoot: parsed.RootLocalName}
 	ackExpected := expectedAckRoot(req.MessageType)
-	result.OK = resp.StatusCode >= 200 && resp.StatusCode < 300 && (ackExpected == "" || strings.EqualFold(parsed.RootLocalName, ackExpected))
+	strictAckOK := ackExpected == "" || strings.EqualFold(parsed.RootLocalName, ackExpected)
+	genericAckOK := req.AllowGenericAck && strings.EqualFold(parsed.RootLocalName, "g2sResponse")
+	result.OK = resp.StatusCode >= 200 && resp.StatusCode < 300 && (strictAckOK || genericAckOK)
 	if !result.OK && result.Error == "" {
 		result.Error = fmt.Sprintf("unexpected http_status=%d response_root=%s", resp.StatusCode, parsed.RootLocalName)
 	}
-	s.logger.Log("info", "outbound", "outbound request complete", map[string]any{"message_type": req.MessageType, "target_url": targetURL, "http_status": resp.StatusCode, "response_root": parsed.RootLocalName, "ok": result.OK})
+	s.logger.Log("info", "outbound", "outbound request complete", map[string]any{"message_type": req.MessageType, "target_url": targetURL, "http_status": resp.StatusCode, "response_root": parsed.RootLocalName, "ok": result.OK, "allow_generic_ack": req.AllowGenericAck})
 	return result, nil
 }
 
@@ -171,6 +178,9 @@ func (s *Server) handleOutboundSendLike(w http.ResponseWriter, r *http.Request, 
 	var req outboundRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)
 	req.MessageType = msgType
+	if msgType == "keepAlive" {
+		req.AllowGenericAck = true
+	}
 	res, err := s.SendOutbound(r.Context(), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
