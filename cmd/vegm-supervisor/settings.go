@@ -109,7 +109,7 @@ func (s *supervisorServer) getInstanceSettings(id string) (instanceSettings, err
 				HostID:         inst.HostID,
 				EGMEndpoint:    inst.EGMEndpoint,
 				HostEndpoint:   inst.HostEndpoint,
-				G2SXML:         gen.Config.G2SXML,
+				G2SXML:         defaultG2SXML(gen.Config.G2SXML, inst.EGMEndpoint),
 				ListenHost:     inst.ListenHost,
 				WirePort:       inst.WirePort,
 				ControlPort:    inst.ControlPort,
@@ -139,6 +139,8 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		gen := &s.generated[i]
 		inst := &gen.Instance
 		cfg := &gen.Config
+
+		in.G2SXML = defaultG2SXML(in.G2SXML, in.EGMEndpoint)
 
 		inst.HostID = in.HostID
 		inst.EGMEndpoint = in.EGMEndpoint
@@ -223,4 +225,17 @@ func (s *supervisorServer) updateInstanceSettings(id string, in instanceSettings
 		}, nil
 	}
 	return instanceSettings{}, fmt.Errorf("instance %q not found", id)
+}
+
+func defaultG2SXML(in runtimecfg.G2SXMLConfig, ep fleet.Endpoint) runtimecfg.G2SXMLConfig {
+	if in.Mode == "" {
+		in.Mode = "lab_legacy_xml"
+	}
+	if in.Namespace == "" {
+		in.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3"
+	}
+	if in.EGMLocation == "" && ep.Host != "" && ep.Port > 0 {
+		in.EGMLocation = fmt.Sprintf("%s:%d", ep.Host, ep.Port)
+	}
+	return in
 }
