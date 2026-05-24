@@ -42,6 +42,12 @@ func timestampsForInstance(instanceID string) sessionTimestampSet {
 func (r RuntimeState) MarshalJSON() ([]byte, error) {
 	type runtimeStateAlias RuntimeState
 	set := timestampsForInstance(r.InstanceID)
+	if set.LastKeepAliveAt.IsZero() && r.LastCommandType == "keepAlive" {
+		set.LastKeepAliveAt = r.LastCommandAt
+	}
+	if set.LastAckAt.IsZero() && r.LastAckStatus != "" {
+		set.LastAckAt = r.LastCommandAt
+	}
 	return json.Marshal(struct {
 		runtimeStateAlias
 		LastCommsOnlineAt time.Time `json:"last_comms_online_at,omitempty"`
