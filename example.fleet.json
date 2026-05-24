@@ -16,6 +16,11 @@
     "host_endpoint": {
       "url": "http://192.168.10.25:8444/g2s"
     },
+    "g2s_xml": {
+      "mode": "lab_legacy_xml",
+      "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
+      "egm_location": "192.168.10.162:18443"
+    },
     "trust_mode": "plaintext_lab",
     "pack_file": "./example.pack.json",
     "overlay_files": [],
@@ -114,6 +119,11 @@
       "host_endpoint": {
         "url": "http://192.168.10.25:8444/g2s"
       },
+      "g2s_xml": {
+        "mode": "lab_legacy_xml",
+        "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
+        "egm_location": "192.168.10.162:18443"
+      },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162"
     },
@@ -132,6 +142,11 @@
       "host_endpoint": {
         "url": "http://192.168.10.25:8444/g2s"
       },
+      "g2s_xml": {
+        "mode": "lab_legacy_xml",
+        "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
+        "egm_location": "192.168.10.162:18444"
+      },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162"
     },
@@ -149,6 +164,11 @@
       },
       "host_endpoint": {
         "url": "http://192.168.10.25:8444/g2s"
+      },
+      "g2s_xml": {
+        "mode": "lab_legacy_xml",
+        "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
+        "egm_location": "192.168.10.162:18453"
       },
       "advertised_host": "192.168.10.162",
       "advertised_ip": "192.168.10.162",
