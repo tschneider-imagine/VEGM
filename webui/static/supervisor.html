@@ -5,27 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VEGM Supervisor</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
-    .wrap { padding: 16px; display: grid; gap: 16px; }
-    .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    button, input, textarea, .buttonlink { cursor: pointer; background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; text-decoration: none; display: inline-block; }
-    input { cursor: text; width: 100%; box-sizing: border-box; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #374151; padding: 8px; text-align: left; font-size: 14px; vertical-align: top; }
-    .ok { color: #34d399; }
-    .bad { color: #f87171; }
-    .warn { color: #fbbf24; }
-    .muted { color: #94a3b8; }
-    .mono { font-family: Consolas, monospace; font-size: 12px; }
-    a { color: #93c5fd; }
-    .details { color: #cbd5e1; line-height: 1.4; }
-    .status-grid { display: grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 4px; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #0f172a; border: 1px solid #475569; font-size: 12px; margin: 2px 4px 2px 0; }
-    .field { display: grid; gap: 4px; }
-    .small { font-size: 12px; }
-    .session-times { margin-top: 6px; border-top: 1px solid #374151; padding-top: 6px; }
+    body { font-family: Arial, sans-serif; margin:0; background:#111827; color:#e5e7eb; }
+    .wrap { padding:16px; display:grid; gap:16px; }
+    .panel { background:#1f2937; border:1px solid #374151; border-radius:12px; padding:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button, input, .buttonlink { cursor:pointer; background:#0f172a; color:#e5e7eb; border:1px solid #475569; border-radius:8px; padding:8px 12px; text-decoration:none; display:inline-block; margin:2px; }
+    input { cursor:text; width:100%; box-sizing:border-box; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid #374151; padding:8px; text-align:left; font-size:14px; vertical-align:top; }
+    a { color:#93c5fd; }
+    .ok { color:#34d399; } .bad { color:#f87171; } .muted { color:#94a3b8; }
+    .mono { font-family:Consolas, monospace; font-size:12px; }
+    .badge { display:inline-block; padding:3px 8px; border-radius:999px; background:#0f172a; border:1px solid #475569; font-size:12px; margin:2px 4px 2px 0; }
+    .grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+    .field { display:grid; gap:4px; }
+    .small { font-size:12px; }
   </style>
 </head>
 <body>
@@ -40,43 +34,34 @@
       <a class="buttonlink" target="_blank" href="/ui/fleet-export.html">Fleet export page</a>
       <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
-    <div class="muted small" style="margin-top:8px;">Navigation: supervisor dashboard, fleet machine add/remove, fleet export, initiate session, and per-VEGM evidence links.</div>
+    <div class="muted small">Dashboard, fleet add/remove, exports, session initiation, forced heartbeat, and per-VEGM evidence links.</div>
   </div>
+
   <div class="panel">
     <table>
-      <thead>
-        <tr>
-          <th>Machine</th>
-          <th>Lifecycle</th>
-          <th>Live State</th>
-          <th>G2S Path</th>
-          <th>Trust / Cert</th>
-          <th>Evidence</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Machine</th><th>Lifecycle</th><th>Live State</th><th>G2S Path</th><th>Evidence</th><th>Actions</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
+
   <div class="panel">
     <h2>Edit machine settings</h2>
-    <div class="muted small">Edit hostId, G2S endpoints, protocol, ports, and cert paths. Save + Restart applies runtime fields.</div>
-    <div id="editorNotice" class="muted" style="margin-top:8px;">No machine selected.</div>
-    <div class="grid" style="margin-top:10px;">
+    <div id="editorNotice" class="muted small">No machine selected.</div>
+    <div class="grid">
       <div class="field"><label>Instance ID</label><input id="f_instance_id" disabled></div>
       <div class="field"><label>Host ID</label><input id="f_host_id"></div>
-      <div class="field"><label>EGM Endpoint Scheme</label><input id="f_ep_scheme"></div>
-      <div class="field"><label>EGM Endpoint Bind IP</label><input id="f_ep_bind_ip"></div>
-      <div class="field"><label>EGM Endpoint Host</label><input id="f_ep_host"></div>
-      <div class="field"><label>EGM Endpoint Port</label><input id="f_ep_port" type="number"></div>
-      <div class="field"><label>EGM Endpoint Path</label><input id="f_ep_path"></div>
+      <div class="field"><label>EGM Scheme</label><input id="f_ep_scheme"></div>
+      <div class="field"><label>EGM Bind IP</label><input id="f_ep_bind_ip"></div>
+      <div class="field"><label>EGM Host</label><input id="f_ep_host"></div>
+      <div class="field"><label>EGM Port</label><input id="f_ep_port" type="number"></div>
+      <div class="field"><label>EGM Path</label><input id="f_ep_path"></div>
       <div class="field"><label>Host Endpoint URL</label><input id="f_host_endpoint_url"></div>
       <div class="field"><label>Listen Host</label><input id="f_listen_host"></div>
       <div class="field"><label>Wire Port</label><input id="f_wire_port" type="number"></div>
       <div class="field"><label>Control Port</label><input id="f_control_port" type="number"></div>
       <div class="field"><label>Advertised Host</label><input id="f_advertised_host"></div>
       <div class="field"><label>Advertised IP</label><input id="f_advertised_ip"></div>
-      <div class="field"><label>DNS Servers (comma separated)</label><input id="f_dns_servers"></div>
+      <div class="field"><label>DNS Servers</label><input id="f_dns_servers"></div>
       <div class="field"><label>Subnet Mask</label><input id="f_subnet_mask"></div>
       <div class="field"><label>Gateway</label><input id="f_gateway"></div>
       <div class="field"><label>Server Name</label><input id="f_server_name"></div>
@@ -85,227 +70,51 @@
       <div class="field"><label>Key File</label><input id="f_key_file"></div>
       <div class="field"><label>CA File</label><input id="f_ca_file"></div>
     </div>
-    <div class="row" style="margin-top:12px;">
-      <button id="saveBtn">Save</button>
-      <button id="saveRestartBtn">Save + Restart</button>
-    </div>
+    <div class="row" style="margin-top:12px;"><button id="saveBtn">Save</button><button id="saveRestartBtn">Save + Restart</button></div>
   </div>
 </div>
 <script>
 let selectedInstance = null;
-
-async function fetchJson(url, opts) {
-  const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return await r.json();
-}
+const $ = (id) => document.getElementById(id);
+async function fetchJson(url, opts) { const r = await fetch(url, opts); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return await r.json(); }
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function jsq(v) { return String(v ?? '').replaceAll('\\', '\\\\').replaceAll("'", "\\'"); }
 function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
-function stateBadge(label, value) { return `<span class="badge"><strong>${esc(label)}:</strong> ${esc(value || 'n/a')}</span>`; }
-function endpointText(ep) {
-  if (!ep) return '';
-  return `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}`;
-}
-function clsBool(ok) { return ok ? 'ok' : 'bad'; }
-function domId(v) { return String(v || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
-function fmtTime(v) {
-  if (!v || String(v).startsWith('0001-')) return 'n/a';
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleTimeString();
-}
-function timestampCell(id, key, label) {
-  return `<div><span class="badge"><strong>${esc(label)}:</strong> <span id="${key}-${domId(id)}">n/a</span></span></div>`;
-}
-
-async function refreshSessionTimestamps(instances) {
-  for (const inst of instances || []) {
-    const id = domId(inst.instance_id);
-    const setText = (key, value) => {
-      const el = document.getElementById(`${key}-${id}`);
-      if (el) el.textContent = fmtTime(value);
-    };
-    setText('ts-comms', inst.last_comms_online_at);
-    setText('ts-keep', inst.last_keep_alive_at);
-    setText('ts-ack', inst.last_ack_at);
-    if (!inst.control_url) continue;
-    try {
-      const state = await fetchJson(`${inst.control_url}/control/state`);
-      setText('ts-comms', state.last_comms_online_at);
-      setText('ts-keep', state.last_keep_alive_at);
-      setText('ts-ack', state.last_ack_at);
-    } catch (_) {
-      // Child may be stopped or not healthy; leave as n/a.
-    }
-  }
-}
-
+function badge(k,v) { return `<span class="badge"><b>${esc(k)}:</b> ${esc(v || 'n/a')}</span>`; }
+function endpoint(ep) { return ep ? `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}` : ''; }
+function fmtTime(v) { if (!v || String(v).startsWith('0001-')) return 'n/a'; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleTimeString(); }
+async function action(id, act) { await fetchJson(`/api/instances/${id}/${act}`, {method:'POST'}); await refresh(); }
+async function initiate(url) { await fetchJson(`${url}/control/outbound/session/open`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
+async function forceHeartbeat(url) { await fetchJson(`${url}/control/outbound/heartbeat`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
+async function childState(inst) { try { return await fetchJson(`${inst.control_url}/control/state`); } catch { return {}; } }
 async function refresh() {
-  const body = document.getElementById('rows');
-  body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+  const body = $('rows'); body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
   try {
     const data = await fetchJson('/api/instances');
-    const instances = data.instances || [];
-    body.innerHTML = instances.map(inst => {
-      const cert = inst.certificate_status || {};
-      const safeID = jsq(inst.instance_id);
-      return `
-      <tr>
-        <td>
-          <div><strong>${esc(inst.instance_id)}</strong></div>
-          <div class="mono">egmId: ${esc(inst.egm_id)}</div>
-          <div class="mono">hostId: ${esc(inst.host_id)}</div>
-          <div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div>
-          <div style="margin-top:6px;"><button onclick="selectInstance('${safeID}')">Edit</button></div>
-        </td>
-        <td>
-          <div class="${inst.running ? 'ok' : 'muted'}">running: ${inst.running}</div>
-          <div class="${inst.healthy ? 'ok' : 'bad'}">healthy: ${inst.healthy}</div>
-          <div>control: <span class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</span></div>
-        </td>
-        <td>
-          <div class="status-grid">
-            <div>${stateBadge('Mute', inst.audio_state)}</div>
-            <div>${stateBadge('Lock', inst.lock_state)}</div>
-            <div>${stateBadge('Hold', inst.hold_state)}</div>
-            <div>${stateBadge('Machine', inst.machine_state)}</div>
-            <div>${stateBadge('Session', inst.session_state)}</div>
-            <div>${stateBadge('Heartbeat', inst.heartbeat_state)}</div>
-            <div>${stateBadge('Connected', inst.connection_state)}</div>
-            <div>${stateBadge('Last cmd', inst.last_command_type)}</div>
-          </div>
-          <div class="session-times mono">
-            ${timestampCell(inst.instance_id, 'ts-comms', 'commsOnLine')}
-            ${timestampCell(inst.instance_id, 'ts-keep', 'keepAlive')}
-            ${timestampCell(inst.instance_id, 'ts-ack', 'last ACK')}
-          </div>
-        </td>
-        <td class="details mono">
-          <div>EGM: ${esc(endpointText(inst.egm_endpoint))}</div>
-          <div>bind: ${esc(inst.egm_endpoint?.bind_ip || '')}</div>
-          <div>Host URL: ${esc(inst.host_endpoint?.url || '')}</div>
-          <div>G2S link: <a target="_blank" href="${esc(inst.wire_url)}">endpoint</a></div>
-        </td>
-        <td class="details mono">
-          <div>mode: ${esc(inst.trust_mode)}</div>
-          <div class="${clsBool(cert.ok)}">cert status: ${cert.ok ? 'ok' : 'not ok'}</div>
-          <div>subject: ${esc(cert.subject || '')}</div>
-          <div>dns san: ${esc(joinList(cert.dns_names))}</div>
-          <div>cert: ${esc(inst.cert_file)}</div>
-          <div>ca: ${esc(inst.ca_file)}</div>
-          <div class="bad">${esc(cert.error || '')}</div>
-        </td>
-        <td>
-          <div><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a></div>
-          <div><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a></div>
-          <div><a target="_blank" href="${esc(inst.control_url)}/control/state/history">state history</a></div>
-          <div><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a></div>
-          <div><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a></div>
-          <div><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></div>
-        </td>
-        <td>
-          <button onclick="act('${safeID}','start')">Start</button>
-          <button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button>
-          <button onclick="act('${safeID}','stop')">Stop</button>
-          <button onclick="act('${safeID}','restart')">Restart</button>
-        </td>
-      </tr>`;
-    }).join('');
-    await refreshSessionTimestamps(instances);
-  } catch (err) {
-    body.innerHTML = `<tr><td colspan="7" class="bad">${esc(err.message)}</td></tr>`;
-  }
+    const rows = [];
+    for (const inst of data.instances || []) {
+      const state = inst.healthy ? await childState(inst) : {};
+      const id = jsq(inst.instance_id);
+      rows.push(`<tr>
+        <td><b>${esc(inst.instance_id)}</b><div class="mono">egmId: ${esc(inst.egm_id)}</div><div class="mono">hostId: ${esc(inst.host_id)}</div><div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div><button onclick="selectInstance('${id}')">Edit</button></td>
+        <td><div class="${inst.running ? 'ok':'muted'}">running: ${inst.running}</div><div class="${inst.healthy ? 'ok':'bad'}">healthy: ${inst.healthy}</div><div class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</div></td>
+        <td>${badge('Mute',inst.audio_state)}${badge('Lock',inst.lock_state)}${badge('Hold',inst.hold_state)}${badge('Machine',inst.machine_state)}${badge('Session',inst.session_state)}${badge('Heartbeat',inst.heartbeat_state)}${badge('Connected',inst.connection_state)}${badge('Last cmd',inst.last_command_type)}<div class="mono">commsOnLine: ${fmtTime(state.last_comms_online_at)}<br>keepAlive: ${fmtTime(state.last_keep_alive_at)}<br>last ACK: ${fmtTime(state.last_ack_at)}</div></td>
+        <td class="mono"><div>EGM: ${esc(endpoint(inst.egm_endpoint))}</div><div>Host: ${esc(inst.host_endpoint?.url || '')}</div><div>mode: ${esc(inst.trust_mode)}</div></td>
+        <td><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a><br><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a><br><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a><br><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a><br><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></td>
+        <td><button onclick="action('${id}','start')">Start</button><button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button><button onclick="forceHeartbeat('${jsq(inst.control_url)}')">Force Heartbeat</button><button onclick="action('${id}','stop')">Stop</button><button onclick="action('${id}','restart')">Restart</button></td>
+      </tr>`);
+    }
+    body.innerHTML = rows.join('');
+  } catch (err) { body.innerHTML = `<tr><td colspan="6" class="bad">${esc(err.message)}</td></tr>`; }
 }
-
-async function act(id, action) {
-  await fetchJson(`/api/instances/${id}/${action}`, { method: 'POST' });
-  await refresh();
-}
-async function initiate(controlUrl) {
-  await fetchJson(`${controlUrl}/control/outbound/session/open`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-  await refresh();
-}
-
 async function selectInstance(id) {
-  const s = await fetchJson(`/api/instance-settings/${id}`);
-  selectedInstance = id;
-  document.getElementById('editorNotice').textContent = `Editing ${id}`;
-  document.getElementById('f_instance_id').value = s.instance_id || '';
-  document.getElementById('f_host_id').value = s.host_id || '';
-  document.getElementById('f_ep_scheme').value = s.egm_endpoint?.scheme || '';
-  document.getElementById('f_ep_bind_ip').value = s.egm_endpoint?.bind_ip || '';
-  document.getElementById('f_ep_host').value = s.egm_endpoint?.host || '';
-  document.getElementById('f_ep_port').value = s.egm_endpoint?.port || 0;
-  document.getElementById('f_ep_path').value = s.egm_endpoint?.path || '';
-  document.getElementById('f_host_endpoint_url').value = s.host_endpoint?.url || '';
-  document.getElementById('f_listen_host').value = s.listen_host || '';
-  document.getElementById('f_wire_port').value = s.wire_port || 0;
-  document.getElementById('f_control_port').value = s.control_port || 0;
-  document.getElementById('f_advertised_host').value = s.advertised_host || '';
-  document.getElementById('f_advertised_ip').value = s.advertised_ip || '';
-  document.getElementById('f_dns_servers').value = joinList(s.dns_servers);
-  document.getElementById('f_subnet_mask').value = s.subnet_mask || '';
-  document.getElementById('f_gateway').value = s.gateway || '';
-  document.getElementById('f_server_name').value = s.server_name || '';
-  document.getElementById('f_trust_mode').value = s.trust_mode || '';
-  document.getElementById('f_cert_file').value = s.cert_file || '';
-  document.getElementById('f_key_file').value = s.key_file || '';
-  document.getElementById('f_ca_file').value = s.ca_file || '';
+  const s = await fetchJson(`/api/instance-settings/${id}`); selectedInstance = id; $('editorNotice').textContent = `Editing ${id}`;
+  $('f_instance_id').value=s.instance_id||''; $('f_host_id').value=s.host_id||''; $('f_ep_scheme').value=s.egm_endpoint?.scheme||''; $('f_ep_bind_ip').value=s.egm_endpoint?.bind_ip||''; $('f_ep_host').value=s.egm_endpoint?.host||''; $('f_ep_port').value=s.egm_endpoint?.port||0; $('f_ep_path').value=s.egm_endpoint?.path||''; $('f_host_endpoint_url').value=s.host_endpoint?.url||''; $('f_listen_host').value=s.listen_host||''; $('f_wire_port').value=s.wire_port||0; $('f_control_port').value=s.control_port||0; $('f_advertised_host').value=s.advertised_host||''; $('f_advertised_ip').value=s.advertised_ip||''; $('f_dns_servers').value=joinList(s.dns_servers); $('f_subnet_mask').value=s.subnet_mask||''; $('f_gateway').value=s.gateway||''; $('f_server_name').value=s.server_name||''; $('f_trust_mode').value=s.trust_mode||''; $('f_cert_file').value=s.cert_file||''; $('f_key_file').value=s.key_file||''; $('f_ca_file').value=s.ca_file||'';
 }
-
-function collectSettings() {
-  return {
-    instance_id: document.getElementById('f_instance_id').value,
-    host_id: document.getElementById('f_host_id').value,
-    egm_endpoint: {
-      scheme: document.getElementById('f_ep_scheme').value,
-      bind_ip: document.getElementById('f_ep_bind_ip').value,
-      host: document.getElementById('f_ep_host').value,
-      port: Number(document.getElementById('f_ep_port').value || 0),
-      path: document.getElementById('f_ep_path').value
-    },
-    host_endpoint: { url: document.getElementById('f_host_endpoint_url').value },
-    listen_host: document.getElementById('f_listen_host').value,
-    wire_port: Number(document.getElementById('f_wire_port').value || 0),
-    control_port: Number(document.getElementById('f_control_port').value || 0),
-    advertised_host: document.getElementById('f_advertised_host').value,
-    advertised_ip: document.getElementById('f_advertised_ip').value,
-    dns_servers: document.getElementById('f_dns_servers').value.split(',').map(x => x.trim()).filter(Boolean),
-    subnet_mask: document.getElementById('f_subnet_mask').value,
-    gateway: document.getElementById('f_gateway').value,
-    server_name: document.getElementById('f_server_name').value,
-    trust_mode: document.getElementById('f_trust_mode').value,
-    cert_file: document.getElementById('f_cert_file').value,
-    key_file: document.getElementById('f_key_file').value,
-    ca_file: document.getElementById('f_ca_file').value
-  };
-}
-
-async function saveSettings(restartAfter) {
-  if (!selectedInstance) {
-    alert('Select a machine first.');
-    return;
-  }
-  await fetchJson(`/api/instance-settings/${selectedInstance}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(collectSettings())
-  });
-  if (restartAfter) {
-    await act(selectedInstance, 'restart');
-  } else {
-    await refresh();
-  }
-}
-
-document.getElementById('refreshBtn').addEventListener('click', refresh);
-document.getElementById('startAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/start-all', { method: 'POST' }); await refresh(); });
-document.getElementById('stopAllBtn').addEventListener('click', async () => { await fetchJson('/api/instances/stop-all', { method: 'POST' }); await refresh(); });
-document.getElementById('saveBtn').addEventListener('click', async () => { await saveSettings(false); });
-document.getElementById('saveRestartBtn').addEventListener('click', async () => { await saveSettings(true); });
-refresh();
-setInterval(refresh, 3000);
+function collectSettings() { return { instance_id:$('f_instance_id').value, host_id:$('f_host_id').value, egm_endpoint:{scheme:$('f_ep_scheme').value, bind_ip:$('f_ep_bind_ip').value, host:$('f_ep_host').value, port:Number($('f_ep_port').value||0), path:$('f_ep_path').value}, host_endpoint:{url:$('f_host_endpoint_url').value}, listen_host:$('f_listen_host').value, wire_port:Number($('f_wire_port').value||0), control_port:Number($('f_control_port').value||0), advertised_host:$('f_advertised_host').value, advertised_ip:$('f_advertised_ip').value, dns_servers:$('f_dns_servers').value.split(',').map(x=>x.trim()).filter(Boolean), subnet_mask:$('f_subnet_mask').value, gateway:$('f_gateway').value, server_name:$('f_server_name').value, trust_mode:$('f_trust_mode').value, cert_file:$('f_cert_file').value, key_file:$('f_key_file').value, ca_file:$('f_ca_file').value }; }
+async function saveSettings(restartAfter) { if (!selectedInstance) { alert('Select a machine first.'); return; } await fetchJson(`/api/instance-settings/${selectedInstance}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(collectSettings())}); if (restartAfter) await action(selectedInstance,'restart'); else await refresh(); }
+$('refreshBtn').addEventListener('click', refresh); $('startAllBtn').addEventListener('click', async()=>{await fetchJson('/api/instances/start-all',{method:'POST'}); await refresh();}); $('stopAllBtn').addEventListener('click', async()=>{await fetchJson('/api/instances/stop-all',{method:'POST'}); await refresh();}); $('saveBtn').addEventListener('click', async()=>saveSettings(false)); $('saveRestartBtn').addEventListener('click', async()=>saveSettings(true));
+refresh(); setInterval(refresh, 3000);
 </script>
 </body>
 </html>
