@@ -13,6 +13,7 @@ type Config struct {
 	EGMID         string              `json:"egm_id"`
 	EGMEndpoint   EGMEndpointConfig   `json:"egm_endpoint,omitempty"`
 	HostEndpoint  HostEndpointConfig  `json:"host_endpoint,omitempty"`
+	G2SXML        G2SXMLConfig        `json:"g2s_xml,omitempty"`
 	SessionEngine SessionEngineConfig `json:"session_engine,omitempty"`
 	Listen        ListenConfig        `json:"listen"`
 	Security      SecurityConfig      `json:"security"`
@@ -37,12 +38,18 @@ type HostEndpointConfig struct {
 	URL string `json:"url,omitempty"`
 }
 
+type G2SXMLConfig struct {
+	Mode        string `json:"mode,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
+	EGMLocation string `json:"egm_location,omitempty"`
+}
+
 type SessionEngineConfig struct {
-	Enabled             bool `json:"enabled,omitempty"`
-	AutoStart           bool `json:"auto_start,omitempty"`
-	CommsOnlineTimeoutMS int `json:"comms_online_timeout_ms,omitempty"`
-	KeepAliveIntervalMS int  `json:"keep_alive_interval_ms,omitempty"`
-	ReconnectIntervalMS int  `json:"reconnect_interval_ms,omitempty"`
+	Enabled              bool `json:"enabled,omitempty"`
+	AutoStart            bool `json:"auto_start,omitempty"`
+	CommsOnlineTimeoutMS int  `json:"comms_online_timeout_ms,omitempty"`
+	KeepAliveIntervalMS  int  `json:"keep_alive_interval_ms,omitempty"`
+	ReconnectIntervalMS  int  `json:"reconnect_interval_ms,omitempty"`
 }
 
 type ListenConfig struct {
@@ -120,11 +127,15 @@ func ValidateConfig(cfg *Config) error {
 		return fmt.Errorf("egm_id is required")
 	}
 	applyEndpointDefaults(cfg)
+	applyG2SXMLDefaults(cfg)
 	applySessionEngineDefaults(cfg)
 	if err := validateEGMEndpoint(cfg.EGMEndpoint); err != nil {
 		return err
 	}
 	if err := validateHostEndpoint(cfg.HostEndpoint); err != nil {
+		return err
+	}
+	if err := validateG2SXML(cfg.G2SXML); err != nil {
 		return err
 	}
 	if cfg.SessionEngine.Enabled && cfg.HostEndpoint.URL == "" {
@@ -204,6 +215,33 @@ func applyEndpointDefaults(cfg *Config) {
 	if cfg.Outbound.DefaultTargetURL == "" && cfg.HostEndpoint.URL != "" {
 		cfg.Outbound.DefaultTargetURL = cfg.HostEndpoint.URL
 	}
+}
+
+func applyG2SXMLDefaults(cfg *Config) {
+	if cfg.G2SXML.Mode == "" {
+		cfg.G2SXML.Mode = "lab_legacy_xml"
+	}
+	if cfg.G2SXML.Namespace == "" {
+		cfg.G2SXML.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3"
+	}
+	if cfg.G2SXML.EGMLocation == "" {
+		cfg.G2SXML.EGMLocation = fmt.Sprintf("%s:%d", cfg.EGMEndpoint.Host, cfg.EGMEndpoint.Port)
+	}
+}
+
+func validateG2SXML(x G2SXMLConfig) error {
+	switch x.Mode {
+	case "lab_legacy_xml", "xsd_g2s_message":
+	default:
+		return fmt.Errorf("unsupported g2s_xml.mode %q", x.Mode)
+	}
+	if x.Namespace == "" {
+		return fmt.Errorf("g2s_xml.namespace is required")
+	}
+	if x.EGMLocation == "" {
+		return fmt.Errorf("g2s_xml.egm_location is required")
+	}
+	return nil
 }
 
 func applySessionEngineDefaults(cfg *Config) {
