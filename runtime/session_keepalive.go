@@ -55,6 +55,9 @@ func (s *Server) runKeepAliveOnce(ctx context.Context, sessionID string) error {
 }
 
 func (s *Server) renderKeepAlive(sessionID string) string {
+	if s.shouldRenderXSDG2SMessage() {
+		return s.renderXSDCommunicationsMessage("keepAlive", map[string]string{})
+	}
 	soapNS := firstNonEmpty(s.pack.Wire.Namespaces["soapenv"], SOAP11Namespace)
 	g2sNS := firstNonEmpty(s.pack.Wire.Namespaces["g2s"], "urn:g2s:lab")
 	return fmt.Sprintf(`<soapenv:Envelope xmlns:soapenv="%s" xmlns:g2s="%s"><soapenv:Body><g2s:keepAlive><g2s:hostId>%s</g2s:hostId><g2s:egmId>%s</g2s:egmId><g2s:sessionId>%s</g2s:sessionId></g2s:keepAlive></soapenv:Body></soapenv:Envelope>`, soapNS, g2sNS, s.cfg.HostID, s.cfg.EGMID, sessionID)
