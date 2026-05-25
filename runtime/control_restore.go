@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	packpkg "github.com/tschneider-imagine/VEGM/pack"
 )
 
 type audioControlRequest struct {
@@ -93,7 +95,33 @@ func (s *Server) handleControlExport(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleControlOverlay(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "overlay hot reload is not implemented", http.StatusNotImplemented)
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var overlay packpkg.MessageOverlay
+	if err := json.NewDecoder(r.Body).Decode(&overlay); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	updated, err := packpkg.ApplyOverlay(s.pack, &overlay)
+	if err != nil {
+		s.mu.Unlock()
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.pack = updated
+	if updated.StateDefaults.RegistrationMode == "open" {
+		s.state.RegistrationState = "open"
+	} else {
+		s.state.RegistrationState = "restricted"
+	}
+	state := s.state
+	s.mu.Unlock()
+	s.logger.Log("info", "control", "overlay applied", map[string]any{"overlay_name": overlay.OverlayName, "target_pack": overlay.TargetPack})
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "pack_name": updated.PackName, "registration_state": state.RegistrationState})
 }
 
 func (s *Server) handleControlHostsAdd(w http.ResponseWriter, r *http.Request) {
