@@ -30,11 +30,8 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			s.state.HeartbeatState = "failed"
 			s.state.LastError = err.Error()
 			s.mu.Unlock()
-			s.logger.Log("warn", "session", "commsOnLine failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "message_type": "commsOnLine"})
-			if !sleepOrDone(ctx, time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS)*time.Millisecond) {
-				return
-			}
-			continue
+			s.logger.Log("warn", "session", "commsOnLine failed; auto-start single-shot will not retry", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "message_type": "commsOnLine", "auto_start_single_shot": true})
+			return
 		}
 		if err := s.runStartupExchange(ctx, sessionID); err != nil {
 			s.mu.Lock()
@@ -43,11 +40,8 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			s.state.HeartbeatState = "failed"
 			s.state.LastError = err.Error()
 			s.mu.Unlock()
-			s.logger.Log("warn", "session", "startup exchange failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID})
-			if !sleepOrDone(ctx, time.Duration(s.cfg.SessionEngine.ReconnectIntervalMS)*time.Millisecond) {
-				return
-			}
-			continue
+			s.logger.Log("warn", "session", "startup exchange failed; auto-start single-shot will not retry", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "auto_start_single_shot": true})
+			return
 		}
 		if ok := s.runKeepAliveLoop(ctx, sessionID); !ok {
 			return
