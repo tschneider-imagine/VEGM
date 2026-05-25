@@ -36,9 +36,9 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	variant := op.Responses[0]
-	hostID := firstNonEmpty(parsed.Fields["hostId"], parsed.Fields["hostID"], parsed.HostID, "HOST-001")
-	sessionID := firstNonEmpty(parsed.Fields["sessionId"], parsed.SessionID, fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano()))
-	egmID := firstNonEmpty(parsed.Fields["egmId"], parsed.EGMID, s.cfg.EGMID)
+	hostID := firstNonEmpty(parsed.Fields["hostId"], parsed.Fields["hostID"], parsed.Fields["host_id"], "HOST-001")
+	sessionID := firstNonEmpty(parsed.Fields["sessionId"], parsed.Fields["session_id"], fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano()))
+	egmID := firstNonEmpty(parsed.Fields["egmId"], parsed.Fields["egmID"], parsed.Fields["egm_id"], s.cfg.EGMID)
 
 	s.state.ConnectionState = "controller_connected"
 	s.state.LastMessageType = opName
