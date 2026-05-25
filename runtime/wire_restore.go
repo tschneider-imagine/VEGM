@@ -4,12 +4,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
 func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !isXMLContentType(r.Header.Get("Content-Type")) {
+		http.Error(w, "unsupported content type", http.StatusUnsupportedMediaType)
 		return
 	}
 	body, err := io.ReadAll(r.Body)
@@ -27,7 +32,17 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Logging.CaptureRawXML {
 		_, _ = s.logger.WritePayload("inbound_request", opName, body)
 	}
+	hostID := firstNonEmpty(parsed.Fields["hostId"], parsed.Fields["hostID"], parsed.Fields["host_id"], "HOST-001")
+	sessionID := firstNonEmpty(parsed.Fields["sessionId"], parsed.Fields["session_id"], fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano()))
+	egmID := firstNonEmpty(parsed.Fields["egmId"], parsed.Fields["egmID"], parsed.Fields["egm_id"], s.cfg.EGMID)
+
 	s.mu.Lock()
+	if !s.hostAllowedLocked(hostID) {
+		s.state.LastError = fmt.Sprintf("host %q is not registered or enabled", hostID)
+		s.mu.Unlock()
+		http.Error(w, s.state.LastError, http.StatusForbidden)
+		return
+	}
 	op, ok := s.pack.Operations[opName]
 	if !ok || len(op.Responses) == 0 {
 		s.state.LastError = fmt.Sprintf("operation %q is not defined", opName)
@@ -36,9 +51,6 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	variant := op.Responses[0]
-	hostID := firstNonEmpty(parsed.Fields["hostId"], parsed.Fields["hostID"], parsed.Fields["host_id"], "HOST-001")
-	sessionID := firstNonEmpty(parsed.Fields["sessionId"], parsed.Fields["session_id"], fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UnixNano()))
-	egmID := firstNonEmpty(parsed.Fields["egmId"], parsed.Fields["egmID"], parsed.Fields["egm_id"], s.cfg.EGMID)
 
 	s.state.ConnectionState = "controller_connected"
 	s.state.LastMessageType = opName
@@ -48,6 +60,7 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 	s.state.LastSessionID = sessionID
 	s.state.LastHostID = hostID
 	s.state.LastError = ""
+	s.applyBuiltInOperationStateLocked(opName)
 	if len(variant.SetState) > 0 {
 		s.applyStateUpdatesLocked(variant.SetState, fmt.Sprintf("wire %s", opName))
 	}
@@ -67,4 +80,38 @@ func (s *Server) handleWire(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/xml; charset=utf-8")
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(responseXML))
+}
+
+func isXMLContentType(contentType string) bool {
+	ct := strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
+	return ct == "text/xml" || ct == "application/xml" || ct == "application/soap+xml"
+}
+
+func (s *Server) hostAllowedLocked(hostID string) bool {
+	if s.pack.StateDefaults.RegistrationMode == "open" || s.state.RegistrationState == "open" {
+		return true
+	}
+	if len(s.state.RegisteredHosts) > 0 {
+		for _, host := range s.state.RegisteredHosts {
+			if host.HostID == hostID {
+				return host.Enabled
+			}
+		}
+		return false
+	}
+	for _, allowed := range s.state.AllowedHostIDs {
+		if allowed == hostID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) applyBuiltInOperationStateLocked(opName string) {
+	switch opName {
+	case "commsOnLine":
+		s.applyStateUpdatesLocked(map[string]any{"session_state": "online", "heartbeat_state": "healthy"}, "wire commsOnLine")
+	case "keepAlive":
+		s.applyStateUpdatesLocked(map[string]any{"heartbeat_state": "healthy"}, "wire keepAlive")
+	}
 }
