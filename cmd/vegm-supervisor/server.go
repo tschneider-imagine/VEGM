@@ -36,6 +36,7 @@ type instanceView struct {
 	Manufacturer      string                       `json:"manufacturer,omitempty"`
 	EGMEndpoint       fleet.Endpoint               `json:"egm_endpoint"`
 	HostEndpoint      fleet.HostEndpoint           `json:"host_endpoint,omitempty"`
+	G2SXML            runtimecfg.G2SXMLConfig      `json:"g2s_xml,omitempty"`
 	WireURL           string                       `json:"wire_url"`
 	ControlURL        string                       `json:"control_url"`
 	UIURL             string                       `json:"ui_url"`
@@ -138,12 +139,16 @@ func (s *supervisorServer) handleStartAll(w http.ResponseWriter, r *http.Request
 	var started []string
 	for _, gen := range s.generated {
 		ok, err := s.startOne(gen.Instance.InstanceID)
-		if err == nil && ok {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if ok {
 			started = append(started, gen.Instance.InstanceID)
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "started": started})
+	_ = json.NewEncoder(w).Encode(map[string]any{"started": started, "instances": s.instanceViews()})
 }
 
 func (s *supervisorServer) handleStopAll(w http.ResponseWriter, r *http.Request) {
@@ -158,49 +163,17 @@ func (s *supervisorServer) handleStopAll(w http.ResponseWriter, r *http.Request)
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "stopped": stopped})
-}
-
-func (s *supervisorServer) handleInstanceAction(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/instances/"), "/"), "/")
-	if len(parts) != 2 {
-		http.NotFound(w, r)
-		return
-	}
-	id, action := parts[0], parts[1]
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var ok bool
-	var err error
-	if action == "start" {
-		ok, err = s.startOne(id)
-	} else if action == "stop" {
-		ok = s.stopOne(id)
-	} else if action == "restart" {
-		s.stopOne(id)
-		ok, err = s.startOne(id)
-	} else {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": ok, "instance_id": id, "action": action})
+	_ = json.NewEncoder(w).Encode(map[string]any{"stopped": stopped, "instances": s.instanceViews()})
 }
 
 func (s *supervisorServer) instanceViews() []instanceView {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var out []instanceView
+	out := make([]instanceView, 0, len(s.generated))
 	for _, gen := range s.generated {
 		inst := gen.Instance
+		wireURL := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.WirePort, inst.EGMEndpoint.Path)
 		controlURL := fmt.Sprintf("http://%s:%d", inst.ListenHost, inst.ControlPort)
-		wireURL := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.EGMEndpoint.Port, inst.EGMEndpoint.Path)
 		cmd := s.cmds[inst.InstanceID]
 		running := processRunning(cmd)
 		meta := s.restartMeta(inst.InstanceID)
@@ -221,6 +194,7 @@ func (s *supervisorServer) instanceViews() []instanceView {
 			Manufacturer:      inst.Manufacturer,
 			EGMEndpoint:       inst.EGMEndpoint,
 			HostEndpoint:      inst.HostEndpoint,
+			G2SXML:            gen.Config.G2SXML,
 			WireURL:           wireURL,
 			ControlURL:        controlURL,
 			UIURL:             controlURL + "/ui/scenario-runner.html",
