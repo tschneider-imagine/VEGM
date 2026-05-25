@@ -237,7 +237,7 @@ func (s *supervisorServer) startOne(instanceID string) (bool, error) {
 	if cmd := s.cmds[instanceID]; processRunning(cmd) {
 		return false, nil
 	}
-	delete(s.cmds[instanceID])
+	delete(s.cmds, instanceID)
 	gen, ok := s.generatedByID(instanceID)
 	if !ok {
 		return false, fmt.Errorf("instance %q not found", instanceID)
