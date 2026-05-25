@@ -3,6 +3,7 @@ param(
     [string]$Template = ".\example.fleet.json",
     [string]$OutFile = ".\generated\fleet-$Count.json",
     [string]$VegmHostIp = "192.168.10.162",
+    [string]$VegmBindIp = "0.0.0.0",
     [string]$HostEndpointUrl = "http://192.168.10.25:8444/g2s",
     [string]$SubnetMask = "255.255.255.0",
     [string]$Gateway = "192.168.10.1",
@@ -26,10 +27,10 @@ $manifest = Get-Content $Template -Raw | ConvertFrom-Json
 $manifest.fleet_name = "lab-floor-$Count"
 $manifest.description = "$Count-VEGM generated scale manifest for $VegmHostIp talking to $HostEndpointUrl."
 
-$manifest.defaults.listen_host = $VegmHostIp
+$manifest.defaults.listen_host = $VegmBindIp
 $manifest.defaults.wire_port_base = $WirePortBase
 $manifest.defaults.control_port_base = $ControlPortBase
-$manifest.defaults.egm_endpoint.bind_ip = $VegmHostIp
+$manifest.defaults.egm_endpoint.bind_ip = $VegmBindIp
 $manifest.defaults.egm_endpoint.host = $VegmHostIp
 $manifest.defaults.host_endpoint.url = $HostEndpointUrl
 $manifest.defaults.advertised_host = $VegmHostIp
@@ -66,6 +67,7 @@ for ($i = 1; $i -le $Count; $i++) {
         wire_port = $wirePort
         control_port = $controlPort
         egm_endpoint = [ordered]@{
+            bind_ip = $VegmBindIp
             host = $VegmHostIp
             port = $wirePort
             path = $manifest.defaults.egm_endpoint.path
@@ -113,7 +115,8 @@ $outPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPa
 Write-Host "Wrote $Count-VEGM manifest: $OutFile"
 Write-Host "Wire ports: $WirePortBase - $($WirePortBase + $Count - 1)"
 Write-Host "Control ports: $ControlPortBase - $($ControlPortBase + $Count - 1)"
-Write-Host "VEGM host IP: $VegmHostIp"
+Write-Host "VEGM bind IP: $VegmBindIp"
+Write-Host "VEGM advertised host/IP: $VegmHostIp"
 Write-Host "Controller URL: $HostEndpointUrl"
 Write-Host "G2S XML mode: $G2SXmlMode"
 Write-Host "G2S XML namespace: $G2SXmlNamespace"
