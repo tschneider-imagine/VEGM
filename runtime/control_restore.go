@@ -202,23 +202,23 @@ func (s *Server) applyStateUpdatesLocked(updates map[string]any, reason string) 
 	s.logger.Log("info", "state", "state updated", map[string]any{"reason": reason, "updates": updates})
 }
 
-func (s *Server) templateStateLocked() map[string]string {
-	return map[string]string{
-		"instanceId":       s.state.InstanceID,
-		"egmId":            s.state.EGMID,
-		"trustMode":        s.state.TrustMode,
-		"connectionState":  s.state.ConnectionState,
-		"sessionState":     s.state.SessionState,
-		"heartbeatState":   s.state.HeartbeatState,
-		"audioState":       s.state.AudioState,
-		"holdState":        s.state.HoldState,
-		"lockState":        s.state.LockState,
-		"machineState":     s.state.MachineState,
-		"lastMessageType":  s.state.LastMessageType,
-		"lastCommandType":  s.state.LastCommandType,
+func (s *Server) templateStateLocked() map[string]any {
+	return map[string]any{
+		"instanceId":        s.state.InstanceID,
+		"egmId":             s.state.EGMID,
+		"trustMode":         s.state.TrustMode,
+		"connectionState":   s.state.ConnectionState,
+		"sessionState":      s.state.SessionState,
+		"heartbeatState":    s.state.HeartbeatState,
+		"audioState":        s.state.AudioState,
+		"holdState":         s.state.HoldState,
+		"lockState":         s.state.LockState,
+		"machineState":      s.state.MachineState,
+		"lastMessageType":   s.state.LastMessageType,
+		"lastCommandType":   s.state.LastCommandType,
 		"lastCommandSource": s.state.LastCommandSource,
-		"lastSessionId":    s.state.LastSessionID,
-		"lastHostId":       s.state.LastHostID,
-		"lastAckStatus":    s.state.LastAckStatus,
+		"lastSessionId":     s.state.LastSessionID,
+		"lastHostId":        s.state.LastHostID,
+		"lastAckStatus":     s.state.LastAckStatus,
 	}
 }
