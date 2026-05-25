@@ -16,11 +16,6 @@
     a { color:#93c5fd; }
     .ok { color:#34d399; } .bad { color:#f87171; } .muted { color:#94a3b8; }
     .mono { font-family:Consolas, monospace; font-size:12px; }
-    .badge { display:inline-block; padding:3px 8px; border-radius:999px; background:#0f172a; border:1px solid #475569; font-size:12px; margin:2px 4px 2px 0; }
-    .grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
-    .field { display:grid; gap:4px; }
-    .small { font-size:12px; }
-    .evidence { margin-top:6px; padding-top:6px; border-top:1px solid #374151; }
   </style>
 </head>
 <body>
@@ -32,10 +27,8 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
       <a class="buttonlink" target="_blank" href="/ui/fleet-machines.html">Fleet machines</a>
-      <a class="buttonlink" target="_blank" href="/ui/fleet-export.html">Fleet export page</a>
       <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
-    <div class="muted small">Dashboard, fleet add/remove, exports, session initiation, forced heartbeat, parsed G2S evidence, and per-VEGM evidence links.</div>
   </div>
 
   <div class="panel">
@@ -44,82 +37,32 @@
       <tbody id="rows"></tbody>
     </table>
   </div>
-
-  <div class="panel">
-    <h2>Edit machine settings</h2>
-    <div id="editorNotice" class="muted small">No machine selected.</div>
-    <div class="grid">
-      <div class="field"><label>Instance ID</label><input id="f_instance_id" disabled></div>
-      <div class="field"><label>Host ID</label><input id="f_host_id"></div>
-      <div class="field"><label>EGM Scheme</label><input id="f_ep_scheme"></div>
-      <div class="field"><label>EGM Bind IP</label><input id="f_ep_bind_ip"></div>
-      <div class="field"><label>EGM Host</label><input id="f_ep_host"></div>
-      <div class="field"><label>EGM Port</label><input id="f_ep_port" type="number"></div>
-      <div class="field"><label>EGM Path</label><input id="f_ep_path"></div>
-      <div class="field"><label>Host Endpoint URL</label><input id="f_host_endpoint_url"></div>
-      <div class="field"><label>G2S XML Mode</label><input id="f_g2s_xml_mode"></div>
-      <div class="field"><label>G2S Namespace</label><input id="f_g2s_xml_namespace"></div>
-      <div class="field"><label>G2S EGM Location</label><input id="f_g2s_xml_egm_location"></div>
-      <div class="field"><label>Listen Host</label><input id="f_listen_host"></div>
-      <div class="field"><label>Wire Port</label><input id="f_wire_port" type="number"></div>
-      <div class="field"><label>Control Port</label><input id="f_control_port" type="number"></div>
-      <div class="field"><label>Advertised Host</label><input id="f_advertised_host"></div>
-      <div class="field"><label>Advertised IP</label><input id="f_advertised_ip"></div>
-      <div class="field"><label>DNS Servers</label><input id="f_dns_servers"></div>
-      <div class="field"><label>Subnet Mask</label><input id="f_subnet_mask"></div>
-      <div class="field"><label>Gateway</label><input id="f_gateway"></div>
-      <div class="field"><label>Server Name</label><input id="f_server_name"></div>
-      <div class="field"><label>Trust Mode</label><input id="f_trust_mode"></div>
-      <div class="field"><label>Cert File</label><input id="f_cert_file"></div>
-      <div class="field"><label>Key File</label><input id="f_key_file"></div>
-      <div class="field"><label>CA File</label><input id="f_ca_file"></div>
-    </div>
-    <div class="row" style="margin-top:12px;"><button id="saveBtn">Save</button><button id="saveRestartBtn">Save + Restart</button></div>
-  </div>
 </div>
 <script>
-let selectedInstance = null;
 const $ = (id) => document.getElementById(id);
-async function fetchJson(url, opts) { const r = await fetch(url, opts); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return await r.json(); }
-function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function jsq(v) { return String(v ?? '').replaceAll('\\', '\\\\').replaceAll("'", "\\'"); }
-function joinList(v) { return Array.isArray(v) ? v.join(', ') : ''; }
-function badge(k,v) { return `<span class="badge"><b>${esc(k)}:</b> ${esc(v || 'n/a')}</span>`; }
-function endpoint(ep) { return ep ? `${ep.scheme || 'http'}://${ep.host || ep.bind_ip || ''}:${ep.port || ''}${ep.path || ''}` : ''; }
-function fmtTime(v) { if (!v || String(v).startsWith('0001-')) return 'n/a'; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleTimeString(); }
-function evidenceText(state) { return `<div class="evidence mono">XML mode: ${esc(state.g2s_xml_mode || state.xml_mode || 'lab_legacy_xml')}<br>XML namespace: ${esc(state.g2s_xml_namespace || 'n/a')}<br>EGM location: ${esc(state.g2s_xml_egm_location || 'n/a')}<br>Parsed root kind: ${esc(state.last_parsed_root_kind || 'n/a')}<br>Parsed class: ${esc(state.last_parsed_class || 'n/a')}<br>Parsed operation: ${esc(state.last_parsed_operation || 'n/a')}<br>Raw root: ${esc(state.last_raw_root || 'n/a')}<br>Expected ACK: ${esc(state.last_expected_ack || 'n/a')}<br>Actual ACK: ${esc(state.last_actual_ack || 'n/a')}</div>`; }
-async function action(id, act) { await fetchJson(`/api/instances/${id}/${act}`, {method:'POST'}); await refresh(); }
-async function initiate(url) { await fetchJson(`${url}/control/outbound/session/open`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
-async function forceHeartbeat(url) { await fetchJson(`${url}/control/outbound/heartbeat`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); await refresh(); }
-async function childState(inst) { try { return await fetchJson(`${inst.control_url}/control/state`); } catch { return {}; } }
+async function fetchJson(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.statusText); return r.json(); }
+function esc(v) { return String(v ?? ''); }
 async function refresh() {
-  const body = $('rows'); body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
-  try {
-    const data = await fetchJson('/api/instances');
-    const rows = [];
-    for (const inst of data.instances || []) {
-      const state = inst.healthy ? await childState(inst) : {};
-      const id = jsq(inst.instance_id);
-      rows.push(`<tr>
-        <td><b>${esc(inst.instance_id)}</b><div class="mono">egmId: ${esc(inst.egm_id)}</div><div class="mono">hostId: ${esc(inst.host_id)}</div><div class="muted">${esc(inst.group)} / ${esc(inst.profile)}</div><button onclick="selectInstance('${id}')">Edit</button></td>
-        <td><div class="${inst.running ? 'ok':'muted'}">running: ${inst.running}</div><div class="${inst.healthy ? 'ok':'bad'}">healthy: ${inst.healthy}</div><div class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</div></td>
-        <td>${badge('Mute',inst.audio_state)}${badge('Lock',inst.lock_state)}${badge('Hold',inst.hold_state)}${badge('Machine',inst.machine_state)}${badge('Session',inst.session_state)}${badge('Heartbeat',inst.heartbeat_state)}${badge('Connected',inst.connection_state)}${badge('Last cmd',inst.last_command_type)}<div class="mono">commsOnLine: ${fmtTime(state.last_comms_online_at)}<br>keepAlive: ${fmtTime(state.last_keep_alive_at)}<br>last ACK: ${fmtTime(state.last_ack_at)}</div>${evidenceText(state)}</td>
-        <td class="mono"><div>EGM: ${esc(endpoint(inst.egm_endpoint))}</div><div>Host: ${esc(inst.host_endpoint?.url || '')}</div><div>mode: ${esc(inst.trust_mode)}</div></td>
-        <td>
-          <a target="_blank" href="${esc(inst.control_url)}/control/state">state</a><br>
-          <a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a><br>
-          <a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a><br>
-          <a target="_blank" href="${esc(inst.control_url)}/control/export">export</a><br>
-          <a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a><br>
-          <a target="_blank" href="/ui/evidence-latest.html?control_url=${encodeURIComponent(inst.control_url)}">evidence latest</a>
-        </td>
-        <td><button onclick="action('${id}','start')">Start</button><button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button><button onclick="forceHeartbeat('${jsq(inst.control_url)}')">Force Heartbeat</button><button onclick="action('${id}','stop')">Stop</button><button onclick="action('${id}','restart')">Restart</button></td>
-      </tr>`);
-    }
-    body.innerHTML = rows.join('');
-  } catch (err) { body.innerHTML = `<tr><td colspan="6" class="bad">${esc(err.message)}</td></tr>`; }
+  const body = $('rows');
+  const data = await fetchJson('/api/instances');
+  body.innerHTML = (data.instances || []).map(inst => `
+    <tr>
+      <td>${esc(inst.instance_id)}</td>
+      <td>${esc(inst.running)}</td>
+      <td>${esc(inst.healthy)}</td>
+      <td>${esc(inst.control_url)}</td>
+      <td>
+        <a target="_blank" href="${inst.control_url}/control/state">state</a><br>
+        <a target="_blank" href="/ui/evidence-latest.html?control_url=${encodeURIComponent(inst.control_url)}">evidence</a>
+      </td>
+      <td>
+        <button onclick="fetch('/api/instances/${inst.instance_id}/start',{method:'POST'})">Start</button>
+      </td>
+    </tr>
+  `).join('');
 }
-refresh(); setInterval(refresh, 3000);
+$('refreshBtn').onclick = refresh;
+refresh();
 </script>
 </body>
 </html>
