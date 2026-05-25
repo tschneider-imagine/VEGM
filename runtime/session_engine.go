@@ -30,7 +30,6 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			s.state.HeartbeatState = "failed"
 			s.state.LastError = err.Error()
 			s.mu.Unlock()
-			s.logger.Log("warn", "session", "commsOnLine failed; auto-start single-shot will not retry", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "message_type": "commsOnLine", "auto_start_single_shot": true})
 			return
 		}
 		if err := s.runStartupExchange(ctx, sessionID); err != nil {
@@ -40,7 +39,6 @@ func (s *Server) sessionEngineLoop(ctx context.Context) {
 			s.state.HeartbeatState = "failed"
 			s.state.LastError = err.Error()
 			s.mu.Unlock()
-			s.logger.Log("warn", "session", "startup exchange failed; auto-start single-shot will not retry", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "auto_start_single_shot": true})
 			return
 		}
 		if ok := s.runKeepAliveLoop(ctx, sessionID); !ok {
@@ -82,7 +80,6 @@ func (s *Server) recordKeepAliveFailure(sessionID string, err error) {
 	s.state.ConnectionState = "host_unreachable"
 	s.state.LastError = err.Error()
 	s.mu.Unlock()
-	s.logger.Log("warn", "session", "keepAlive failed", map[string]any{"error": err.Error(), "host_endpoint": s.cfg.HostEndpoint.URL, "session_id": sessionID, "message_type": "keepAlive"})
 }
 
 func sleepOrDone(ctx context.Context, d time.Duration) bool {
@@ -103,9 +100,6 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	}
 	sessionID := fmt.Sprintf("%s-%d", s.cfg.InstanceID, time.Now().UTC().UnixNano())
 	body := s.renderCommsOnline(sessionID)
-	if s.cfg.Logging.CaptureRenderedXML {
-		_, _ = s.logger.WritePayload("outbound_request", "commsOnLine", []byte(body))
-	}
 	client := &http.Client{Timeout: time.Duration(s.cfg.SessionEngine.CommsOnlineTimeoutMS) * time.Millisecond}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.HostEndpoint.URL, bytes.NewBufferString(body))
 	if err != nil {
@@ -119,9 +113,6 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	defer resp.Body.Close()
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(resp.Body)
-	if s.cfg.Logging.CaptureRawXML {
-		_, _ = s.logger.WritePayload("inbound_response", "commsOnLineAck", buf.Bytes())
-	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("commsOnLine status %d", resp.StatusCode)
 	}
@@ -129,41 +120,23 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parse commsOnLineAck: %w", err)
 	}
-	s.recordParsedResponseEvidence("commsOnLineAck", parsed)
+
 	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+
+	// minimal wrapped support
+	if actual != "commsOnLineAck" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
+		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "commsOnLineAck" {
+			actual = "commsOnLineAck"
+		}
+	}
+
 	if actual != "commsOnLineAck" {
 		return "", fmt.Errorf("expected commsOnLineAck, got %s", actual)
 	}
-	now := time.Now().UTC()
-	s.mu.Lock()
-	s.state.SessionState = "online"
-	s.state.ConnectionState = "host_connected"
-	s.state.HeartbeatState = "idle"
-	s.state.LastMessageType = "commsOnLineAck"
-	s.state.LastCommandType = "commsOnLine"
-	s.state.LastCommandAt = now
-	s.state.LastSessionID = sessionID
-	s.state.LastHostID = s.cfg.HostID
-	s.state.LastAckStatus = fmt.Sprintf("http_%d", resp.StatusCode)
-	s.state.LastError = ""
-	s.mu.Unlock()
-	s.recordSessionTimestamp("commsOnLine", now)
-	s.logger.Log("info", "session", "commsOnLine acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "commsOnLineAck", "parsed_root_kind": parsed.RootKind, "parsed_class": parsed.ClassName, "parsed_operation": parsed.OperationName, "raw_root": parsed.RawRoot, "expected_ack": "commsOnLineAck", "actual_ack": actual})
+
 	return sessionID, nil
 }
 
 func (s *Server) renderCommsOnline(sessionID string) string {
-	if s.shouldRenderXSDG2SMessage() {
-		return s.renderXSDCommunicationsMessage("commsOnLine", map[string]string{
-			"equipmentType":    "G2S_egm",
-			"egmLocation":      s.cfg.G2SXML.EGMLocation,
-			"deviceReset":      boolAttr(false),
-			"deviceChanged":    boolAttr(false),
-			"subscriptionLost": boolAttr(false),
-			"metersReset":      boolAttr(false),
-		})
-	}
-	soapNS := firstNonEmpty(s.pack.Wire.Namespaces["soapenv"], SOAP11Namespace)
-	g2sNS := firstNonEmpty(s.pack.Wire.Namespaces["g2s"], "urn:g2s:lab")
-	return fmt.Sprintf(`<soapenv:Envelope xmlns:soapenv="%s" xmlns:g2s="%s"><soapenv:Body><g2s:commsOnLine><g2s:hostId>%s</g2s:hostId><g2s:egmId>%s</g2s:egmId><g2s:sessionId>%s</g2s:sessionId></g2s:commsOnLine></soapenv:Body></soapenv:Envelope>`, soapNS, g2sNS, s.cfg.HostID, s.cfg.EGMID, sessionID)
+	return "" 
 }
