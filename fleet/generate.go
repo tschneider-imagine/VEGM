@@ -29,6 +29,7 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 	}
 	var out []GeneratedConfig
 	for _, eff := range effective {
+		controlBind := fmt.Sprintf("127.0.0.1:%d", eff.ControlPort)
 		notes := map[string]string{
 			"group":                eff.Group,
 			"profile":              eff.Profile,
@@ -53,6 +54,7 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 			"ca_file":              eff.CAFile,
 			"storage_backend":      eff.StorageBackend,
 			"sqlite_path":          eff.SQLitePath,
+			"control_bind":         controlBind,
 		}
 		sessionEngine := runtimecfg.SessionEngineConfig{}
 		if eff.HostEndpoint.URL != "" {
@@ -100,7 +102,7 @@ func GenerateConfigs(m *Manifest, outDir string) ([]GeneratedConfig, error) {
 				SQLitePath: eff.SQLitePath,
 			},
 			Control: runtimecfg.ControlConfig{
-				Bind: fmt.Sprintf("%s:%d", eff.ListenHost, eff.ControlPort),
+				Bind: controlBind,
 			},
 			PackFile: eff.PackFile,
 			Overlay:  eff.OverlayFiles,
