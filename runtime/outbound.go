@@ -105,9 +105,6 @@ func (s *Server) SendOutbound(ctx context.Context, req outboundRequest) (outboun
 }
 
 func (s *Server) renderConfiguredOutboundBody(messageType, sessionID string) string {
-	if !s.shouldRenderXSDG2SMessage() {
-		return ""
-	}
 	switch messageType {
 	case "commsOnLine":
 		return s.renderCommsOnline(sessionID)
@@ -244,7 +241,7 @@ func expectedAckRoot(messageType string) string {
 	}
 }
 
-func firstContentType(pk interface{ }) string {
+func firstContentType(pk interface{}) string {
 	if p, ok := pk.(*struct{}); ok && p == nil {
 		return "text/xml; charset=utf-8"
 	}
