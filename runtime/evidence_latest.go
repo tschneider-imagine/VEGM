@@ -1,8 +1,11 @@
 package runtime
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -30,11 +33,13 @@ type latestEvidenceResponse struct {
 }
 
 type evidencePairing struct {
-	Strategy            string `json:"strategy"`
-	RequestMessageType  string `json:"request_message_type,omitempty"`
-	ResponseMessageType string `json:"response_message_type,omitempty"`
-	MatchedMessageType  bool   `json:"matched_message_type"`
-	Warning             string `json:"warning,omitempty"`
+	Strategy                    string `json:"strategy"`
+	RequestMessageType          string `json:"request_message_type,omitempty"`
+	ResponseMessageType         string `json:"response_message_type,omitempty"`
+	MatchedMessageType          bool   `json:"matched_message_type"`
+	ResponseOlderThanRequest    bool   `json:"response_older_than_request"`
+	ResponseAgeDeltaMS          int64  `json:"response_age_delta_ms,omitempty"`
+	Warning                     string `json:"warning,omitempty"`
 }
 
 type latestEvidencePayload struct {
@@ -48,6 +53,7 @@ type latestEvidencePayload struct {
 	ParsedRoot   string    `json:"parsed_root,omitempty"`
 	ParsedClass  string    `json:"parsed_class,omitempty"`
 	ParsedOp     string    `json:"parsed_operation,omitempty"`
+	NestedAck    string    `json:"nested_ack,omitempty"`
 	ParseError   string    `json:"parse_error,omitempty"`
 }
 
@@ -103,6 +109,7 @@ func pairedLatestResponse(payloadDir string, request latestEvidencePayload) (lat
 			pairing.Strategy = "matched_outbound_response"
 			pairing.ResponseMessageType = response.MessageType
 			pairing.MatchedMessageType = true
+			pairing = annotatePairingAge(pairing, request, response)
 			return response, pairing
 		}
 		response = latestPayloadForMessageType(payloadDir, "inbound_response", request.MessageType)
@@ -110,6 +117,7 @@ func pairedLatestResponse(payloadDir string, request latestEvidencePayload) (lat
 			pairing.Strategy = "matched_inbound_response"
 			pairing.ResponseMessageType = response.MessageType
 			pairing.MatchedMessageType = true
+			pairing = annotatePairingAge(pairing, request, response)
 			return response, pairing
 		}
 	}
@@ -120,18 +128,42 @@ func pairedLatestResponse(payloadDir string, request latestEvidencePayload) (lat
 	pairing.Strategy = "fallback_latest_response"
 	pairing.ResponseMessageType = response.MessageType
 	pairing.MatchedMessageType = request.MessageType != "" && request.MessageType == response.MessageType
+	pairing = annotatePairingAge(pairing, request, response)
 	if request.Path != "" && response.Path != "" && !pairing.MatchedMessageType {
-		pairing.Warning = "latest response does not match latest request message_type"
+		pairing.Warning = joinEvidenceWarnings(pairing.Warning, "latest response does not match latest request message_type")
 	}
 	return response, pairing
+}
+
+func annotatePairingAge(pairing evidencePairing, request, response latestEvidencePayload) evidencePairing {
+	if request.Path == "" || response.Path == "" || request.ModifiedAt.IsZero() || response.ModifiedAt.IsZero() {
+		return pairing
+	}
+	delta := response.ModifiedAt.Sub(request.ModifiedAt)
+	pairing.ResponseAgeDeltaMS = delta.Milliseconds()
+	if delta < 0 {
+		pairing.ResponseOlderThanRequest = true
+		pairing.Warning = joinEvidenceWarnings(pairing.Warning, "matched response is older than latest request")
+	}
+	return pairing
+}
+
+func joinEvidenceWarnings(existing, next string) string {
+	if existing == "" {
+		return next
+	}
+	if next == "" {
+		return existing
+	}
+	return existing + "; " + next
 }
 
 func evidenceTranscript(out latestEvidenceResponse) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "instance=%s xml_mode=%s\n", out.InstanceID, out.XMLMode)
 	fmt.Fprintf(&b, "request=%s parsed=%s file=%s\n", out.Request.MessageType, firstNonEmpty(out.Request.ParsedOp, out.Request.ParsedRoot), out.Request.Name)
-	fmt.Fprintf(&b, "response=%s parsed=%s file=%s\n", out.Response.MessageType, firstNonEmpty(out.Response.ParsedOp, out.Response.ParsedRoot), out.Response.Name)
-	fmt.Fprintf(&b, "pairing=%s matched=%t", out.Pairing.Strategy, out.Pairing.MatchedMessageType)
+	fmt.Fprintf(&b, "response=%s parsed=%s nested_ack=%s file=%s\n", out.Response.MessageType, firstNonEmpty(out.Response.ParsedOp, out.Response.ParsedRoot), out.Response.NestedAck, out.Response.Name)
+	fmt.Fprintf(&b, "pairing=%s matched=%t delta_ms=%d stale=%t", out.Pairing.Strategy, out.Pairing.MatchedMessageType, out.Pairing.ResponseAgeDeltaMS, out.Pairing.ResponseOlderThanRequest)
 	if out.Pairing.Warning != "" {
 		fmt.Fprintf(&b, " warning=%s", out.Pairing.Warning)
 	}
@@ -194,6 +226,7 @@ func latestPayloadForMessageType(payloadDir, direction, messageType string) late
 		return out
 	}
 	out.Content = string(data)
+	out.NestedAck = firstNestedAckName(data)
 	if parsed, err := ParseG2SEnvelope(data); err == nil {
 		out.ParsedRoot = firstNonEmpty(parsed.OperationName, parsed.RawRoot)
 		out.ParsedClass = parsed.ClassName
@@ -203,6 +236,32 @@ func latestPayloadForMessageType(payloadDir, direction, messageType string) late
 		out.ParseError = err.Error()
 	}
 	return out
+}
+
+func firstNestedAckName(data []byte) string {
+	dec := xml.NewDecoder(bytes.NewReader(data))
+	var depth int
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			return ""
+		}
+		if err != nil {
+			return ""
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			depth++
+			local := t.Name.Local
+			if depth > 1 && strings.HasSuffix(local, "Ack") && local != "g2sAck" {
+				return local
+			}
+		case xml.EndElement:
+			if depth > 0 {
+				depth--
+			}
+		}
+	}
 }
 
 func messageTypeFromPayloadName(name, direction string) string {
