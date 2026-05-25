@@ -106,6 +106,16 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 				parsed.DateTimeSent = firstNonEmpty(parsed.DateTimeSent, attrValue(t.Attr, "dateTimeSent"))
 				continue
 			}
+			if strings.EqualFold(parent, "g2sBody") && parsed.ClassName == "" && parsed.OperationName == "" {
+				if isG2SClassName(local) {
+					parsed.ClassName = local
+				} else {
+					parsed.OperationName = local
+					parsed.SessionID = firstNonEmpty(parsed.SessionID, attrValue(t.Attr, "sessionId"))
+				}
+				copyAttrs(parsed.Fields, t.Attr)
+				continue
+			}
 			if isG2SClassContainer(parent) && parsed.ClassName == "" {
 				parsed.ClassName = local
 				copyAttrs(parsed.Fields, t.Attr)
@@ -161,6 +171,15 @@ func ParseG2SEnvelope(data []byte) (ParsedG2SEnvelope, error) {
 
 func isG2SClassContainer(parent string) bool {
 	return strings.EqualFold(parent, "g2sBody")
+}
+
+func isG2SClassName(local string) bool {
+	switch strings.ToLower(local) {
+	case "communications", "cabinet", "meters", "eventhandler", "deviceconfig", "commconfig", "optionconfig", "gameplay", "player", "printer", "voucher", "noteacceptor", "notedispenser", "coinacceptor", "hopper", "handpay", "bonus", "progressive", "download", "hardware", "idreader", "gat", "wat", "central":
+		return true
+	default:
+		return false
+	}
 }
 
 func isLegacyOperationCandidate(local, parent string, hasEnvelope bool) bool {
