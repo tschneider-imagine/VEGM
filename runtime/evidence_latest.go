@@ -22,9 +22,19 @@ type latestEvidenceResponse struct {
 	ParsedClass     string                 `json:"parsed_class,omitempty"`
 	ParsedOperation string                 `json:"parsed_operation,omitempty"`
 	RawRoot         string                 `json:"raw_root,omitempty"`
+	Pairing         evidencePairing        `json:"pairing"`
+	Transcript      string                 `json:"transcript,omitempty"`
 	Request         latestEvidencePayload  `json:"request,omitempty"`
 	Response        latestEvidencePayload  `json:"response,omitempty"`
 	State           map[string]interface{} `json:"state,omitempty"`
+}
+
+type evidencePairing struct {
+	Strategy            string `json:"strategy"`
+	RequestMessageType  string `json:"request_message_type,omitempty"`
+	ResponseMessageType string `json:"response_message_type,omitempty"`
+	MatchedMessageType  bool   `json:"matched_message_type"`
+	Warning             string `json:"warning,omitempty"`
 }
 
 type latestEvidencePayload struct {
@@ -63,16 +73,7 @@ func (s *Server) handleControlEvidenceLatest(w http.ResponseWriter, r *http.Requ
 		payloadDir = s.logger.payloadDir
 	}
 	request := latestPayload(payloadDir, "outbound_request")
-	response := latestPayloadForMessageType(payloadDir, "outbound_response", request.MessageType)
-	if response.Path == "" {
-		response = latestPayloadForMessageType(payloadDir, "inbound_response", request.MessageType)
-	}
-	if response.Path == "" {
-		response = latestPayload(payloadDir, "outbound_response")
-	}
-	if response.Path == "" {
-		response = latestPayload(payloadDir, "inbound_response")
-	}
+	response, pairing := pairedLatestResponse(payloadDir, request)
 	out := latestEvidenceResponse{
 		InstanceID:      s.cfg.InstanceID,
 		XMLMode:         firstNonEmpty(evidence.G2SXMLMode, xmlInfo.Mode, s.cfg.G2SXML.Mode),
@@ -84,12 +85,62 @@ func (s *Server) handleControlEvidenceLatest(w http.ResponseWriter, r *http.Requ
 		ParsedClass:     evidence.LastParsedClass,
 		ParsedOperation: evidence.LastParsedOperation,
 		RawRoot:         evidence.LastRawRoot,
+		Pairing:         pairing,
 		Request:         request,
 		Response:        response,
 		State:           stateSnapshot,
 	}
+	out.Transcript = evidenceTranscript(out)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(out)
+}
+
+func pairedLatestResponse(payloadDir string, request latestEvidencePayload) (latestEvidencePayload, evidencePairing) {
+	pairing := evidencePairing{RequestMessageType: request.MessageType}
+	if request.MessageType != "" {
+		response := latestPayloadForMessageType(payloadDir, "outbound_response", request.MessageType)
+		if response.Path != "" {
+			pairing.Strategy = "matched_outbound_response"
+			pairing.ResponseMessageType = response.MessageType
+			pairing.MatchedMessageType = true
+			return response, pairing
+		}
+		response = latestPayloadForMessageType(payloadDir, "inbound_response", request.MessageType)
+		if response.Path != "" {
+			pairing.Strategy = "matched_inbound_response"
+			pairing.ResponseMessageType = response.MessageType
+			pairing.MatchedMessageType = true
+			return response, pairing
+		}
+	}
+	response := latestPayload(payloadDir, "outbound_response")
+	if response.Path == "" {
+		response = latestPayload(payloadDir, "inbound_response")
+	}
+	pairing.Strategy = "fallback_latest_response"
+	pairing.ResponseMessageType = response.MessageType
+	pairing.MatchedMessageType = request.MessageType != "" && request.MessageType == response.MessageType
+	if request.Path != "" && response.Path != "" && !pairing.MatchedMessageType {
+		pairing.Warning = "latest response does not match latest request message_type"
+	}
+	return response, pairing
+}
+
+func evidenceTranscript(out latestEvidenceResponse) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "instance=%s xml_mode=%s\n", out.InstanceID, out.XMLMode)
+	fmt.Fprintf(&b, "request=%s parsed=%s file=%s\n", out.Request.MessageType, firstNonEmpty(out.Request.ParsedOp, out.Request.ParsedRoot), out.Request.Name)
+	fmt.Fprintf(&b, "response=%s parsed=%s file=%s\n", out.Response.MessageType, firstNonEmpty(out.Response.ParsedOp, out.Response.ParsedRoot), out.Response.Name)
+	fmt.Fprintf(&b, "pairing=%s matched=%t", out.Pairing.Strategy, out.Pairing.MatchedMessageType)
+	if out.Pairing.Warning != "" {
+		fmt.Fprintf(&b, " warning=%s", out.Pairing.Warning)
+	}
+	b.WriteByte('\n')
+	fmt.Fprintf(&b, "expected_ack=%s actual_ack=%s\n", out.ExpectedAck, out.ActualAck)
+	if out.State != nil {
+		fmt.Fprintf(&b, "state session=%v connection=%v heartbeat=%v error=%v\n", out.State["session_state"], out.State["connection_state"], out.State["heartbeat_state"], out.State["last_error"])
+	}
+	return b.String()
 }
 
 func latestPayload(payloadDir, direction string) latestEvidencePayload {
