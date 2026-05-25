@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VEGM Latest Evidence</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
+    .wrap { padding: 16px; display: grid; gap: 16px; }
+    .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    input, button { background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    input { min-width: 420px; }
+    a { color: #93c5fd; }
+    .ok { color: #34d399; }
+    .bad { color: #f87171; }
+    .muted { color: #94a3b8; }
+    .mono { font-family: Consolas, monospace; font-size: 12px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+    pre { white-space: pre-wrap; overflow-x: auto; background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 12px; min-height: 180px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #374151; padding: 6px; text-align: left; vertical-align: top; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <h1>Latest G2S Evidence</h1>
+    <div class="row">
+      <a href="/ui/supervisor.html">Back to Supervisor</a>
+      <input id="controlUrl" placeholder="http://192.168.10.162:19001" />
+      <button id="loadBtn">Load latest evidence</button>
+      <button id="refreshBtn">Refresh</button>
+    </div>
+    <p class="muted">Shows the latest outbound request and latest response payload captured by a VEGM. This supports project plan Pass 8/9 evidence review: raw XML, parsed operation, expected/actual ACK, state, and timestamps.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Summary</h2>
+    <table class="mono"><tbody id="summary"><tr><td>Ready.</td></tr></tbody></table>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Latest outbound request</h2>
+      <table class="mono"><tbody id="requestMeta"></tbody></table>
+      <pre id="requestXml"></pre>
+    </div>
+    <div class="panel">
+      <h2>Latest response</h2>
+      <table class="mono"><tbody id="responseMeta"></tbody></table>
+      <pre id="responseXml"></pre>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Raw JSON</h2>
+    <pre id="rawJson"></pre>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function row(k, v) { return `<tr><th>${esc(k)}</th><td>${esc(v || 'n/a')}</td></tr>`; }
+function payloadRows(p) {
+  if (!p || !p.path) return '<tr><td class="muted">No payload found.</td></tr>';
+  return [
+    row('file', p.name),
+    row('path', p.path),
+    row('direction', p.direction),
+    row('message_type', p.message_type),
+    row('modified_at', p.modified_at),
+    row('size_bytes', p.size_bytes),
+    row('parsed_root', p.parsed_root || p.raw_root),
+    row('parsed_class', p.parsed_class || p.class_name),
+    row('parsed_operation', p.parsed_operation || p.operation_name),
+    row('parse_error', p.parse_error)
+  ].join('');
+}
+function setControlUrlFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('control_url') || params.get('url');
+  if (fromQuery) $('controlUrl').value = fromQuery.replace(/\/$/, '');
+}
+async function loadEvidence() {
+  const base = $('controlUrl').value.trim().replace(/\/$/, '');
+  if (!base) {
+    $('summary').innerHTML = '<tr><td class="bad">Enter a VEGM control URL first.</td></tr>';
+    return;
+  }
+  const res = await fetch(`${base}/control/evidence/latest`);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(text || `${res.status} ${res.statusText}`); }
+  if (!res.ok) throw new Error(data.error || text || `${res.status} ${res.statusText}`);
+  $('summary').innerHTML = [
+    row('instance_id', data.instance_id),
+    row('xml_mode', data.xml_mode),
+    row('xml_namespace', data.xml_namespace),
+    row('xml_egm_location', data.xml_egm_location),
+    row('expected_ack', data.expected_ack),
+    row('actual_ack', data.actual_ack),
+    row('last_error', data.last_error || data.state?.last_error),
+    row('last_command_type', data.last_command_type || data.state?.last_command_type),
+    row('last_message_type', data.last_message_type || data.state?.last_message_type),
+    row('last_ack_status', data.last_ack_status || data.state?.last_ack_status)
+  ].join('');
+  const req = data.outbound_request || data.request;
+  const rsp = data.response;
+  $('requestMeta').innerHTML = payloadRows(req);
+  $('requestXml').textContent = req?.content || '';
+  $('responseMeta').innerHTML = payloadRows(rsp);
+  $('responseXml').textContent = rsp?.content || '';
+  $('rawJson').textContent = JSON.stringify(data, null, 2);
+}
+async function safeLoad() {
+  try { await loadEvidence(); }
+  catch (err) { $('summary').innerHTML = `<tr><td class="bad">${esc(err.message)}</td></tr>`; }
+}
+setControlUrlFromQuery();
+$('loadBtn').addEventListener('click', safeLoad);
+$('refreshBtn').addEventListener('click', safeLoad);
+if ($('controlUrl').value) safeLoad();
+</script>
+</body>
+</html>
