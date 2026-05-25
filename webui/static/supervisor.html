@@ -32,7 +32,6 @@
       <button id="startAllBtn">Start all</button>
       <button id="stopAllBtn">Stop all</button>
       <a class="buttonlink" target="_blank" href="/ui/fleet-machines.html">Fleet machines</a>
-      <a class="buttonlink" target="_blank" href="/ui/fleet-export.html">Fleet export page</a>
       <a class="buttonlink" target="_blank" href="/api/export/fleet">Export fleet run</a>
     </div>
     <div class="muted small">Dashboard, fleet add/remove, exports, session initiation, forced heartbeat, parsed G2S evidence, and per-VEGM evidence links.</div>
@@ -108,7 +107,7 @@ async function refresh() {
         <td><div class="${inst.running ? 'ok':'muted'}">running: ${inst.running}</div><div class="${inst.healthy ? 'ok':'bad'}">healthy: ${inst.healthy}</div><div class="mono">${esc(inst.listen_host)}:${esc(inst.control_port)}</div></td>
         <td>${badge('Mute',inst.audio_state)}${badge('Lock',inst.lock_state)}${badge('Hold',inst.hold_state)}${badge('Machine',inst.machine_state)}${badge('Session',inst.session_state)}${badge('Heartbeat',inst.heartbeat_state)}${badge('Connected',inst.connection_state)}${badge('Last cmd',inst.last_command_type)}<div class="mono">commsOnLine: ${fmtTime(state.last_comms_online_at)}<br>keepAlive: ${fmtTime(state.last_keep_alive_at)}<br>last ACK: ${fmtTime(state.last_ack_at)}</div>${evidenceText(state)}</td>
         <td class="mono"><div>EGM: ${esc(endpoint(inst.egm_endpoint))}</div><div>Host: ${esc(inst.host_endpoint?.url || '')}</div><div>mode: ${esc(inst.trust_mode)}</div></td>
-        <td><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a><br><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a><br><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a><br><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a><br><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a></td>
+        <td><a target="_blank" href="${esc(inst.control_url)}/control/state">state</a><br><a target="_blank" href="${esc(inst.control_url)}/control/machine-status">session details</a><br><a target="_blank" href="${esc(inst.control_url)}/control/logs">logs</a><br><a target="_blank" href="${esc(inst.control_url)}/control/export">export</a><br><a target="_blank" href="${esc(inst.ui_url)}">per-VEGM UI</a><br><a target="_blank" href="/ui/evidence-latest.html?control_url=${encodeURIComponent(inst.control_url)}">evidence latest</a></td>
         <td><button onclick="action('${id}','start')">Start</button><button onclick="initiate('${jsq(inst.control_url)}')">Initiate</button><button onclick="forceHeartbeat('${jsq(inst.control_url)}')">Force Heartbeat</button><button onclick="action('${id}','stop')">Stop</button><button onclick="action('${id}','restart')">Restart</button></td>
       </tr>`);
     }
