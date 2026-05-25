@@ -45,11 +45,12 @@ type G2SXMLConfig struct {
 }
 
 type SessionEngineConfig struct {
-	Enabled              bool `json:"enabled,omitempty"`
-	AutoStart            bool `json:"auto_start,omitempty"`
-	CommsOnlineTimeoutMS int  `json:"comms_online_timeout_ms,omitempty"`
-	KeepAliveIntervalMS  int  `json:"keep_alive_interval_ms,omitempty"`
-	ReconnectIntervalMS  int  `json:"reconnect_interval_ms,omitempty"`
+	Enabled                     bool `json:"enabled,omitempty"`
+	AutoStart                   bool `json:"auto_start,omitempty"`
+	CommsOnlineTimeoutMS        int  `json:"comms_online_timeout_ms,omitempty"`
+	KeepAliveIntervalMS         int  `json:"keep_alive_interval_ms,omitempty"`
+	ReconnectIntervalMS         int  `json:"reconnect_interval_ms,omitempty"`
+	AcceptWrappedG2SResponseAck bool `json:"accept_wrapped_g2s_response_ack,omitempty"`
 }
 
 type ListenConfig struct {

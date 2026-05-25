@@ -131,6 +131,11 @@ func (s *Server) runCommsOnlineOnce(ctx context.Context) (string, error) {
 	}
 	s.recordParsedResponseEvidence("commsOnLineAck", parsed)
 	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	if actual != "commsOnLineAck" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
+		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "commsOnLineAck" {
+			actual = "commsOnLineAck"
+		}
+	}
 	if actual != "commsOnLineAck" {
 		return "", fmt.Errorf("expected commsOnLineAck, got %s", actual)
 	}
