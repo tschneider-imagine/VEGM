@@ -172,7 +172,7 @@ func (s *supervisorServer) instanceViews() []instanceView {
 	for _, gen := range s.generated {
 		inst := gen.Instance
 		wireURL := fmt.Sprintf("%s://%s:%d%s", inst.EGMEndpoint.Scheme, inst.EGMEndpoint.Host, inst.WirePort, inst.EGMEndpoint.Path)
-		controlURL := fmt.Sprintf("http://%s:%d", inst.ListenHost, inst.ControlPort)
+		controlURL := controlURLForConfig(gen.Config.Control.Bind, inst.ControlPort)
 		cmd := s.cmds[inst.InstanceID]
 		running := processRunning(cmd)
 		meta := s.restartMeta(inst.InstanceID)
@@ -229,6 +229,17 @@ func (s *supervisorServer) instanceViews() []instanceView {
 		})
 	}
 	return out
+}
+
+func controlURLForConfig(bind string, fallbackPort int) string {
+	host, port, err := net.SplitHostPort(bind)
+	if err != nil || port == "" {
+		return fmt.Sprintf("http://127.0.0.1:%d", fallbackPort)
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" || host == "[::]" {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("http://%s:%s", host, port)
 }
 
 func (s *supervisorServer) startOne(instanceID string) (bool, error) {
