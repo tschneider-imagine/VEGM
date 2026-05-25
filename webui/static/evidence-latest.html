@@ -9,12 +9,10 @@
     .wrap { padding: 16px; display: grid; gap: 16px; }
     .panel { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 12px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    input, button { background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
+    input, button, select { background: #0f172a; color: #e5e7eb; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; }
     input { min-width: 420px; }
     a { color: #93c5fd; }
-    .ok { color: #34d399; }
-    .bad { color: #f87171; }
-    .muted { color: #94a3b8; }
+    .bad { color: #f87171; } .ok { color: #34d399; } .muted { color: #94a3b8; }
     .mono { font-family: Consolas, monospace; font-size: 12px; }
     .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
     pre { white-space: pre-wrap; overflow-x: auto; background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 12px; min-height: 180px; }
@@ -28,99 +26,96 @@
     <h1>Latest G2S Evidence</h1>
     <div class="row">
       <a href="/ui/supervisor.html">Back to Supervisor</a>
-      <input id="controlUrl" placeholder="http://192.168.10.162:19001" />
-      <button id="loadBtn">Load latest evidence</button>
-      <button id="refreshBtn">Refresh</button>
+      <select id="instanceId"><option value="vegm-001">vegm-001</option></select>
+      <input id="controlUrl" placeholder="http://127.0.0.1:19001" />
+      <button type="button" id="discoverBtn">Discover</button>
+      <button type="button" id="loadBtn">Load latest evidence</button>
+      <button type="button" id="refreshBtn">Refresh</button>
     </div>
-    <p class="muted">Shows the latest outbound request and latest response payload captured by a VEGM. This supports project plan Pass 8/9 evidence review: raw XML, parsed operation, expected/actual ACK, state, and timestamps.</p>
+    <p class="muted">Uses the supervisor API to discover the current VEGM control URL, then loads /control/evidence/latest.</p>
   </div>
-
-  <div class="panel">
-    <h2>Summary</h2>
-    <table class="mono"><tbody id="summary"><tr><td>Ready.</td></tr></tbody></table>
-  </div>
-
+  <div class="panel"><h2>Summary</h2><table class="mono"><tbody id="summary"><tr><td>Ready.</td></tr></tbody></table></div>
   <div class="grid">
-    <div class="panel">
-      <h2>Latest outbound request</h2>
-      <table class="mono"><tbody id="requestMeta"></tbody></table>
-      <pre id="requestXml"></pre>
-    </div>
-    <div class="panel">
-      <h2>Latest response</h2>
-      <table class="mono"><tbody id="responseMeta"></tbody></table>
-      <pre id="responseXml"></pre>
-    </div>
+    <div class="panel"><h2>Latest outbound request</h2><table class="mono"><tbody id="requestMeta"></tbody></table><pre id="requestXml"></pre></div>
+    <div class="panel"><h2>Latest response</h2><table class="mono"><tbody id="responseMeta"></tbody></table><pre id="responseXml"></pre></div>
   </div>
-
-  <div class="panel">
-    <h2>Raw JSON</h2>
-    <pre id="rawJson"></pre>
-  </div>
+  <div class="panel"><h2>Raw JSON</h2><pre id="rawJson"></pre></div>
 </div>
 <script>
 const $ = (id) => document.getElementById(id);
+let instances = [];
 function esc(v) { return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function row(k, v) { return `<tr><th>${esc(k)}</th><td>${esc(v || 'n/a')}</td></tr>`; }
+function showError(err) { $('summary').innerHTML = `<tr><td class="bad">${esc(err.message || err)}</td></tr>`; }
+function normalizeUrl(raw) {
+  raw = String(raw || '').trim().replace(/\/$/, '');
+  if (!raw) return '';
+  const u = new URL(raw, window.location.href);
+  if (u.hostname === '0.0.0.0' || u.hostname === '::') u.hostname = '127.0.0.1';
+  return u.origin;
+}
 function payloadRows(p) {
   if (!p || !p.path) return '<tr><td class="muted">No payload found.</td></tr>';
-  return [
-    row('file', p.name),
-    row('path', p.path),
-    row('direction', p.direction),
-    row('message_type', p.message_type),
-    row('modified_at', p.modified_at),
-    row('size_bytes', p.size_bytes),
-    row('parsed_root', p.parsed_root || p.raw_root),
-    row('parsed_class', p.parsed_class || p.class_name),
-    row('parsed_operation', p.parsed_operation || p.operation_name),
-    row('parse_error', p.parse_error)
-  ].join('');
+  return [row('file', p.name), row('path', p.path), row('direction', p.direction), row('message_type', p.message_type), row('modified_at', p.modified_at), row('size_bytes', p.size_bytes), row('parsed_root', p.parsed_root || p.raw_root), row('parsed_class', p.parsed_class || p.class_name), row('parsed_operation', p.parsed_operation || p.operation_name), row('parse_error', p.parse_error)].join('');
 }
-function setControlUrlFromQuery() {
-  const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get('control_url') || params.get('url');
-  if (fromQuery) $('controlUrl').value = fromQuery.replace(/\/$/, '');
-}
-async function loadEvidence() {
-  const base = $('controlUrl').value.trim().replace(/\/$/, '');
-  if (!base) {
-    $('summary').innerHTML = '<tr><td class="bad">Enter a VEGM control URL first.</td></tr>';
-    return;
-  }
-  const res = await fetch(`${base}/control/evidence/latest`);
+async function getJson(url) {
+  const res = await fetch(url);
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { throw new Error(text || `${res.status} ${res.statusText}`); }
   if (!res.ok) throw new Error(data.error || text || `${res.status} ${res.statusText}`);
-  $('summary').innerHTML = [
-    row('instance_id', data.instance_id),
-    row('xml_mode', data.xml_mode),
-    row('xml_namespace', data.xml_namespace),
-    row('xml_egm_location', data.xml_egm_location),
-    row('expected_ack', data.expected_ack),
-    row('actual_ack', data.actual_ack),
-    row('last_error', data.last_error || data.state?.last_error),
-    row('last_command_type', data.last_command_type || data.state?.last_command_type),
-    row('last_message_type', data.last_message_type || data.state?.last_message_type),
-    row('last_ack_status', data.last_ack_status || data.state?.last_ack_status)
-  ].join('');
+  return data;
+}
+async function discover() {
+  $('summary').innerHTML = '<tr><td class="muted">Discovering VEGMs...</td></tr>';
+  const data = await getJson('/api/instances');
+  instances = data.instances || [];
+  const sel = $('instanceId');
+  sel.innerHTML = '';
+  for (const inst of instances) {
+    const opt = document.createElement('option');
+    opt.value = inst.instance_id;
+    opt.textContent = `${inst.instance_id} ${inst.running ? 'running' : 'stopped'} ${inst.healthy ? 'healthy' : 'not-healthy'} ${inst.control_url || ''}`;
+    sel.appendChild(opt);
+  }
+  const params = new URLSearchParams(window.location.search);
+  const wanted = params.get('instance_id') || params.get('instance') || 'vegm-001';
+  const chosen = instances.find(x => x.instance_id === wanted) || instances.find(x => x.running) || instances[0];
+  if (!chosen) throw new Error('No instances returned by supervisor.');
+  sel.value = chosen.instance_id;
+  $('controlUrl').value = normalizeUrl(chosen.control_url);
+  $('summary').innerHTML = `<tr><td class="ok">Selected ${esc(chosen.instance_id)} at ${esc($('controlUrl').value)}</td></tr>`;
+}
+async function loadEvidence() {
+  let base = normalizeUrl($('controlUrl').value);
+  if (!base) {
+    const inst = instances.find(x => x.instance_id === $('instanceId').value);
+    if (inst) base = normalizeUrl(inst.control_url);
+  }
+  if (!base) throw new Error('No control URL available. Click Discover first.');
+  $('controlUrl').value = base;
+  const data = await getJson(`${base}/control/evidence/latest`);
+  $('summary').innerHTML = [row('instance_id', data.instance_id), row('control_url', base), row('xml_mode', data.xml_mode), row('xml_namespace', data.xml_namespace), row('xml_egm_location', data.xml_egm_location), row('expected_ack', data.expected_ack), row('actual_ack', data.actual_ack), row('last_error', data.last_error || (data.state && data.state.last_error)), row('last_command_type', data.last_command_type || (data.state && data.state.last_command_type)), row('last_message_type', data.last_message_type || (data.state && data.state.last_message_type)), row('last_ack_status', data.last_ack_status || (data.state && data.state.last_ack_status))].join('');
   const req = data.outbound_request || data.request;
   const rsp = data.response;
   $('requestMeta').innerHTML = payloadRows(req);
-  $('requestXml').textContent = req?.content || '';
+  $('requestXml').textContent = req && req.content ? req.content : '';
   $('responseMeta').innerHTML = payloadRows(rsp);
-  $('responseXml').textContent = rsp?.content || '';
+  $('responseXml').textContent = rsp && rsp.content ? rsp.content : '';
   $('rawJson').textContent = JSON.stringify(data, null, 2);
 }
-async function safeLoad() {
-  try { await loadEvidence(); }
-  catch (err) { $('summary').innerHTML = `<tr><td class="bad">${esc(err.message)}</td></tr>`; }
-}
-setControlUrlFromQuery();
-$('loadBtn').addEventListener('click', safeLoad);
-$('refreshBtn').addEventListener('click', safeLoad);
-if ($('controlUrl').value) safeLoad();
+async function safe(fn) { try { await fn(); } catch (err) { showError(err); } }
+$('discoverBtn').onclick = () => safe(discover);
+$('loadBtn').onclick = () => safe(loadEvidence);
+$('refreshBtn').onclick = () => safe(loadEvidence);
+$('instanceId').onchange = () => { const inst = instances.find(x => x.instance_id === $('instanceId').value); if (inst) $('controlUrl').value = normalizeUrl(inst.control_url); };
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('control_url') || params.get('url');
+  if (fromQuery) $('controlUrl').value = normalizeUrl(fromQuery);
+  await discover();
+  await loadEvidence();
+})().catch(showError);
 </script>
 </body>
 </html>
