@@ -27,7 +27,7 @@ A standalone supervisor-served UI page was added:
 The page allows a tester to enter a VEGM control URL such as:
 
 ```text
-http://192.168.10.162:19001
+http://192.168.10.161:19001
 ```
 
 and view:
@@ -53,7 +53,7 @@ and view:
 4. Open:
 
 ```text
-http://127.0.0.1:18081/ui/evidence-latest.html?control_url=http://192.168.10.162:19001
+http://127.0.0.1:18081/ui/evidence-latest.html?control_url=http://192.168.10.161:19001
 ```
 
 5. Confirm latest request/response XML and parsed fields are visible.

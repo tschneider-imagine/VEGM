@@ -33,7 +33,7 @@
       <button id="refreshBtn">Refresh</button>
       <button id="nextBtn">Fill next machine</button>
     </div>
-    <p class="muted">Add/remove test machines from the fleet manifest. Lab network defaults: VEGM host IP 192.168.10.162, controller http://tspi4.local:8444/g2s, subnet 255.255.255.0.</p>
+    <p class="muted">Add/remove test machines from the fleet manifest. Lab network defaults: VEGM host IP 192.168.10.161, controller http://tspi4.local:8444/g2s, subnet 255.255.255.0.</p>
   </div>
 
   <div class="panel">
@@ -45,15 +45,15 @@
       <div class="field"><label>Group</label><input id="add_group" value="bank_a"></div>
       <div class="field"><label>Wire Port</label><input id="add_wire_port" type="number" value="18445"></div>
       <div class="field"><label>Control Port</label><input id="add_control_port" type="number" value="19003"></div>
-      <div class="field"><label>EGM Endpoint Host</label><input id="add_endpoint_host" value="192.168.10.162"></div>
+      <div class="field"><label>EGM Endpoint Host</label><input id="add_endpoint_host" value="192.168.10.161"></div>
       <div class="field"><label>EGM Endpoint Port</label><input id="add_endpoint_port" type="number" value="18445"></div>
       <div class="field"><label>EGM Endpoint Path</label><input id="add_endpoint_path" value="/g2s"></div>
       <div class="field"><label>Host Endpoint URL</label><input id="add_host_endpoint_url" value="http://tspi4.local:8444/g2s"></div>
       <div class="field"><label>G2S XML Mode</label><input id="add_g2s_xml_mode" value="lab_legacy_xml"></div>
       <div class="field"><label>G2S Namespace</label><input id="add_g2s_xml_namespace" value="http://www.gamingstandards.com/g2s/schemas/v1.0.3"></div>
-      <div class="field"><label>G2S EGM Location</label><input id="add_g2s_xml_egm_location" value="192.168.10.162:18445"></div>
-      <div class="field"><label>Advertised Host</label><input id="add_advertised_host" value="192.168.10.162"></div>
-      <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" value="192.168.10.162"></div>
+      <div class="field"><label>G2S EGM Location</label><input id="add_g2s_xml_egm_location" value="192.168.10.161:18445"></div>
+      <div class="field"><label>Advertised Host</label><input id="add_advertised_host" value="192.168.10.161"></div>
+      <div class="field"><label>Advertised IP</label><input id="add_advertised_ip" value="192.168.10.161"></div>
     </div>
     <div class="row" style="margin-top:12px;">
       <button id="addBtn">Add machine</button>
@@ -84,7 +84,7 @@
   </div>
 </div>
 <script>
-const LAB_VEGM_HOST_IP = '192.168.10.162';
+const LAB_VEGM_HOST_IP = '192.168.10.161';
 const LAB_CONTROLLER_URL = 'http://tspi4.local:8444/g2s';
 const G2S_DEFAULT_XML_MODE = 'lab_legacy_xml';
 const G2S_DEFAULT_NAMESPACE = 'http://www.gamingstandards.com/g2s/schemas/v1.0.3';

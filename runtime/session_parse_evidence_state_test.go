@@ -11,7 +11,7 @@ func TestRuntimeStateJSONIncludesParsedResponseEvidence(t *testing.T) {
 		G2SXML: G2SXMLConfig{
 			Mode:        G2SXMLModeXSDMessage,
 			Namespace:   G2SDefaultNamespace,
-			EGMLocation: "192.168.10.162:18443",
+			EGMLocation: "192.168.10.161:18443",
 		},
 	}}
 	s.recordParsedResponseEvidence("keepAliveAck", ParsedG2SEnvelope{
@@ -33,7 +33,7 @@ func TestRuntimeStateJSONIncludesParsedResponseEvidence(t *testing.T) {
 	checks := map[string]string{
 		"g2s_xml_mode":          G2SXMLModeXSDMessage,
 		"g2s_xml_namespace":     G2SDefaultNamespace,
-		"g2s_xml_egm_location":  "192.168.10.162:18443",
+		"g2s_xml_egm_location":  "192.168.10.161:18443",
 		"last_parsed_root_kind": "g2sMessage",
 		"last_parsed_class":     "communications",
 		"last_parsed_operation": "keepAliveAck",
@@ -55,17 +55,17 @@ func TestRuntimeStateJSONIncludesConfiguredXMLMetadataBeforeParsedResponse(t *te
 		EGMID:      "EGM-XML-001",
 		EGMEndpoint: EGMEndpointConfig{
 			Scheme: "http",
-			BindIP: "192.168.10.162",
-			Host:   "192.168.10.162",
+			BindIP: "192.168.10.161",
+			Host:   "192.168.10.161",
 			Port:   18443,
 			Path:   "/g2s",
 		},
 		G2SXML: G2SXMLConfig{
 			Mode:        G2SXMLModeXSDMessage,
 			Namespace:   G2SDefaultNamespace,
-			EGMLocation: "192.168.10.162:18443",
+			EGMLocation: "192.168.10.161:18443",
 		},
-		Listen:   ListenConfig{Host: "192.168.10.162", Port: 18443},
+		Listen:   ListenConfig{Host: "192.168.10.161", Port: 18443},
 		Security: SecurityConfig{TrustMode: "plaintext_lab"},
 		Logging:  LoggingConfig{Dir: t.TempDir()},
 		Control:  ControlConfig{Bind: "127.0.0.1:0"},
@@ -87,7 +87,7 @@ func TestRuntimeStateJSONIncludesConfiguredXMLMetadataBeforeParsedResponse(t *te
 	checks := map[string]string{
 		"g2s_xml_mode":         G2SXMLModeXSDMessage,
 		"g2s_xml_namespace":    G2SDefaultNamespace,
-		"g2s_xml_egm_location": "192.168.10.162:18443",
+		"g2s_xml_egm_location": "192.168.10.161:18443",
 	}
 	for key, want := range checks {
 		if got := out[key]; got != want {

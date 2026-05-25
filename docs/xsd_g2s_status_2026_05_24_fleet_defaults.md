@@ -39,8 +39,8 @@ Each instance gets an EGM location derived from its wire port:
 Example:
 
 ```text
-192.168.10.162:18443
-192.168.10.162:18444
+192.168.10.161:18443
+192.168.10.161:18444
 ```
 
 The checked-in `example.fleet.json` now documents the same explicit `g2s_xml` shape for defaults and the sample instances.

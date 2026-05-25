@@ -4,13 +4,13 @@
   "description": "Example mixed-floor manifest for supervisor-driven VEGM generation and launch.",
   "defaults": {
     "host_id": "HOST-001",
-    "listen_host": "192.168.10.162",
+    "listen_host": "192.168.10.161",
     "wire_port_base": 18443,
     "control_port_base": 19001,
     "egm_endpoint": {
       "scheme": "http",
-      "bind_ip": "192.168.10.162",
-      "host": "192.168.10.162",
+      "bind_ip": "192.168.10.161",
+      "host": "192.168.10.161",
       "path": "/g2s"
     },
     "host_endpoint": {
@@ -19,7 +19,7 @@
     "g2s_xml": {
       "mode": "lab_legacy_xml",
       "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
-      "egm_location": "192.168.10.162:18443"
+      "egm_location": "192.168.10.161:18443"
     },
     "trust_mode": "plaintext_lab",
     "pack_file": "./example.pack.json",
@@ -27,8 +27,8 @@
     "log_root": "./logs/fleet-a",
     "storage_backend": "sqlite",
     "sqlite_root": "./logs/fleet-a",
-    "advertised_host": "192.168.10.162",
-    "advertised_ip": "192.168.10.162",
+    "advertised_host": "192.168.10.161",
+    "advertised_ip": "192.168.10.161",
     "dns_servers": ["8.8.8.8", "1.1.1.1"],
     "subnet_mask": "255.255.255.0",
     "gateway": "192.168.10.1",
@@ -60,7 +60,7 @@
         "lock_on": "lockOn",
         "lock_off": "lockOff"
       },
-      "advertised_host": "192.168.10.162"
+      "advertised_host": "192.168.10.161"
     },
     "vendorquirk": {
       "label": "Vendor quirk profile",
@@ -75,8 +75,8 @@
         "lock_on": "lockOn",
         "lock_off": "lockOff"
       },
-      "advertised_host": "192.168.10.162",
-      "server_name": "192.168.10.162",
+      "advertised_host": "192.168.10.161",
+      "server_name": "192.168.10.161",
       "cert_file": "./certs/vendor/server.pem",
       "key_file": "./certs/vendor/server.key",
       "ca_file": "./certs/vendor/ca.pem",
@@ -112,7 +112,7 @@
       "wire_port": 18443,
       "control_port": 19001,
       "egm_endpoint": {
-        "host": "192.168.10.162",
+        "host": "192.168.10.161",
         "port": 18443,
         "path": "/g2s"
       },
@@ -122,10 +122,10 @@
       "g2s_xml": {
         "mode": "lab_legacy_xml",
         "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
-        "egm_location": "192.168.10.162:18443"
+        "egm_location": "192.168.10.161:18443"
       },
-      "advertised_host": "192.168.10.162",
-      "advertised_ip": "192.168.10.162"
+      "advertised_host": "192.168.10.161",
+      "advertised_ip": "192.168.10.161"
     },
     {
       "instance_id": "vegm-002",
@@ -135,7 +135,7 @@
       "wire_port": 18444,
       "control_port": 19002,
       "egm_endpoint": {
-        "host": "192.168.10.162",
+        "host": "192.168.10.161",
         "port": 18444,
         "path": "/g2s"
       },
@@ -145,10 +145,10 @@
       "g2s_xml": {
         "mode": "lab_legacy_xml",
         "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
-        "egm_location": "192.168.10.162:18444"
+        "egm_location": "192.168.10.161:18444"
       },
-      "advertised_host": "192.168.10.162",
-      "advertised_ip": "192.168.10.162"
+      "advertised_host": "192.168.10.161",
+      "advertised_ip": "192.168.10.161"
     },
     {
       "instance_id": "vegm-011",
@@ -158,7 +158,7 @@
       "wire_port": 18453,
       "control_port": 19011,
       "egm_endpoint": {
-        "host": "192.168.10.162",
+        "host": "192.168.10.161",
         "port": 18453,
         "path": "/g2s"
       },
@@ -168,10 +168,10 @@
       "g2s_xml": {
         "mode": "lab_legacy_xml",
         "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
-        "egm_location": "192.168.10.162:18453"
+        "egm_location": "192.168.10.161:18453"
       },
-      "advertised_host": "192.168.10.162",
-      "advertised_ip": "192.168.10.162",
+      "advertised_host": "192.168.10.161",
+      "advertised_ip": "192.168.10.161",
       "subnet_mask": "255.255.255.0",
       "gateway": "192.168.10.1",
       "overrides": {

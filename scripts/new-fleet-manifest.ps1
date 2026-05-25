@@ -2,7 +2,7 @@ param(
     [int]$Count = 15,
     [string]$Template = ".\example.fleet.json",
     [string]$OutFile = ".\generated\fleet-$Count.json",
-    [string]$VegmHostIp = "192.168.10.162",
+    [string]$VegmHostIp = "192.168.10.161",
     [string]$VegmBindIp = "0.0.0.0",
     [string]$HostEndpointUrl = "http://192.168.10.25:8444/g2s",
     [string]$SubnetMask = "255.255.255.0",

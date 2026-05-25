@@ -8,7 +8,7 @@ Use this workflow to generate repeatable fleet manifests for 15 or 30 simulated 
 
 Current lab defaults:
 
-- VEGM host IP: `192.168.10.162`
+- VEGM host IP: `192.168.10.161`
 - Controller endpoint: `http://tspi4.local:8444/g2s`
 - Subnet mask: `255.255.255.0`
 - Gateway: `192.168.10.1`
@@ -66,7 +66,7 @@ Use the UI to start machines, inspect status, and export evidence.
 - All generated wire ports are unique
 - All generated control ports are unique
 - Each VEGM row has correct host endpoint: `http://tspi4.local:8444/g2s`
-- Each VEGM row has correct EGM host endpoint IP: `192.168.10.162`
+- Each VEGM row has correct EGM host endpoint IP: `192.168.10.161`
 - Start one VEGM first
 - Then start a small group
 - Then start all

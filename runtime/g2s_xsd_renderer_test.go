@@ -50,7 +50,7 @@ func TestRenderXSDCommsOnLine(t *testing.T) {
 		`egmId="EGM-001"`,
 		`dateTimeSent="`,
 		`<g2s:communications><g2s:commsOnLine`,
-		`egmLocation="192.168.10.162:18443"`,
+		`egmLocation="192.168.10.161:18443"`,
 		`equipmentType="G2S_egm"`,
 		`deviceReset="false"`,
 		`deviceChanged="false"`,
@@ -105,15 +105,15 @@ func newXSDRendererTestServer() *Server {
 		EGMID:      "EGM-001",
 		EGMEndpoint: EGMEndpointConfig{
 			Scheme: "http",
-			BindIP: "192.168.10.162",
-			Host:   "192.168.10.162",
+			BindIP: "192.168.10.161",
+			Host:   "192.168.10.161",
 			Port:   18443,
 			Path:   "/g2s",
 		},
 		G2SXML: G2SXMLConfig{
 			Mode:        G2SXMLModeXSDMessage,
 			Namespace:   G2SDefaultNamespace,
-			EGMLocation: "192.168.10.162:18443",
+			EGMLocation: "192.168.10.161:18443",
 		},
 		SessionEngine: SessionEngineConfig{KeepAliveIntervalMS: 5000},
 	}}

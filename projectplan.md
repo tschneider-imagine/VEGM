@@ -798,7 +798,7 @@ http://192.168.10.25:8444/g2s
 Current VEGM host/listen IP:
 
 ```text
-192.168.10.162
+192.168.10.161
 ```
 
 Current generated child control ports observed:

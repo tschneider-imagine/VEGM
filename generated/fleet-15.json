@@ -1,16 +1,16 @@
-﻿{
+{
     "schema_version":  "vegm.fleet-manifest/v1",
     "fleet_name":  "lab-floor-15",
-    "description":  "15-VEGM generated scale manifest for 192.168.10.162 talking to http://192.168.10.25:8444/g2s.",
+    "description":  "15-VEGM generated scale manifest for 192.168.10.161 talking to http://192.168.10.25:8444/g2s.",
     "defaults":  {
                      "host_id":  "HOST-001",
-                     "listen_host":  "192.168.10.162",
+                     "listen_host":  "192.168.10.161",
                      "wire_port_base":  18443,
                      "control_port_base":  19001,
                      "egm_endpoint":  {
                                           "scheme":  "http",
-                                          "bind_ip":  "192.168.10.162",
-                                          "host":  "192.168.10.162",
+                                          "bind_ip":  "192.168.10.161",
+                                          "host":  "192.168.10.161",
                                           "path":  "/g2s"
                                       },
                      "host_endpoint":  {
@@ -24,8 +24,8 @@
                      "log_root":  "./logs/fleet-a",
                      "storage_backend":  "sqlite",
                      "sqlite_root":  "./logs/fleet-a",
-                     "advertised_host":  "192.168.10.162",
-                     "advertised_ip":  "192.168.10.162",
+                     "advertised_host":  "192.168.10.161",
+                     "advertised_ip":  "192.168.10.161",
                      "dns_servers":  [
                                          "8.8.8.8",
                                          "1.1.1.1"
@@ -62,7 +62,7 @@
                                                                "lock_on":  "lockOn",
                                                                "lock_off":  "lockOff"
                                                            },
-                                      "advertised_host":  "192.168.10.162"
+                                      "advertised_host":  "192.168.10.161"
                                   },
                      "vendorquirk":  {
                                          "label":  "Vendor quirk profile",
@@ -79,8 +79,8 @@
                                                                   "lock_on":  "lockOn",
                                                                   "lock_off":  "lockOff"
                                                               },
-                                         "advertised_host":  "192.168.10.162",
-                                         "server_name":  "192.168.10.162",
+                                         "advertised_host":  "192.168.10.161",
+                                         "server_name":  "192.168.10.161",
                                          "cert_file":  "./certs/vendor/server.pem",
                                          "key_file":  "./certs/vendor/server.key",
                                          "ca_file":  "./certs/vendor/ca.pem",
@@ -116,15 +116,15 @@
                           "wire_port":  18443,
                           "control_port":  19001,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18443,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -136,15 +136,15 @@
                           "wire_port":  18444,
                           "control_port":  19002,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18444,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -156,15 +156,15 @@
                           "wire_port":  18445,
                           "control_port":  19003,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18445,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -176,15 +176,15 @@
                           "wire_port":  18446,
                           "control_port":  19004,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18446,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -196,15 +196,15 @@
                           "wire_port":  18447,
                           "control_port":  19005,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18447,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -216,15 +216,15 @@
                           "wire_port":  18448,
                           "control_port":  19006,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18448,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -236,15 +236,15 @@
                           "wire_port":  18449,
                           "control_port":  19007,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18449,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -256,15 +256,15 @@
                           "wire_port":  18450,
                           "control_port":  19008,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18450,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -276,15 +276,15 @@
                           "wire_port":  18451,
                           "control_port":  19009,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18451,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -296,15 +296,15 @@
                           "wire_port":  18452,
                           "control_port":  19010,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18452,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -316,15 +316,15 @@
                           "wire_port":  18453,
                           "control_port":  19011,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18453,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1"
                       },
@@ -336,15 +336,15 @@
                           "wire_port":  18454,
                           "control_port":  19012,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18454,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1",
                           "overrides":  {
@@ -364,15 +364,15 @@
                           "wire_port":  18455,
                           "control_port":  19013,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18455,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1",
                           "overrides":  {
@@ -392,15 +392,15 @@
                           "wire_port":  18456,
                           "control_port":  19014,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18456,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1",
                           "overrides":  {
@@ -420,15 +420,15 @@
                           "wire_port":  18457,
                           "control_port":  19015,
                           "egm_endpoint":  {
-                                               "host":  "192.168.10.162",
+                                               "host":  "192.168.10.161",
                                                "port":  18457,
                                                "path":  "/g2s"
                                            },
                           "host_endpoint":  {
                                                 "url":  "http://192.168.10.25:8444/g2s"
                                             },
-                          "advertised_host":  "192.168.10.162",
-                          "advertised_ip":  "192.168.10.162",
+                          "advertised_host":  "192.168.10.161",
+                          "advertised_ip":  "192.168.10.161",
                           "subnet_mask":  "255.255.255.0",
                           "gateway":  "192.168.10.1",
                           "overrides":  {

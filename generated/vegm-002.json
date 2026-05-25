@@ -4,13 +4,18 @@
   "egm_id": "EGM-002",
   "egm_endpoint": {
     "scheme": "http",
-    "bind_ip": "192.168.10.162",
-    "host": "192.168.10.162",
+    "bind_ip": "192.168.10.161",
+    "host": "192.168.10.161",
     "port": 18444,
     "path": "/g2s"
   },
   "host_endpoint": {
     "url": "http://192.168.10.25:8444/g2s"
+  },
+  "g2s_xml": {
+    "mode": "lab_legacy_xml",
+    "namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
+    "egm_location": "192.168.10.161:18444"
   },
   "session_engine": {
     "enabled": true,
@@ -20,7 +25,7 @@
     "reconnect_interval_ms": 5000
   },
   "listen": {
-    "host": "192.168.10.162",
+    "host": "192.168.10.161",
     "port": 18444
   },
   "security": {
@@ -36,22 +41,26 @@
     "sqlite_path": "logs\\fleet-a\\vegm-002-index.db"
   },
   "control": {
-    "bind": "192.168.10.162:19002"
+    "bind": "127.0.0.1:19002"
   },
   "outbound": {
     "scheduler": {}
   },
   "pack_file": "./example.pack.json",
   "notes": {
-    "advertised_host": "192.168.10.162",
-    "advertised_ip": "192.168.10.162",
+    "advertised_host": "192.168.10.161",
+    "advertised_ip": "192.168.10.161",
     "ca_file": "",
     "cert_file": "",
+    "control_bind": "127.0.0.1:19002",
     "dns_servers": "8.8.8.8,1.1.1.1",
-    "egm_endpoint_bind_ip": "192.168.10.162",
-    "egm_endpoint_host": "192.168.10.162",
+    "egm_endpoint_bind_ip": "192.168.10.161",
+    "egm_endpoint_host": "192.168.10.161",
     "egm_endpoint_path": "/g2s",
     "egm_endpoint_scheme": "http",
+    "g2s_xml_egm_location": "192.168.10.161:18444",
+    "g2s_xml_mode": "lab_legacy_xml",
+    "g2s_xml_namespace": "http://www.gamingstandards.com/g2s/schemas/v1.0.3",
     "gateway": "192.168.10.1",
     "group": "bank_a",
     "host_endpoint_url": "http://192.168.10.25:8444/g2s",
