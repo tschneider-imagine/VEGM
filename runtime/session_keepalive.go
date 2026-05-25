@@ -37,20 +37,10 @@ func (s *Server) runKeepAliveOnce(ctx context.Context, sessionID string) error {
 		return fmt.Errorf("parse keepAliveAck: %w", err)
 	}
 	s.recordParsedResponseEvidence("keepAliveAck", parsed)
-
 	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
-
-	// NEW: wrapped ACK support
-	if actual != "keepAliveAck" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
-		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "keepAliveAck" {
-			actual = "keepAliveAck"
-		}
-	}
-
 	if actual != "keepAliveAck" {
 		return fmt.Errorf("expected keepAliveAck, got %s", actual)
 	}
-
 	now := time.Now().UTC()
 	s.mu.Lock()
 	s.state.HeartbeatState = "healthy"
@@ -64,7 +54,7 @@ func (s *Server) runKeepAliveOnce(ctx context.Context, sessionID string) error {
 	s.state.LastError = ""
 	s.mu.Unlock()
 	s.recordSessionTimestamp("keepAlive", now)
-	s.logger.Log("info", "session", "keepAlive acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "keepAliveAck"})
+	s.logger.Log("info", "session", "keepAlive acknowledged", map[string]any{"host_id": s.cfg.HostID, "egm_id": s.cfg.EGMID, "session_id": sessionID, "status": resp.StatusCode, "message_type": "keepAliveAck", "parsed_root_kind": parsed.RootKind, "parsed_class": parsed.ClassName, "parsed_operation": parsed.OperationName, "raw_root": parsed.RawRoot, "expected_ack": "keepAliveAck", "actual_ack": actual})
 	return nil
 }
 
