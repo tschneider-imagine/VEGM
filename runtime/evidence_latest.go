@@ -63,7 +63,13 @@ func (s *Server) handleControlEvidenceLatest(w http.ResponseWriter, r *http.Requ
 		payloadDir = s.logger.payloadDir
 	}
 	request := latestPayload(payloadDir, "outbound_request")
-	response := latestPayload(payloadDir, "outbound_response")
+	response := latestPayloadForMessageType(payloadDir, "outbound_response", request.MessageType)
+	if response.Path == "" {
+		response = latestPayloadForMessageType(payloadDir, "inbound_response", request.MessageType)
+	}
+	if response.Path == "" {
+		response = latestPayload(payloadDir, "outbound_response")
+	}
 	if response.Path == "" {
 		response = latestPayload(payloadDir, "inbound_response")
 	}
@@ -87,6 +93,10 @@ func (s *Server) handleControlEvidenceLatest(w http.ResponseWriter, r *http.Requ
 }
 
 func latestPayload(payloadDir, direction string) latestEvidencePayload {
+	return latestPayloadForMessageType(payloadDir, direction, "")
+}
+
+func latestPayloadForMessageType(payloadDir, direction, messageType string) latestEvidencePayload {
 	if payloadDir == "" {
 		return latestEvidencePayload{}
 	}
@@ -101,6 +111,9 @@ func latestPayload(payloadDir, direction string) latestEvidencePayload {
 		}
 		name := entry.Name()
 		if !strings.Contains(name, "_"+direction+"_") || !strings.HasSuffix(name, ".xml") {
+			continue
+		}
+		if messageType != "" && messageTypeFromPayloadName(name, direction) != messageType {
 			continue
 		}
 		files = append(files, entry)
