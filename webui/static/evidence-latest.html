@@ -39,6 +39,7 @@
     <div class="panel"><h2>Latest outbound request</h2><table class="mono"><tbody id="requestMeta"></tbody></table><pre id="requestXml"></pre></div>
     <div class="panel"><h2>Latest response</h2><table class="mono"><tbody id="responseMeta"></tbody></table><pre id="responseXml"></pre></div>
   </div>
+  <div class="panel"><h2>Transcript</h2><pre id="transcript"></pre></div>
   <div class="panel"><h2>Raw JSON</h2><pre id="rawJson"></pre></div>
 </div>
 <script>
@@ -56,7 +57,7 @@ function normalizeUrl(raw) {
 }
 function payloadRows(p) {
   if (!p || !p.path) return '<tr><td class="muted">No payload found.</td></tr>';
-  return [row('file', p.name), row('path', p.path), row('direction', p.direction), row('message_type', p.message_type), row('modified_at', p.modified_at), row('size_bytes', p.size_bytes), row('parsed_root', p.parsed_root || p.raw_root), row('parsed_class', p.parsed_class || p.class_name), row('parsed_operation', p.parsed_operation || p.operation_name), row('parse_error', p.parse_error)].join('');
+  return [row('file', p.name), row('path', p.path), row('direction', p.direction), row('message_type', p.message_type), row('modified_at', p.modified_at), row('size_bytes', p.size_bytes), row('parsed_root', p.parsed_root || p.raw_root), row('parsed_class', p.parsed_class || p.class_name), row('parsed_operation', p.parsed_operation || p.operation_name), row('nested_ack', p.nested_ack), row('parse_error', p.parse_error)].join('');
 }
 async function getJson(url) {
   const res = await fetch(url);
@@ -95,13 +96,15 @@ async function loadEvidence() {
   if (!base) throw new Error('No control URL available. Click Discover first.');
   $('controlUrl').value = base;
   const data = await getJson(`${base}/control/evidence/latest`);
-  $('summary').innerHTML = [row('instance_id', data.instance_id), row('control_url', base), row('xml_mode', data.xml_mode), row('xml_namespace', data.xml_namespace), row('xml_egm_location', data.xml_egm_location), row('expected_ack', data.expected_ack), row('actual_ack', data.actual_ack), row('last_error', data.last_error || (data.state && data.state.last_error)), row('last_command_type', data.last_command_type || (data.state && data.state.last_command_type)), row('last_message_type', data.last_message_type || (data.state && data.state.last_message_type)), row('last_ack_status', data.last_ack_status || (data.state && data.state.last_ack_status))].join('');
+  const pairing = data.pairing || {};
+  $('summary').innerHTML = [row('instance_id', data.instance_id), row('control_url', base), row('xml_mode', data.xml_mode), row('xml_namespace', data.xml_namespace), row('xml_egm_location', data.xml_egm_location), row('expected_ack', data.expected_ack), row('actual_ack', data.actual_ack), row('pairing_strategy', pairing.strategy), row('matched_message_type', pairing.matched_message_type), row('response_older_than_request', pairing.response_older_than_request), row('response_age_delta_ms', pairing.response_age_delta_ms), row('pairing_warning', pairing.warning), row('last_error', data.last_error || (data.state && data.state.last_error)), row('last_command_type', data.last_command_type || (data.state && data.state.last_command_type)), row('last_message_type', data.last_message_type || (data.state && data.state.last_message_type)), row('last_ack_status', data.last_ack_status || (data.state && data.state.last_ack_status))].join('');
   const req = data.outbound_request || data.request;
   const rsp = data.response;
   $('requestMeta').innerHTML = payloadRows(req);
   $('requestXml').textContent = req && req.content ? req.content : '';
   $('responseMeta').innerHTML = payloadRows(rsp);
   $('responseXml').textContent = rsp && rsp.content ? rsp.content : '';
+  $('transcript').textContent = data.transcript || '';
   $('rawJson').textContent = JSON.stringify(data, null, 2);
 }
 async function safe(fn) { try { await fn(); } catch (err) { showError(err); } }
