@@ -192,7 +192,7 @@ func firstNonZero(values ...int) int {
 	for _, v := range values {
 		if v != 0 {
 			return v
-	}
+		}
 	}
 	return 0
 }
@@ -210,32 +210,56 @@ func firstNonEmptySlice(values ...[]string) []string {
 
 func mergeEndpoint(base, overlay Endpoint) Endpoint {
 	out := base
-	if overlay.Scheme != "" { out.Scheme = overlay.Scheme }
-	if overlay.BindIP != "" { out.BindIP = overlay.BindIP }
-	if overlay.Host != "" { out.Host = overlay.Host }
-	if overlay.Port != 0 { out.Port = overlay.Port }
-	if overlay.Path != "" { out.Path = overlay.Path }
+	if overlay.Scheme != "" {
+		out.Scheme = overlay.Scheme
+	}
+	if overlay.BindIP != "" {
+		out.BindIP = overlay.BindIP
+	}
+	if overlay.Host != "" {
+		out.Host = overlay.Host
+	}
+	if overlay.Port != 0 {
+		out.Port = overlay.Port
+	}
+	if overlay.Path != "" {
+		out.Path = overlay.Path
+	}
 	return out
 }
 
 func mergeHostEndpoint(base, overlay HostEndpoint) HostEndpoint {
 	out := base
-	if overlay.URL != "" { out.URL = overlay.URL }
+	if overlay.URL != "" {
+		out.URL = overlay.URL
+	}
 	return out
 }
 
 func mergeG2SXML(base, overlay G2SXML) G2SXML {
 	out := base
-	if overlay.Mode != "" { out.Mode = overlay.Mode }
-	if overlay.Namespace != "" { out.Namespace = overlay.Namespace }
-	if overlay.EGMLocation != "" { out.EGMLocation = overlay.EGMLocation }
+	if overlay.Mode != "" {
+		out.Mode = overlay.Mode
+	}
+	if overlay.Namespace != "" {
+		out.Namespace = overlay.Namespace
+	}
+	if overlay.EGMLocation != "" {
+		out.EGMLocation = overlay.EGMLocation
+	}
 	return out
 }
 
 func defaultG2SXML(in G2SXML, ep Endpoint) G2SXML {
-	if in.Mode == "" { in.Mode = "lab_legacy_xml" }
-	if in.Namespace == "" { in.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3" }
-	if in.EGMLocation == "" && ep.Host != "" && ep.Port > 0 { in.EGMLocation = fmt.Sprintf("%s:%d", ep.Host, ep.Port) }
+	if in.Mode == "" {
+		in.Mode = "lab_legacy_xml"
+	}
+	if in.Namespace == "" {
+		in.Namespace = "http://www.gamingstandards.com/g2s/schemas/v1.0.3"
+	}
+	if in.EGMLocation == "" && ep.Host != "" && ep.Port > 0 {
+		in.EGMLocation = fmt.Sprintf("%s:%d", ep.Host, ep.Port)
+	}
 	return in
 }
 

@@ -29,31 +29,31 @@ type G2SXML struct {
 }
 
 type Defaults struct {
-	HostID           string         `json:"host_id,omitempty"`
-	ListenHost       string         `json:"listen_host,omitempty"`
-	WirePortBase     int            `json:"wire_port_base,omitempty"`
-	ControlPortBase  int            `json:"control_port_base,omitempty"`
-	EGMEndpoint      Endpoint       `json:"egm_endpoint,omitempty"`
-	HostEndpoint     HostEndpoint   `json:"host_endpoint,omitempty"`
-	G2SXML           G2SXML         `json:"g2s_xml,omitempty"`
-	TrustMode        string         `json:"trust_mode,omitempty"`
-	PackFile         string         `json:"pack_file,omitempty"`
-	OverlayFiles     []string       `json:"overlay_files,omitempty"`
-	LogRoot          string         `json:"log_root,omitempty"`
-	StorageBackend   string         `json:"storage_backend,omitempty"`
-	SQLiteRoot       string         `json:"sqlite_root,omitempty"`
-	AdvertisedHost   string         `json:"advertised_host,omitempty"`
-	AdvertisedIP     string         `json:"advertised_ip,omitempty"`
-	DNSServers       []string       `json:"dns_servers,omitempty"`
-	SubnetMask       string         `json:"subnet_mask,omitempty"`
-	Gateway          string         `json:"gateway,omitempty"`
-	ServerName       string         `json:"server_name,omitempty"`
-	CertFile         string         `json:"cert_file,omitempty"`
-	KeyFile          string         `json:"key_file,omitempty"`
-	CAFile           string         `json:"ca_file,omitempty"`
-	Heartbeat        map[string]any `json:"heartbeat,omitempty"`
-	NormalizedState  map[string]any `json:"normalized_state,omitempty"`
-	Faults           map[string]any `json:"faults,omitempty"`
+	HostID          string         `json:"host_id,omitempty"`
+	ListenHost      string         `json:"listen_host,omitempty"`
+	WirePortBase    int            `json:"wire_port_base,omitempty"`
+	ControlPortBase int            `json:"control_port_base,omitempty"`
+	EGMEndpoint     Endpoint       `json:"egm_endpoint,omitempty"`
+	HostEndpoint    HostEndpoint   `json:"host_endpoint,omitempty"`
+	G2SXML          G2SXML         `json:"g2s_xml,omitempty"`
+	TrustMode       string         `json:"trust_mode,omitempty"`
+	PackFile        string         `json:"pack_file,omitempty"`
+	OverlayFiles    []string       `json:"overlay_files,omitempty"`
+	LogRoot         string         `json:"log_root,omitempty"`
+	StorageBackend  string         `json:"storage_backend,omitempty"`
+	SQLiteRoot      string         `json:"sqlite_root,omitempty"`
+	AdvertisedHost  string         `json:"advertised_host,omitempty"`
+	AdvertisedIP    string         `json:"advertised_ip,omitempty"`
+	DNSServers      []string       `json:"dns_servers,omitempty"`
+	SubnetMask      string         `json:"subnet_mask,omitempty"`
+	Gateway         string         `json:"gateway,omitempty"`
+	ServerName      string         `json:"server_name,omitempty"`
+	CertFile        string         `json:"cert_file,omitempty"`
+	KeyFile         string         `json:"key_file,omitempty"`
+	CAFile          string         `json:"ca_file,omitempty"`
+	Heartbeat       map[string]any `json:"heartbeat,omitempty"`
+	NormalizedState map[string]any `json:"normalized_state,omitempty"`
+	Faults          map[string]any `json:"faults,omitempty"`
 }
 
 type Profile struct {
