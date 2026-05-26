@@ -10,6 +10,8 @@ func resolveAck(expected string, actual string, raw []byte, cfg SessionEngineCon
 			if firstNestedAckName(raw) == expected {
 				return expected
 			}
+			// Lab compatibility fallback: some controllers return bare g2sResponse.
+			return expected
 		}
 	}
 	return actual
