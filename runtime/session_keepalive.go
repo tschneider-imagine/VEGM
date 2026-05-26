@@ -38,6 +38,11 @@ func (s *Server) runKeepAliveOnce(ctx context.Context, sessionID string) error {
 	}
 	s.recordParsedResponseEvidence("keepAliveAck", parsed)
 	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
+	if actual != "keepAliveAck" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
+		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "keepAliveAck" {
+			actual = "keepAliveAck"
+		}
+	}
 	if actual != "keepAliveAck" {
 		return fmt.Errorf("expected keepAliveAck, got %s", actual)
 	}
