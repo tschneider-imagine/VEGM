@@ -47,12 +47,7 @@ func (s *Server) runGetDescriptorOnce(ctx context.Context, sessionID string) err
 		return fmt.Errorf("parse descriptorList: %w", err)
 	}
 	s.recordParsedResponseEvidence("descriptorList", parsed)
-	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
-	if actual != "descriptorList" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
-		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "descriptorList" {
-			actual = "descriptorList"
-		}
-	}
+	actual := resolveAck("descriptorList", firstNonEmpty(parsed.OperationName, parsed.RawRoot), buf.Bytes(), s.cfg.SessionEngine)
 	if actual != "descriptorList" {
 		return fmt.Errorf("expected descriptorList, got %s", actual)
 	}
@@ -98,12 +93,7 @@ func (s *Server) runSetKeepAliveOnce(ctx context.Context, sessionID string) erro
 		return fmt.Errorf("parse setKeepAliveAck: %w", err)
 	}
 	s.recordParsedResponseEvidence("setKeepAliveAck", parsed)
-	actual := firstNonEmpty(parsed.OperationName, parsed.RawRoot)
-	if actual != "setKeepAliveAck" && s.cfg.SessionEngine.AcceptWrappedG2SResponseAck {
-		if actual == "g2sResponse" && firstNestedAckName(buf.Bytes()) == "setKeepAliveAck" {
-			actual = "setKeepAliveAck"
-		}
-	}
+	actual := resolveAck("setKeepAliveAck", firstNonEmpty(parsed.OperationName, parsed.RawRoot), buf.Bytes(), s.cfg.SessionEngine)
 	if actual != "setKeepAliveAck" {
 		return fmt.Errorf("expected setKeepAliveAck, got %s", actual)
 	}
